@@ -78,6 +78,13 @@ class SpaceInvadersState(State):
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.KEYDOWN:
+            # ESC key should always return to menu
+            if event.key == pygame.K_ESCAPE:
+                from menu_items import get_menu_items
+                from engine import MenuState
+
+                self.request_transition(MenuState(get_menu_items()))
+                return
             if not (self.game_over or self.win):
                 if event.key == pygame.K_SPACE:
                     bullet_rect = pygame.Rect(
@@ -90,11 +97,6 @@ class SpaceInvadersState(State):
             else:
                 if event.key == pygame.K_r:
                     self.__init__()
-                elif event.key == pygame.K_ESCAPE:
-                    from menu_items import get_menu_items
-                    from engine import MenuState
-
-                    self.request_transition(MenuState(get_menu_items()))
 
     def update(self, dt: float) -> None:
         if self.game_over or self.win:
