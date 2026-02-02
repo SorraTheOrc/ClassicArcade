@@ -21,6 +21,7 @@ from utils import (
     CYAN,
     draw_text,
 )
+from engine import State
 
 # Game constants
 PADDLE_WIDTH = 100
@@ -34,6 +35,129 @@ BRICK_WIDTH = (SCREEN_WIDTH - (BRICK_COLS + 1) * 5) // BRICK_COLS
 BRICK_HEIGHT = 20
 BRICK_SPACING = 5
 FONT_SIZE = 24
+
+# State implementation for the engine
+from engine import State
+from utils import (
+    draw_text,
+    WHITE,
+    BLACK,
+    RED,
+    GREEN,
+    YELLOW,
+    CYAN,
+    SCREEN_WIDTH,
+    SCREEN_HEIGHT,
+)
+import pygame
+import random
+
+
+class BreakoutState(State):
+    """State for the Breakout game, compatible with the engine loop."""
+
+    def __init__(self):
+        super().__init__()
+        # Initialize paddle
+        self.paddle = pygame.Rect(
+            (SCREEN_WIDTH - PADDLE_WIDTH) // 2,
+            SCREEN_HEIGHT - PADDLE_HEIGHT - 30,
+            PADDLE_WIDTH,
+            PADDLE_HEIGHT,
+        )
+        # Ball starts above paddle
+        self.ball = pygame.Rect(
+            self.paddle.centerx - BALL_RADIUS,
+            self.paddle.top - 2 * BALL_RADIUS,
+            BALL_RADIUS * 2,
+            BALL_RADIUS * 2,
+        )
+        self.ball_vel = [random.choice([-BALL_SPEED, BALL_SPEED]), -BALL_SPEED]
+        self.bricks = create_bricks()
+        self.score = 0
+        self.game_over = False
+        self.win = False
+
+    def handle_event(self, event: pygame.event.Event) -> None:
+        if event.type == pygame.KEYDOWN:
+            if self.game_over or self.win:
+                if event.key == pygame.K_r:
+                    # Restart
+                    self.__init__()
+                elif event.key == pygame.K_ESCAPE:
+                    # Return to menu
+                    from menu_items import get_menu_items
+                    from engine import MenuState
+
+                    self.request_transition(MenuState(get_menu_items()))
+
+    def update(self, dt: float) -> None:
+        if self.game_over or self.win:
+            return
+        keys = pygame.key.get_pressed()
+        # Paddle movement
+        if keys[pygame.K_LEFT] and self.paddle.left > 0:
+            self.paddle.move_ip(-PADDLE_SPEED, 0)
+        if keys[pygame.K_RIGHT] and self.paddle.right < SCREEN_WIDTH:
+            self.paddle.move_ip(PADDLE_SPEED, 0)
+        # Ball movement
+        self.ball.move_ip(*self.ball_vel)
+        # Collisions with walls
+        if self.ball.left <= 0 or self.ball.right >= SCREEN_WIDTH:
+            self.ball_vel[0] = -self.ball_vel[0]
+        if self.ball.top <= 0:
+            self.ball_vel[1] = -self.ball_vel[1]
+        # Collision with paddle
+        if self.ball.colliderect(self.paddle) and self.ball_vel[1] > 0:
+            self.ball_vel[1] = -self.ball_vel[1]
+            offset = (self.ball.centerx - self.paddle.centerx) / (PADDLE_WIDTH / 2)
+            self.ball_vel[0] = int(BALL_SPEED * offset)
+        # Collision with bricks
+        hit_index = self.ball.collidelist([br[0] for br in self.bricks])
+        if hit_index != -1:
+            brick_rect, brick_color = self.bricks.pop(hit_index)
+            self.score += 1
+            self.ball_vel[1] = -self.ball_vel[1]
+        # Check win
+        if not self.bricks:
+            self.win = True
+        # Check lose
+        if self.ball.bottom >= SCREEN_HEIGHT:
+            self.game_over = True
+
+    def draw(self, screen: pygame.Surface) -> None:
+        screen.fill(BLACK)
+        # Draw paddle
+        pygame.draw.rect(screen, WHITE, self.paddle)
+        # Draw ball
+        pygame.draw.ellipse(screen, GREEN, self.ball)
+        # Draw bricks
+        for rect, color in self.bricks:
+            pygame.draw.rect(screen, color, rect)
+        # Draw score
+        draw_text(
+            screen, f"Score: {self.score}", FONT_SIZE, WHITE, 60, 20, center=False
+        )
+        if self.game_over:
+            draw_text(
+                screen,
+                "Game Over! Press R to restart or ESC to menu",
+                FONT_SIZE,
+                RED,
+                SCREEN_WIDTH // 2,
+                SCREEN_HEIGHT // 2,
+                center=True,
+            )
+        if self.win:
+            draw_text(
+                screen,
+                "You Win! Press R to restart or ESC to menu",
+                FONT_SIZE,
+                YELLOW,
+                SCREEN_WIDTH // 2,
+                SCREEN_HEIGHT // 2,
+                center=True,
+            )
 
 
 def create_bricks():

@@ -14,3 +14,7 @@ Worklog Specific Ignores
 .opencode/tmp/
 
 ### End of Worklog Specific Ignores
+
+# Ignore compiled python files
+__pycache__/
+

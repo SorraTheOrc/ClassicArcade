@@ -21,6 +21,7 @@ from utils import (
     YELLOW,
     draw_text,
 )
+from engine import State
 
 # Game constants
 PLAYER_WIDTH = 50
@@ -38,6 +39,137 @@ ALIEN_V_SPACING = 10
 ALIEN_SPEED = 1  # horizontal speed per frame
 ALIEN_DESCEND = 20
 FONT_SIZE = 24
+
+# State implementation for the engine
+from engine import State
+from utils import (
+    draw_text,
+    WHITE,
+    BLACK,
+    RED,
+    GREEN,
+    BLUE,
+    YELLOW,
+    SCREEN_WIDTH,
+    SCREEN_HEIGHT,
+)
+import pygame
+import random
+
+
+class SpaceInvadersState(State):
+    """State for the Space Invaders game, compatible with the engine loop."""
+
+    def __init__(self):
+        super().__init__()
+        # Player ship
+        self.player = pygame.Rect(
+            (SCREEN_WIDTH - PLAYER_WIDTH) // 2,
+            SCREEN_HEIGHT - PLAYER_HEIGHT - 30,
+            PLAYER_WIDTH,
+            PLAYER_HEIGHT,
+        )
+        self.bullets = []
+        self.aliens = create_aliens()
+        self.alien_direction = 1
+        self.score = 0
+        self.game_over = False
+        self.win = False
+
+    def handle_event(self, event: pygame.event.Event) -> None:
+        if event.type == pygame.KEYDOWN:
+            if not (self.game_over or self.win):
+                if event.key == pygame.K_SPACE:
+                    bullet_rect = pygame.Rect(
+                        self.player.centerx - BULLET_WIDTH // 2,
+                        self.player.top - BULLET_HEIGHT,
+                        BULLET_WIDTH,
+                        BULLET_HEIGHT,
+                    )
+                    self.bullets.append(bullet_rect)
+            else:
+                if event.key == pygame.K_r:
+                    self.__init__()
+                elif event.key == pygame.K_ESCAPE:
+                    from menu_items import get_menu_items
+                    from engine import MenuState
+
+                    self.request_transition(MenuState(get_menu_items()))
+
+    def update(self, dt: float) -> None:
+        if self.game_over or self.win:
+            return
+        keys = pygame.key.get_pressed()
+        # Player movement
+        if keys[pygame.K_LEFT] and self.player.left > 0:
+            self.player.move_ip(-PLAYER_SPEED, 0)
+        if keys[pygame.K_RIGHT] and self.player.right < SCREEN_WIDTH:
+            self.player.move_ip(PLAYER_SPEED, 0)
+        # Move bullets
+        for bullet in self.bullets[:]:
+            bullet.move_ip(0, -BULLET_SPEED)
+            if bullet.bottom < 0:
+                self.bullets.remove(bullet)
+        # Move aliens horizontally
+        move_down = False
+        for rect, color in self.aliens:
+            rect.move_ip(ALIEN_SPEED * self.alien_direction, 0)
+            if rect.right >= SCREEN_WIDTH or rect.left <= 0:
+                move_down = True
+        if move_down:
+            self.alien_direction *= -1
+            for rect, color in self.aliens:
+                rect.move_ip(0, ALIEN_DESCEND)
+        # Bullet-alien collisions
+        for bullet in self.bullets[:]:
+            hit_index = bullet.collidelist([a[0] for a in self.aliens])
+            if hit_index != -1:
+                self.aliens.pop(hit_index)
+                self.bullets.remove(bullet)
+                self.score += 10
+        # Check win
+        if not self.aliens:
+            self.win = True
+        # Check lose
+        for rect, _ in self.aliens:
+            if rect.bottom >= self.player.top:
+                self.game_over = True
+                break
+
+    def draw(self, screen: pygame.Surface) -> None:
+        screen.fill(BLACK)
+        # Draw player
+        pygame.draw.rect(screen, WHITE, self.player)
+        # Draw bullets
+        for bullet in self.bullets:
+            pygame.draw.rect(screen, YELLOW, bullet)
+        # Draw aliens
+        for rect, color in self.aliens:
+            pygame.draw.rect(screen, color, rect)
+        # Draw score
+        draw_text(
+            screen, f"Score: {self.score}", FONT_SIZE, WHITE, 60, 20, center=False
+        )
+        if self.game_over:
+            draw_text(
+                screen,
+                "Game Over! Press R to restart or ESC to menu",
+                FONT_SIZE,
+                RED,
+                SCREEN_WIDTH // 2,
+                SCREEN_HEIGHT // 2,
+                center=True,
+            )
+        if self.win:
+            draw_text(
+                screen,
+                "You Win! Press R to restart or ESC to menu",
+                FONT_SIZE,
+                GREEN,
+                SCREEN_WIDTH // 2,
+                SCREEN_HEIGHT // 2,
+                center=True,
+            )
 
 
 def create_aliens():

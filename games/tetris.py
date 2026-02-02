@@ -25,6 +25,7 @@ from utils import (
     GRAY,
     draw_text,
 )
+from engine import State
 
 # Game constants
 CELL_SIZE = 20
@@ -35,6 +36,166 @@ GRID_Y_OFFSET = (SCREEN_HEIGHT - GRID_HEIGHT * CELL_SIZE) // 2
 FALL_SPEED = 500  # milliseconds per grid step (initial)
 FAST_FALL_SPEED = 50
 FONT_SIZE = 24
+
+# State implementation for the engine
+from engine import State
+from utils import (
+    draw_text,
+    WHITE,
+    BLACK,
+    RED,
+    GREEN,
+    BLUE,
+    YELLOW,
+    CYAN,
+    MAGENTA,
+    GRAY,
+    SCREEN_WIDTH,
+    SCREEN_HEIGHT,
+)
+import pygame
+import random
+
+
+class TetrisState(State):
+    """State for the Tetris game, compatible with the engine loop."""
+
+    def __init__(self):
+        super().__init__()
+        # Initialize empty grid
+        self.grid = [[None for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
+        # Piece state
+        self.current_shape_name = random.choice(list(SHAPES.keys()))
+        self.current_shape = SHAPES[self.current_shape_name]
+        self.current_color = SHAPE_COLORS[self.current_shape_name]
+        self.shape_x = GRID_WIDTH // 2 - 2
+        self.shape_y = 0
+        self.shape_coords = self.current_shape
+        self.fall_timer = 0
+        self.fall_interval = FALL_SPEED
+        self.game_over = False
+        self.score = 0
+        self.level = 1
+        self.lines_cleared_total = 0
+
+    def handle_event(self, event: pygame.event.Event) -> None:
+        if event.type == pygame.KEYDOWN:
+            if not self.game_over:
+                if event.key == pygame.K_LEFT:
+                    if valid_position(
+                        self.grid, self.shape_coords, self.shape_x - 1, self.shape_y
+                    ):
+                        self.shape_x -= 1
+                elif event.key == pygame.K_RIGHT:
+                    if valid_position(
+                        self.grid, self.shape_coords, self.shape_x + 1, self.shape_y
+                    ):
+                        self.shape_x += 1
+                elif event.key == pygame.K_DOWN:
+                    self.fall_interval = FAST_FALL_SPEED
+                elif event.key == pygame.K_UP:
+                    new_coords = rotate(self.shape_coords)
+                    if valid_position(
+                        self.grid, new_coords, self.shape_x, self.shape_y
+                    ):
+                        self.shape_coords = new_coords
+            else:
+                if event.key == pygame.K_r:
+                    self.__init__()
+                elif event.key == pygame.K_ESCAPE:
+                    from menu_items import get_menu_items
+                    from engine import MenuState
+
+                    self.request_transition(MenuState(get_menu_items()))
+
+    def update(self, dt: float) -> None:
+        if self.game_over:
+            return
+        # Reset fall speed after handling key press (if not holding down)
+        keys = pygame.key.get_pressed()
+        if not keys[pygame.K_DOWN]:
+            self.fall_interval = FALL_SPEED
+        # Update fall timer
+        self.fall_timer += dt * 1000  # dt is seconds, convert to ms
+        if self.fall_timer >= self.fall_interval:
+            self.fall_timer = 0
+            # Attempt to move piece down
+            if valid_position(
+                self.grid, self.shape_coords, self.shape_x, self.shape_y + 1
+            ):
+                self.shape_y += 1
+            else:
+                # Lock piece
+                lock_piece(
+                    self.grid,
+                    self.shape_coords,
+                    self.shape_x,
+                    self.shape_y,
+                    self.current_color,
+                )
+                # Clear lines
+                lines = clear_lines(self.grid)
+                if lines:
+                    self.lines_cleared_total += lines
+                    self.score += (lines**2) * 100
+                    # Increase level every 5 lines cleared
+                    if self.lines_cleared_total // 5 > (self.level - 1):
+                        self.level += 1
+                        self.fall_interval = max(50, FALL_SPEED - (self.level - 1) * 50)
+                # Spawn new piece
+                self.current_shape_name = random.choice(list(SHAPES.keys()))
+                self.current_shape = SHAPES[self.current_shape_name]
+                self.current_color = SHAPE_COLORS[self.current_shape_name]
+                self.shape_coords = self.current_shape
+                self.shape_x = GRID_WIDTH // 2 - 2
+                self.shape_y = 0
+                # Check immediate collision
+                if not valid_position(
+                    self.grid, self.shape_coords, self.shape_x, self.shape_y
+                ):
+                    self.game_over = True
+
+    def draw(self, screen: pygame.Surface) -> None:
+        screen.fill(BLACK)
+        # Draw grid cells
+        for y in range(GRID_HEIGHT):
+            for x in range(GRID_WIDTH):
+                cell_color = self.grid[y][x]
+                if cell_color:
+                    rect = pygame.Rect(
+                        GRID_X_OFFSET + x * CELL_SIZE,
+                        GRID_Y_OFFSET + y * CELL_SIZE,
+                        CELL_SIZE,
+                        CELL_SIZE,
+                    )
+                    pygame.draw.rect(screen, cell_color, rect)
+        # Draw current falling piece
+        for x_offset, y_offset in self.shape_coords:
+            gx = self.shape_x + x_offset
+            gy = self.shape_y + y_offset
+            if 0 <= gx < GRID_WIDTH and 0 <= gy < GRID_HEIGHT:
+                rect = pygame.Rect(
+                    GRID_X_OFFSET + gx * CELL_SIZE,
+                    GRID_Y_OFFSET + gy * CELL_SIZE,
+                    CELL_SIZE,
+                    CELL_SIZE,
+                )
+                pygame.draw.rect(screen, self.current_color, rect)
+        # Draw score
+        draw_text(
+            screen, f"Score: {self.score}", FONT_SIZE, WHITE, 60, 20, center=False
+        )
+        if self.game_over:
+            draw_text(
+                screen,
+                "Game Over! Press R to restart or ESC to menu",
+                FONT_SIZE,
+                RED,
+                SCREEN_WIDTH // 2,
+                SCREEN_HEIGHT // 2,
+                center=True,
+            )
+
 
 # Tetromino shapes (list of (x, y) offsets within a 4x4 matrix)
 SHAPES = {
