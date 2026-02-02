@@ -18,7 +18,7 @@ from utils import (
     BLUE,
     draw_text,
 )
-from engine import State
+from games.game_base import Game
 
 # Game constants
 PADDLE_WIDTH = 10
@@ -30,13 +30,8 @@ BALL_SPEED_X = 4
 BALL_SPEED_Y = 4
 FONT_SIZE = 24
 
-# State implementation for the engine
-from engine import State
-from utils import draw_text, WHITE, BLACK, GREEN, RED, SCREEN_WIDTH, SCREEN_HEIGHT
-import pygame
 
-
-class PongState(State):
+class PongState(Game):
     """State for the Pong game, compatible with the engine loop."""
 
     def __init__(self):
@@ -65,19 +60,7 @@ class PongState(State):
         self.game_over = False
         self.winner = None
 
-    def handle_event(self, event: pygame.event.Event) -> None:
-        if event.type == pygame.KEYDOWN:
-            # ESC key should return to menu at any time
-            if event.key == pygame.K_ESCAPE:
-                from menu_items import get_menu_items
-                from engine import MenuState
-
-                self.request_transition(MenuState(get_menu_items()))
-                return
-            if self.game_over:
-                if event.key == pygame.K_r:
-                    # Restart by reinitialising the state
-                    self.__init__()
+    # Inherit handle_event from Game (handles ESC, pause, restart)
 
     def update(self, dt: float) -> None:
         if self.game_over:
