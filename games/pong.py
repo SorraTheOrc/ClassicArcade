@@ -67,16 +67,17 @@ class PongState(State):
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.KEYDOWN:
+            # ESC key should return to menu at any time
+            if event.key == pygame.K_ESCAPE:
+                from menu_items import get_menu_items
+                from engine import MenuState
+
+                self.request_transition(MenuState(get_menu_items()))
+                return
             if self.game_over:
                 if event.key == pygame.K_r:
                     # Restart by reinitialising the state
                     self.__init__()
-                elif event.key == pygame.K_ESCAPE:
-                    # Return to menu
-                    from menu_items import get_menu_items
-                    from engine import MenuState
-
-                    self.request_transition(MenuState(get_menu_items()))
 
     def update(self, dt: float) -> None:
         if self.game_over:
