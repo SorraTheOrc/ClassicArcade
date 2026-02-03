@@ -23,7 +23,7 @@ from config import (
     KEY_RIGHT,
 )
 from utils import draw_text
-from .game_base import Game
+from games.game_base import Game
 from engine import Engine
 
 # Game constants
@@ -128,13 +128,4 @@ class SnakeState(Game):
             )
 
 
-def run():
-    """Run the Snake game using the shared run helper."""
-    from .run_helper import run_game
-
-    # Use the original snake speed constant for FPS
-    run_game(SnakeState, fps=SNAKE_SPEED)
-
-
-if __name__ == "__main__":
-    run()
+# Run function removed; use package-level run()
