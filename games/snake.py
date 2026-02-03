@@ -125,10 +125,11 @@ class SnakeState(Game):
 
 
 def run():
-    """Run the Snake game using the Engine."""
-    state = SnakeState()
-    engine = Engine(state, fps=SNAKE_SPEED)
-    engine.run()
+    """Run the Snake game using the shared run helper."""
+    from .run_helper import run_game
+
+    # Use the original snake speed constant for FPS
+    run_game(SnakeState, fps=SNAKE_SPEED)
 
 
 if __name__ == "__main__":

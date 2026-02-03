@@ -42,7 +42,7 @@ FONT_SIZE = 24
 
 
 class SpaceInvadersState(Game):
-    """State for the Space Invaders game, compatible with the engine loop."""
+    """Game class for Space Invaders, inherits from ``Game`` and compatible with the engine loop."""
 
     def __init__(self):
         super().__init__()
@@ -158,122 +158,10 @@ def create_aliens():
 
 
 def run():
-    pygame.init()
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("Space Invaders")
-    clock = pygame.time.Clock()
+    """Run Space Invaders using the shared run helper."""
+    from .run_helper import run_game
 
-    # Player ship
-    player = pygame.Rect(
-        (SCREEN_WIDTH - PLAYER_WIDTH) // 2,
-        SCREEN_HEIGHT - PLAYER_HEIGHT - 30,
-        PLAYER_WIDTH,
-        PLAYER_HEIGHT,
-    )
-    # Bullets list (rects)
-    bullets = []
-    # Aliens list (rect, color)
-    aliens = create_aliens()
-    alien_direction = 1  # 1 = right, -1 = left
-    score = 0
-    game_over = False
-    win = False
-
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                return
-            elif event.type == pygame.KEYDOWN:
-                if not (game_over or win):
-                    if event.key == pygame.K_SPACE:
-                        # Fire a bullet from the top-center of the ship
-                        bullet_rect = pygame.Rect(
-                            player.centerx - BULLET_WIDTH // 2,
-                            player.top - BULLET_HEIGHT,
-                            BULLET_WIDTH,
-                            BULLET_HEIGHT,
-                        )
-                        bullets.append(bullet_rect)
-                else:
-                    if event.key == pygame.K_r:
-                        return run()
-                    elif event.key == pygame.K_ESCAPE:
-                        pygame.quit()
-                        return
-        keys = pygame.key.get_pressed()
-        if not (game_over or win):
-            # Player movement
-            if keys[pygame.K_LEFT] and player.left > 0:
-                player.move_ip(-PLAYER_SPEED, 0)
-            if keys[pygame.K_RIGHT] and player.right < SCREEN_WIDTH:
-                player.move_ip(PLAYER_SPEED, 0)
-            # Move bullets
-            for bullet in bullets[:]:
-                bullet.move_ip(0, -BULLET_SPEED)
-                if bullet.bottom < 0:
-                    bullets.remove(bullet)
-            # Move aliens horizontally
-            move_down = False
-            for i, (rect, color) in enumerate(aliens):
-                rect.move_ip(ALIEN_SPEED * alien_direction, 0)
-                # Check for edge collision
-                if rect.right >= SCREEN_WIDTH or rect.left <= 0:
-                    move_down = True
-            if move_down:
-                alien_direction *= -1
-                for i, (rect, color) in enumerate(aliens):
-                    rect.move_ip(0, ALIEN_DESCEND)
-            # Bullet-alien collisions
-            for bullet in bullets[:]:
-                hit_index = bullet.collidelist([a[0] for a in aliens])
-                if hit_index != -1:
-                    # Remove alien and bullet
-                    aliens.pop(hit_index)
-                    bullets.remove(bullet)
-                    score += 10
-            # Check win condition
-            if not aliens:
-                win = True
-            # Check lose condition: any alien reaches player's y level
-            for rect, _ in aliens:
-                if rect.bottom >= player.top:
-                    game_over = True
-                    break
-        # Drawing
-        screen.fill(BLACK)
-        # Draw player
-        pygame.draw.rect(screen, WHITE, player)
-        # Draw bullets
-        for bullet in bullets:
-            pygame.draw.rect(screen, YELLOW, bullet)
-        # Draw aliens
-        for rect, color in aliens:
-            pygame.draw.rect(screen, color, rect)
-        # Draw score
-        draw_text(screen, f"Score: {score}", FONT_SIZE, WHITE, 60, 20, center=False)
-        if game_over:
-            draw_text(
-                screen,
-                "Game Over! Press R to restart or ESC to menu",
-                FONT_SIZE,
-                RED,
-                SCREEN_WIDTH // 2,
-                SCREEN_HEIGHT // 2,
-                center=True,
-            )
-        if win:
-            draw_text(
-                screen,
-                "You Win! Press R to restart or ESC to menu",
-                FONT_SIZE,
-                GREEN,
-                SCREEN_WIDTH // 2,
-                SCREEN_HEIGHT // 2,
-                center=True,
-            )
-        pygame.display.flip()
-        clock.tick(60)
+    run_game(SpaceInvadersState)
 
 
 if __name__ == "__main__":
