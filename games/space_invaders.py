@@ -150,13 +150,23 @@ class SpaceInvadersState(Game):
             self.alien_direction *= -1
             for rect, color in self.aliens:
                 rect.move_ip(0, ALIEN_DESCEND)
-        # Bullet-alien collisions
+        # Bullet-alien collisions (player bullets vs aliens)
         for bullet in self.bullets[:]:
             hit_index = bullet.collidelist([a[0] for a in self.aliens])
             if hit_index != -1:
+                # Destroy alien and the bullet
                 self.aliens.pop(hit_index)
                 self.bullets.remove(bullet)
                 self.score += 10
+                continue
+            # Player bullet vs shelter blocks
+            shelter_hit = bullet.collidelist(self.shelters)
+            if shelter_hit != -1:
+                # Destroy the shelter block and the bullet
+                self.shelters.pop(shelter_hit)
+                self.bullets.remove(bullet)
+                # No score change – shelters are neutral objects
+                continue
         # Enemy bullet-player collisions (with shelter blocks)
         for bullet in self.enemy_bullets[:]:
             # Check collision with shelter blocks first

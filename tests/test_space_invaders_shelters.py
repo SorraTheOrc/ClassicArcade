@@ -77,6 +77,26 @@ class TestSpaceInvadersShelters(unittest.TestCase):
         # Player should be dead
         self.assertTrue(self.state.game_over)
 
+    def test_player_bullet_hits_shelter(self):
+        # Ensure there is at least one shelter block
+        self.assertGreater(len(self.state.shelters), 0)
+        # Record initial block count
+        initial_blocks = len(self.state.shelters)
+        # Choose a shelter block to target
+        shelter_block = self.state.shelters[0]
+        # Place a player bullet overlapping the shelter block
+        bullet = pygame.Rect(
+            shelter_block.x, shelter_block.y, BULLET_WIDTH, BULLET_HEIGHT
+        )
+        self.state.bullets.append(bullet)
+        # Run update (no keys pressed)
+        pygame.key.get_pressed = lambda: [False] * 512
+        self.state.update(0.016)
+        # Bullet should be removed and shelter block destroyed
+        self.assertEqual(len(self.state.bullets), 0)
+        self.assertEqual(len(self.state.shelters), initial_blocks - 1)
+        self.assertFalse(self.state.game_over)
+
     def test_shelter_block_count(self):
         # Each shelter should have 6 blocks (shape 0 1 0 / 1 1 1 / 1 0 1)
         expected_blocks = NUM_SHELTERS * 6
