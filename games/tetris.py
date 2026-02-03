@@ -85,7 +85,7 @@ class TetrisState(Game):
             # No need to handle R here; base class already restarts
 
     def update(self, dt: float) -> None:
-        if self.game_over:
+        if self.game_over or self.paused:
             return
         # Reset fall speed after handling key press (if not holding down)
         keys = pygame.key.get_pressed()

@@ -21,7 +21,7 @@ from utils import (
     YELLOW,
     draw_text,
 )
-from engine import State
+from .game_base import Game
 
 # Game constants
 PLAYER_WIDTH = 50
@@ -40,24 +40,8 @@ ALIEN_SPEED = 1  # horizontal speed per frame
 ALIEN_DESCEND = 20
 FONT_SIZE = 24
 
-# State implementation for the engine
-from engine import State
-from utils import (
-    draw_text,
-    WHITE,
-    BLACK,
-    RED,
-    GREEN,
-    BLUE,
-    YELLOW,
-    SCREEN_WIDTH,
-    SCREEN_HEIGHT,
-)
-import pygame
-import random
 
-
-class SpaceInvadersState(State):
+class SpaceInvadersState(Game):
     """State for the Space Invaders game, compatible with the engine loop."""
 
     def __init__(self):
@@ -77,29 +61,12 @@ class SpaceInvadersState(State):
         self.win = False
 
     def handle_event(self, event: pygame.event.Event) -> None:
-        if event.type == pygame.KEYDOWN:
-            # ESC key should always return to menu
-            if event.key == pygame.K_ESCAPE:
-                from menu_items import get_menu_items
-                from engine import MenuState
-
-                self.request_transition(MenuState(get_menu_items()))
-                return
-            if not (self.game_over or self.win):
-                if event.key == pygame.K_SPACE:
-                    bullet_rect = pygame.Rect(
-                        self.player.centerx - BULLET_WIDTH // 2,
-                        self.player.top - BULLET_HEIGHT,
-                        BULLET_WIDTH,
-                        BULLET_HEIGHT,
-                    )
-                    self.bullets.append(bullet_rect)
-            else:
-                if event.key == pygame.K_r:
-                    self.__init__()
+        # Let Game base handle ESC, pause, restart
+        super().handle_event(event)
+        # No additional handling needed for Space Invaders
 
     def update(self, dt: float) -> None:
-        if self.game_over or self.win:
+        if self.game_over or self.win or self.paused:
             return
         keys = pygame.key.get_pressed()
         # Player movement

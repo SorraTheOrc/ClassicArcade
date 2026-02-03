@@ -63,7 +63,7 @@ class BreakoutState(Game):
         self.win = False
 
     def update(self, dt: float) -> None:
-        if self.game_over or self.win:
+        if self.game_over or self.win or self.paused:
             return
         keys = pygame.key.get_pressed()
         # Paddle movement

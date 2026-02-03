@@ -59,7 +59,7 @@ class SnakeState(Game):
         super().handle_event(event)
 
     def update(self, dt: float) -> None:
-        if self.game_over:
+        if self.game_over or self.paused:
             return
         # Accumulate time and move snake at the defined speed
         self._time_acc += dt
