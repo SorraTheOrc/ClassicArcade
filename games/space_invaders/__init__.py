@@ -5,10 +5,11 @@ Exports:
 - ``run()`` – convenience function to launch the game.
 """
 
-from .space_invaders import SpaceInvadersState
+from .space_invaders import *  # re-export all module symbols for tests
+
 from games.run_helper import run_game
 
-__all__ = ["SpaceInvadersState", "run"]
+__all__ = [name for name in globals().keys() if not name.startswith("_")]
 
 
 def run():

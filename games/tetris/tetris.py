@@ -246,11 +246,11 @@ class TetrisState(Game):
         return lines_cleared
 
     @staticmethod
-    def run():
-        """Run Tetris using the shared run helper."""
-        from games.run_helper import run_game
+def run():
+    """Run Tetris using the shared run helper."""
+    from games.run_helper import run_game
 
-        run_game(TetrisState)
+    run_game(TetrisState)
 
 
 if __name__ == "__main__":
