@@ -15,6 +15,7 @@ from games.space_invaders import (
     PLAYER_HEIGHT,
     BULLET_WIDTH,
     BULLET_HEIGHT,
+    NUM_SHELTERS,
 )
 
 
@@ -75,6 +76,11 @@ class TestSpaceInvadersShelters(unittest.TestCase):
         self.state.update(0.016)
         # Player should be dead
         self.assertTrue(self.state.game_over)
+
+    def test_shelter_block_count(self):
+        # Each shelter should have 6 blocks (shape 0 1 0 / 1 1 1 / 1 0 1)
+        expected_blocks = NUM_SHELTERS * 6
+        self.assertEqual(len(self.state.shelters), expected_blocks)
 
 
 if __name__ == "__main__":

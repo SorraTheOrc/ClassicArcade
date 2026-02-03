@@ -48,6 +48,14 @@ SHELTER_HEIGHT = 30
 SHELTER_SPACING = 50
 SHELTER_COLOR = BLUE
 NUM_SHELTERS = 3
+# Shelter block layout (0 = empty, 1 = block)
+SHELTER_SHAPE = [
+    [0, 1, 0],
+    [1, 1, 1],
+    [1, 0, 1],
+]
+SHELTER_BLOCK_WIDTH = SHELTER_WIDTH // 3
+SHELTER_BLOCK_HEIGHT = SHELTER_HEIGHT // 3
 
 
 class SpaceInvadersState(Game):
@@ -149,15 +157,17 @@ class SpaceInvadersState(Game):
                 self.aliens.pop(hit_index)
                 self.bullets.remove(bullet)
                 self.score += 10
-        # Enemy bullet-player collisions (with shelters)
+        # Enemy bullet-player collisions (with shelter blocks)
         for bullet in self.enemy_bullets[:]:
-            # Check collision with shelters first
-            if bullet.collidelist([s for s in self.shelters]) != -1:
-                # Bullet hits a shelter, remove it
+            # Check collision with shelter blocks first
+            hit_idx = bullet.collidelist(self.shelters)
+            if hit_idx != -1:
+                # Bullet hits a shelter block, remove the block and the bullet
+                self.shelters.pop(hit_idx)
                 self.enemy_bullets.remove(bullet)
                 continue
             if bullet.colliderect(self.player):
-                # Player hit (not protected by shelter)
+                # Player hit (no shelter block protecting)
                 self.game_over = True
                 self.enemy_bullets.remove(bullet)
                 break
@@ -229,8 +239,16 @@ def create_aliens():
 
 
 def create_shelters():
+    """Create bomb shelter blocks.
+
+    Each shelter consists of a 3x3 grid of blocks with the shape:
+    0 1 0
+    1 1 1
+    1 0 1
+    This results in 6 blocks per shelter.
+    """
     shelters = []
-    # Calculate starting x to center shelters
+    # Calculate starting x to center the group of shelters
     start_x = (
         SCREEN_WIDTH
         - (NUM_SHELTERS * SHELTER_WIDTH + (NUM_SHELTERS - 1) * SHELTER_SPACING)
@@ -238,9 +256,17 @@ def create_shelters():
     # Position shelters above the player
     y = SCREEN_HEIGHT - PLAYER_HEIGHT - 80
     for i in range(NUM_SHELTERS):
-        x = start_x + i * (SHELTER_WIDTH + SHELTER_SPACING)
-        rect = pygame.Rect(x, y, SHELTER_WIDTH, SHELTER_HEIGHT)
-        shelters.append(rect)
+        shelter_origin_x = start_x + i * (SHELTER_WIDTH + SHELTER_SPACING)
+        # Generate blocks for this shelter based on SHELTER_SHAPE
+        for row_idx, row in enumerate(SHELTER_SHAPE):
+            for col_idx, cell in enumerate(row):
+                if cell:
+                    block_x = shelter_origin_x + col_idx * SHELTER_BLOCK_WIDTH
+                    block_y = y + row_idx * SHELTER_BLOCK_HEIGHT
+                    rect = pygame.Rect(
+                        block_x, block_y, SHELTER_BLOCK_WIDTH, SHELTER_BLOCK_HEIGHT
+                    )
+                    shelters.append(rect)
     return shelters
 
 
