@@ -20,7 +20,7 @@ from config import (
     KEY_DOWN,
 )
 from utils import draw_text
-from .game_base import Game
+from games.game_base import Game
 
 # Game constants
 PADDLE_WIDTH = 10
@@ -150,7 +150,7 @@ class PongState(Game):
 
 def run():
     """Run Pong using the shared run helper."""
-    from .run_helper import run_game
+    from games.run_helper import run_game
 
     run_game(PongState)
 

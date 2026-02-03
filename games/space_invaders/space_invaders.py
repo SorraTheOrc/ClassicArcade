@@ -23,7 +23,7 @@ from config import (
     KEY_RIGHT,
 )
 from utils import draw_text
-from .game_base import Game
+from games.game_base import Game
 
 # Game constants
 PLAYER_WIDTH = 50
@@ -284,7 +284,7 @@ def create_shelters():
 
 def run():
     """Run Space Invaders using the shared run helper."""
-    from .run_helper import run_game
+    from games.run_helper import run_game
 
     run_game(SpaceInvadersState)
 

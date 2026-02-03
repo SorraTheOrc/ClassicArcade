@@ -150,7 +150,7 @@ def create_bricks():
 
 def run():
     """Run Breakout using the shared run helper."""
-    from .run_helper import run_game
+    from games.run_helper import run_game
 
     run_game(BreakoutState)
 

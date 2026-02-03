@@ -248,7 +248,7 @@ class TetrisState(Game):
     @staticmethod
     def run():
         """Run Tetris using the shared run helper."""
-        from .run_helper import run_game
+        from games.run_helper import run_game
 
         run_game(TetrisState)
 
