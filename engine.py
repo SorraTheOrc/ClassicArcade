@@ -10,6 +10,14 @@ the engine switches to the new state and clears the flag.
 """
 
 import pygame
+import atexit
+
+
+def _pygame_cleanup():
+    pygame.quit()
+
+
+atexit.register(_pygame_cleanup)
 from abc import ABC, abstractmethod
 from typing import Optional
 
