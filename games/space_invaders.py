@@ -42,6 +42,12 @@ FONT_SIZE = 24
 
 # Configurable constants
 PLAYER_SHOOT_COOLDOWN = 0.5  # seconds between player shots
+# Bomb shelter constants
+SHELTER_WIDTH = 80
+SHELTER_HEIGHT = 30
+SHELTER_SPACING = 50
+SHELTER_COLOR = BLUE
+NUM_SHELTERS = 3
 
 
 class SpaceInvadersState(Game):
@@ -61,6 +67,7 @@ class SpaceInvadersState(Game):
         self.enemy_shoot_cooldown = 2.0  # seconds
         self.player_shoot_cooldown = 0.0  # seconds
         self.aliens = create_aliens()
+        self.shelters = create_shelters()
         self.alien_direction = 1
         self.score = 0
         self.game_over = False
@@ -142,9 +149,15 @@ class SpaceInvadersState(Game):
                 self.aliens.pop(hit_index)
                 self.bullets.remove(bullet)
                 self.score += 10
-        # Enemy bullet-player collisions
+        # Enemy bullet-player collisions (with shelters)
         for bullet in self.enemy_bullets[:]:
+            # Check collision with shelters first
+            if bullet.collidelist([s for s in self.shelters]) != -1:
+                # Bullet hits a shelter, remove it
+                self.enemy_bullets.remove(bullet)
+                continue
             if bullet.colliderect(self.player):
+                # Player hit (not protected by shelter)
                 self.game_over = True
                 self.enemy_bullets.remove(bullet)
                 break
@@ -170,6 +183,9 @@ class SpaceInvadersState(Game):
         # Draw aliens
         for rect, color in self.aliens:
             pygame.draw.rect(screen, color, rect)
+        # Draw shelters
+        for shelter in self.shelters:
+            pygame.draw.rect(screen, SHELTER_COLOR, shelter)
         # Draw score
         draw_text(
             screen, f"Score: {self.score}", FONT_SIZE, WHITE, 60, 20, center=False
@@ -210,6 +226,22 @@ def create_aliens():
             color = random.choice([RED, GREEN, BLUE, YELLOW])
             aliens.append((rect, color))
     return aliens
+
+
+def create_shelters():
+    shelters = []
+    # Calculate starting x to center shelters
+    start_x = (
+        SCREEN_WIDTH
+        - (NUM_SHELTERS * SHELTER_WIDTH + (NUM_SHELTERS - 1) * SHELTER_SPACING)
+    ) // 2
+    # Position shelters above the player
+    y = SCREEN_HEIGHT - PLAYER_HEIGHT - 80
+    for i in range(NUM_SHELTERS):
+        x = start_x + i * (SHELTER_WIDTH + SHELTER_SPACING)
+        rect = pygame.Rect(x, y, SHELTER_WIDTH, SHELTER_HEIGHT)
+        shelters.append(rect)
+    return shelters
 
 
 def run():
