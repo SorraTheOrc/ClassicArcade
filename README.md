@@ -48,27 +48,6 @@ python main.py
 
 You will see a loading screen with a list of games. Use the **Up/Down** arrow keys to navigate, press **Enter** to launch a game, and **Esc** to quit.
 
-## Project Structure
-
-```
-.
-├── main.py                # Entry point with menu
-├── utils.py               # Shared utilities (colors, draw_text)
-├── games/
-│   ├── __init__.py        # Package marker
-│   ├── snake/
-│   │   └── snake.py       # Snake game (package)
-│   ├── pong/
-│   │   └── pong.py        # Pong game (package)
-│   ├── breakout/
-│   │   └── breakout.py    # Breakout game (package)
-│   ├── space_invaders/
-│   │   └── space_invaders.py # Space Invaders game (package)
-│   └── tetris/
-│       └── tetris.py      # Tetris game (package)
-└── README.md
-```
-
 ## Running Individual Games
 
 Each game is packaged under `games/<name>/` and exposes a `run()` convenience function and the game `State` class for testing. Run a single game from the project root (ensure `pip install pygame` first):
@@ -94,6 +73,26 @@ from games.snake import SnakeState
 state = SnakeState()
 ```
 
+## Project Structure
+
+```
+.
+├── main.py                # Entry point with menu
+├── utils.py               # Shared utilities (colors, draw_text)
+├── games/
+│   ├── __init__.py        # Package marker
+│   ├── snake/
+│   │   └── snake.py       # Snake game (package)
+│   ├── pong/
+│   │   └── pong.py        # Pong game (package)
+│   ├── breakout/
+│   │   └── breakout.py    # Breakout game (package)
+│   ├── space_invaders/
+│   │   └── space_invaders.py # Space Invaders game (package)
+│   └── tetris/
+│       └── tetris.py      # Tetris game (package)
+└── README.md
+```
 
 ## License
 
