@@ -10,7 +10,7 @@ Controls:
 
 import pygame
 import random
-from utils import (
+from config import (
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
     WHITE,
@@ -19,8 +19,10 @@ from utils import (
     GREEN,
     BLUE,
     YELLOW,
-    draw_text,
+    KEY_LEFT,
+    KEY_RIGHT,
 )
+from utils import draw_text
 from .game_base import Game
 
 # Game constants
@@ -101,9 +103,9 @@ class SpaceInvadersState(Game):
                     return keys.get(key, False)
                 return False
 
-        if is_pressed(pygame.K_LEFT) and self.player.left > 0:
+        if is_pressed(KEY_LEFT) and self.player.left > 0:
             self.player.move_ip(-PLAYER_SPEED, 0)
-        if is_pressed(pygame.K_RIGHT) and self.player.right < SCREEN_WIDTH:
+        if is_pressed(KEY_RIGHT) and self.player.right < SCREEN_WIDTH:
             self.player.move_ip(PLAYER_SPEED, 0)
 
         # Move bullets

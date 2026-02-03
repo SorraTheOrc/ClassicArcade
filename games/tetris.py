@@ -11,7 +11,7 @@ Controls:
 
 import pygame
 import random
-from utils import (
+from config import (
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
     WHITE,
@@ -23,8 +23,12 @@ from utils import (
     CYAN,
     MAGENTA,
     GRAY,
-    draw_text,
+    KEY_UP,
+    KEY_DOWN,
+    KEY_LEFT,
+    KEY_RIGHT,
 )
+from utils import draw_text
 from games.game_base import Game
 
 # Game constants
@@ -64,19 +68,19 @@ class TetrisState(Game):
         super().handle_event(event)
         if event.type == pygame.KEYDOWN:
             if not self.game_over:
-                if event.key == pygame.K_LEFT:
+                if event.key == KEY_LEFT:
                     if self.valid_position(
                         self.grid, self.shape_coords, self.shape_x - 1, self.shape_y
                     ):
                         self.shape_x -= 1
-                elif event.key == pygame.K_RIGHT:
+                elif event.key == KEY_RIGHT:
                     if self.valid_position(
                         self.grid, self.shape_coords, self.shape_x + 1, self.shape_y
                     ):
                         self.shape_x += 1
-                elif event.key == pygame.K_DOWN:
+                elif event.key == KEY_DOWN:
                     self.fall_interval = FAST_FALL_SPEED
-                elif event.key == pygame.K_UP:
+                elif event.key == KEY_UP:
                     new_coords = self.rotate(self.shape_coords)
                     if self.valid_position(
                         self.grid, new_coords, self.shape_x, self.shape_y
@@ -89,7 +93,7 @@ class TetrisState(Game):
             return
         # Reset fall speed after handling key press (if not holding down)
         keys = pygame.key.get_pressed()
-        if not keys[pygame.K_DOWN]:
+        if not keys[KEY_DOWN]:
             self.fall_interval = FALL_SPEED
         # Update fall timer
         self.fall_timer += dt * 1000  # dt is seconds, convert to ms

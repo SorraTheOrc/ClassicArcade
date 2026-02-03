@@ -15,7 +15,8 @@ logic, reducing duplication across the individual game modules.
 
 import pygame
 from abc import ABC, abstractmethod
-from utils import draw_text, WHITE, SCREEN_WIDTH, SCREEN_HEIGHT
+from config import SCREEN_WIDTH, SCREEN_HEIGHT, WHITE, KEY_QUIT, KEY_PAUSE, KEY_RESTART
+from utils import draw_text
 from engine import State, MenuState
 
 
@@ -37,16 +38,16 @@ class Game(State):
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
+            if event.key == KEY_QUIT:
                 # Return to menu (import lazily to avoid circular import)
                 from menu_items import get_menu_items
 
                 self.request_transition(MenuState(get_menu_items()))
                 return
-            if event.key == pygame.K_p:
+            if event.key == KEY_PAUSE:
                 self.paused = not self.paused
                 return
-            if event.key == pygame.K_r:
+            if event.key == KEY_RESTART:
                 # Re‑initialise the state – subclasses can override for custom behaviour
                 self.__init__()
                 return

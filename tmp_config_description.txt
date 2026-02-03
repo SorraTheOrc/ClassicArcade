@@ -1,0 +1,13 @@
+Create a config.py that stores SCREEN_WIDTH, SCREEN_HEIGHT, colors, FPS defaults, and key bindings. Update imports throughout the project to use config constants. This centralises tuning and makes future configuration changes easier.
+
+Acceptance Criteria:
+- A `config.py` file exists at the repository root defining constants:
+  - `SCREEN_WIDTH` (int)
+  - `SCREEN_HEIGHT` (int)
+  - `FPS` (int)
+  - `COLORS` dictionary with keys: `WHITE`, `BLACK`, `RED`, `GREEN`, `BLUE`, and any other colors used in the code, mapping to RGB tuples.
+  - Key binding constants: `KEY_QUIT`, `KEY_PAUSE`, `KEY_RESTART`, `KEY_UP`, `KEY_DOWN`, `KEY_LEFT`, `KEY_RIGHT`.
+- All references to these constants in the codebase (including `utils.py` and game modules) are replaced with imports from `config.py`.
+- The `Engine` class uses `config.FPS` for its default frame rate and `config.SCREEN_WIDTH`/`config.SCREEN_HEIGHT` for screen dimensions.
+- Running the project after changes works without errors and visual behavior matches previous defaults.
+- Existing test suite passes, and new tests verify that `config` constants have the expected values and that modules import them correctly.

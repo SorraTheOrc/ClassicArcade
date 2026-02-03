@@ -8,7 +8,7 @@ Controls:
 """
 
 import pygame
-from utils import (
+from config import (
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
     WHITE,
@@ -16,8 +16,10 @@ from utils import (
     GREEN,
     RED,
     BLUE,
-    draw_text,
+    KEY_UP,
+    KEY_DOWN,
 )
+from utils import draw_text
 from .game_base import Game
 
 # Game constants
@@ -70,9 +72,9 @@ class PongState(Game):
             return
         keys = pygame.key.get_pressed()
         # Player paddle movement
-        if keys[pygame.K_UP] and self.left_paddle.top > 0:
+        if keys[KEY_UP] and self.left_paddle.top > 0:
             self.left_paddle.move_ip(0, -PADDLE_SPEED)
-        if keys[pygame.K_DOWN] and self.left_paddle.bottom < SCREEN_HEIGHT:
+        if keys[KEY_DOWN] and self.left_paddle.bottom < SCREEN_HEIGHT:
             self.left_paddle.move_ip(0, PADDLE_SPEED)
         # Simple AI for right paddle: follow ball Y position
         if self.ball.centery < self.right_paddle.centery and self.right_paddle.top > 0:

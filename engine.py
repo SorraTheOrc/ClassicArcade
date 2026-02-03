@@ -13,7 +13,8 @@ import pygame
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from utils import SCREEN_WIDTH, SCREEN_HEIGHT, BLACK, WHITE, YELLOW, draw_text
+from config import SCREEN_WIDTH, SCREEN_HEIGHT, BLACK, WHITE, YELLOW, KEY_UP, KEY_DOWN
+from utils import draw_text
 
 
 class State(ABC):
@@ -107,9 +108,9 @@ class MenuState(State):
 
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
+            if event.key == KEY_UP:
                 self.selected = (self.selected - 1) % len(self.menu_items)
-            elif event.key == pygame.K_DOWN:
+            elif event.key == KEY_DOWN:
                 self.selected = (self.selected + 1) % len(self.menu_items)
             elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
                 # Transition to the selected game state

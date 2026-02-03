@@ -9,7 +9,7 @@ Controls:
 
 import pygame
 import random
-from utils import (
+from config import (
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
     WHITE,
@@ -19,8 +19,10 @@ from utils import (
     BLUE,
     YELLOW,
     CYAN,
-    draw_text,
+    KEY_LEFT,
+    KEY_RIGHT,
 )
+from utils import draw_text
 from games.game_base import Game
 
 # Game constants
@@ -67,9 +69,9 @@ class BreakoutState(Game):
             return
         keys = pygame.key.get_pressed()
         # Paddle movement
-        if keys[pygame.K_LEFT] and self.paddle.left > 0:
+        if keys[KEY_LEFT] and self.paddle.left > 0:
             self.paddle.move_ip(-PADDLE_SPEED, 0)
-        if keys[pygame.K_RIGHT] and self.paddle.right < SCREEN_WIDTH:
+        if keys[KEY_RIGHT] and self.paddle.right < SCREEN_WIDTH:
             self.paddle.move_ip(PADDLE_SPEED, 0)
         # Ball movement
         self.ball.move_ip(*self.ball_vel)

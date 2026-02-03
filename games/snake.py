@@ -9,7 +9,7 @@ Controls:
 
 import pygame
 import random
-from utils import (
+from config import (
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
     WHITE,
@@ -17,8 +17,12 @@ from utils import (
     RED,
     GREEN,
     YELLOW,
-    draw_text,
+    KEY_UP,
+    KEY_DOWN,
+    KEY_LEFT,
+    KEY_RIGHT,
 )
+from utils import draw_text
 from .game_base import Game
 from engine import Engine
 
@@ -47,13 +51,13 @@ class SnakeState(Game):
     def handle_event(self, event: pygame.event.Event) -> None:
         if event.type == pygame.KEYDOWN:
             if not self.game_over:
-                if event.key == pygame.K_UP:
+                if event.key == KEY_UP:
                     self.direction = (0, -BLOCK_SIZE)
-                elif event.key == pygame.K_DOWN:
+                elif event.key == KEY_DOWN:
                     self.direction = (0, BLOCK_SIZE)
-                elif event.key == pygame.K_LEFT:
+                elif event.key == KEY_LEFT:
                     self.direction = (-BLOCK_SIZE, 0)
-                elif event.key == pygame.K_RIGHT:
+                elif event.key == KEY_RIGHT:
                     self.direction = (BLOCK_SIZE, 0)
         # Delegate remaining keys (ESC, P, R) and other events to base class
         super().handle_event(event)
