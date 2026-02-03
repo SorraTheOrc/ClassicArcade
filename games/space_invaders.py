@@ -54,6 +54,8 @@ class SpaceInvadersState(Game):
             PLAYER_HEIGHT,
         )
         self.bullets = []
+        self.enemy_bullets = []
+        self.enemy_shoot_cooldown = 2.0  # seconds
         self.aliens = create_aliens()
         self.alien_direction = 1
         self.score = 0
@@ -74,11 +76,37 @@ class SpaceInvadersState(Game):
             self.player.move_ip(-PLAYER_SPEED, 0)
         if keys[pygame.K_RIGHT] and self.player.right < SCREEN_WIDTH:
             self.player.move_ip(PLAYER_SPEED, 0)
+        # Player shooting
+        if keys[pygame.K_SPACE]:
+            bullet = pygame.Rect(
+                self.player.centerx - BULLET_WIDTH // 2,
+                self.player.top - BULLET_HEIGHT,
+                BULLET_WIDTH,
+                BULLET_HEIGHT,
+            )
+            self.bullets.append(bullet)
         # Move bullets
         for bullet in self.bullets[:]:
             bullet.move_ip(0, -BULLET_SPEED)
             if bullet.bottom < 0:
                 self.bullets.remove(bullet)
+        # Move enemy bullets
+        for bullet in self.enemy_bullets[:]:
+            bullet.move_ip(0, BULLET_SPEED)
+            if bullet.top > SCREEN_HEIGHT:
+                self.enemy_bullets.remove(bullet)
+        # Enemy shooting timer
+        self.enemy_shoot_cooldown -= dt
+        if self.enemy_shoot_cooldown <= 0 and self.aliens:
+            alien_rect, _ = random.choice(self.aliens)
+            enemy_bullet = pygame.Rect(
+                alien_rect.centerx - BULLET_WIDTH // 2,
+                alien_rect.bottom,
+                BULLET_WIDTH,
+                BULLET_HEIGHT,
+            )
+            self.enemy_bullets.append(enemy_bullet)
+            self.enemy_shoot_cooldown = random.uniform(1.0, 3.0)
         # Move aliens horizontally
         move_down = False
         for rect, color in self.aliens:
@@ -96,6 +124,12 @@ class SpaceInvadersState(Game):
                 self.aliens.pop(hit_index)
                 self.bullets.remove(bullet)
                 self.score += 10
+        # Enemy bullet-player collisions
+        for bullet in self.enemy_bullets[:]:
+            if bullet.colliderect(self.player):
+                self.game_over = True
+                self.enemy_bullets.remove(bullet)
+                break
         # Check win
         if not self.aliens:
             self.win = True
@@ -112,6 +146,9 @@ class SpaceInvadersState(Game):
         # Draw bullets
         for bullet in self.bullets:
             pygame.draw.rect(screen, YELLOW, bullet)
+        # Draw enemy bullets
+        for bullet in self.enemy_bullets:
+            pygame.draw.rect(screen, RED, bullet)
         # Draw aliens
         for rect, color in self.aliens:
             pygame.draw.rect(screen, color, rect)
