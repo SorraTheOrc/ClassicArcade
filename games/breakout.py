@@ -21,7 +21,7 @@ from utils import (
     CYAN,
     draw_text,
 )
-from engine import State
+from games.game_base import Game
 
 # Game constants
 PADDLE_WIDTH = 100
@@ -36,24 +36,8 @@ BRICK_HEIGHT = 20
 BRICK_SPACING = 5
 FONT_SIZE = 24
 
-# State implementation for the engine
-from engine import State
-from utils import (
-    draw_text,
-    WHITE,
-    BLACK,
-    RED,
-    GREEN,
-    YELLOW,
-    CYAN,
-    SCREEN_WIDTH,
-    SCREEN_HEIGHT,
-)
-import pygame
-import random
 
-
-class BreakoutState(State):
+class BreakoutState(Game):
     """State for the Breakout game, compatible with the engine loop."""
 
     def __init__(self):
@@ -77,20 +61,6 @@ class BreakoutState(State):
         self.score = 0
         self.game_over = False
         self.win = False
-
-    def handle_event(self, event: pygame.event.Event) -> None:
-        if event.type == pygame.KEYDOWN:
-            # ESC key should always return to menu
-            if event.key == pygame.K_ESCAPE:
-                from menu_items import get_menu_items
-                from engine import MenuState
-
-                self.request_transition(MenuState(get_menu_items()))
-                return
-            if self.game_over or self.win:
-                if event.key == pygame.K_r:
-                    # Restart
-                    self.__init__()
 
     def update(self, dt: float) -> None:
         if self.game_over or self.win:
