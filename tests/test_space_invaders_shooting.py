@@ -1,3 +1,5 @@
+import unittest
+import collections
 import pygame
 import sys
 import os
@@ -17,7 +19,7 @@ from games.space_invaders import (
 )
 
 
-class TestSpaceInvadersShooting:
+class TestSpaceInvadersShooting(unittest.TestCase):
     def setUp(self):
         pygame.init()
         self.state = SpaceInvadersState()
@@ -100,6 +102,7 @@ class TestSpaceInvadersShooting:
         assert self.state.game_over is True
 
     def test_player_bullet_hits_alien(self):
+        # Existing test remains unchanged
         # Place an alien directly above the player
         alien_rect = pygame.Rect(
             self.state.player.centerx - BULLET_WIDTH // 2,
@@ -125,3 +128,28 @@ class TestSpaceInvadersShooting:
         # Alien should be removed and score increased
         assert len(self.state.aliens) == 0
         assert self.state.score == 10
+
+    def test_player_shoot_cooldown(self):
+        # Ensure fresh state
+        original_get_pressed = pygame.key.get_pressed
+        # First shot (should fire)
+        pygame.key.get_pressed = lambda: collections.defaultdict(
+            bool, {pygame.K_SPACE: True}
+        )
+        self.state.update(0.016)
+        pygame.key.get_pressed = original_get_pressed
+        assert len(self.state.bullets) == 1
+        # Attempt second shot too soon (cooldown not elapsed)
+        pygame.key.get_pressed = lambda: collections.defaultdict(
+            bool, {pygame.K_SPACE: True}
+        )
+        self.state.update(0.1)  # less than 0.75 sec
+        pygame.key.get_pressed = original_get_pressed
+        assert len(self.state.bullets) == 1
+        # Wait enough time and fire again
+        pygame.key.get_pressed = lambda: collections.defaultdict(
+            bool, {pygame.K_SPACE: True}
+        )
+        self.state.update(0.8)  # exceeds cooldown
+        pygame.key.get_pressed = original_get_pressed
+        assert len(self.state.bullets) == 2
