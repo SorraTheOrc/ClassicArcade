@@ -55,14 +55,45 @@ You will see a loading screen with a list of games. Use the **Up/Down** arrow ke
 ├── main.py                # Entry point with menu
 ├── utils.py               # Shared utilities (colors, draw_text)
 ├── games/
-│   ├── __init__.py       # Package marker
-│   ├── snake.py          # Snake game
-│   ├── pong.py           # Pong game
-│   ├── breakout.py       # Breakout game
-│   ├── space_invaders.py # Space Invaders game
-│   └── tetris.py         # Tetris game
+│   ├── __init__.py        # Package marker
+│   ├── snake/
+│   │   └── snake.py       # Snake game (package)
+│   ├── pong/
+│   │   └── pong.py        # Pong game (package)
+│   ├── breakout/
+│   │   └── breakout.py    # Breakout game (package)
+│   ├── space_invaders/
+│   │   └── space_invaders.py # Space Invaders game (package)
+│   └── tetris/
+│       └── tetris.py      # Tetris game (package)
 └── README.md
 ```
+
+## Running Individual Games
+
+Each game is packaged under `games/<name>/` and exposes a `run()` convenience function and the game `State` class for testing. Run a single game from the project root (ensure `pip install pygame` first):
+
+- Using the `run()` export (recommended):
+
+```bash
+python -c "from games.pong import run; run()"
+```
+
+- Or execute the module directly with `-m`:
+
+```bash
+python -m games.pong.pong
+```
+
+Replace `pong` with `snake`, `breakout`, `space_invaders`, or `tetris` to run other games. Running from the project root ensures relative imports resolve correctly.
+
+Programmatic usage example (import the state for tests or embedding):
+
+```py
+from games.snake import SnakeState
+state = SnakeState()
+```
+
 
 ## License
 
