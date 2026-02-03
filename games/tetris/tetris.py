@@ -245,7 +245,7 @@ class TetrisState(Game):
             grid[y] = new_grid[y]
         return lines_cleared
 
-    @staticmethod
+
 def run():
     """Run Tetris using the shared run helper."""
     from games.run_helper import run_game
