@@ -9,6 +9,14 @@ from menu_items import get_menu_items
 
 
 def main():
+    # Ensure pygame quits cleanly on unexpected exit
+    import atexit
+    import pygame
+
+    def _cleanup():
+        pygame.quit()
+
+    atexit.register(_cleanup)
     """Run the arcade suite using the state machine engine."""
     initial_state = MenuState(get_menu_items())
     engine = Engine(initial_state)

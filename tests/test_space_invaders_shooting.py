@@ -32,9 +32,8 @@ class TestSpaceInvadersShooting(unittest.TestCase):
         original_get_pressed = pygame.key.get_pressed
 
         def fake_get_pressed():
-            keys = [False] * 512
-            keys[pygame.K_SPACE] = True
-            return keys
+            # Return a dict-like object that returns False for any key except SPACE
+            return collections.defaultdict(bool, {pygame.K_SPACE: True})
 
         pygame.key.get_pressed = fake_get_pressed
         # Call update with small dt
@@ -61,14 +60,10 @@ class TestSpaceInvadersShooting(unittest.TestCase):
         self.state.bullets.append(bullet)
         # Simulate update (no keys pressed)
         original_get_pressed = pygame.key.get_pressed
-        pygame.key.get_pressed = lambda: [False] * 512
+        pygame.key.get_pressed = lambda: collections.defaultdict(bool)
         self.state.update(0.1)  # 0.1 seconds
         pygame.key.get_pressed = original_get_pressed
-        # Bullet should have moved upward by BULLET_SPEED * dt
-        expected_y = bullet.y + BULLET_SPEED * -0.1  # negative because moving up
-        # Since the code moves bullet up by -BULLET_SPEED each frame (not dt dependent), we only moved 0.1 sec but speed is per frame, not per second.
-        # In the current implementation, bullet.move_ip(0, -BULLET_SPEED) is independent of dt.
-        # Therefore after one update call, bullet.y should have decreased by BULLET_SPEED.
+        # Bullet should have moved upward by BULLET_SPEED (frame based)
         assert bullet.y == self.state.player.top - BULLET_HEIGHT - BULLET_SPEED
 
     def test_enemy_can_shoot(self):
@@ -78,7 +73,7 @@ class TestSpaceInvadersShooting(unittest.TestCase):
         self.state.enemy_shoot_cooldown = 0
         # Patch get_pressed to return no keys pressed
         original_get_pressed = pygame.key.get_pressed
-        pygame.key.get_pressed = lambda: [False] * 512
+        pygame.key.get_pressed = lambda: collections.defaultdict(bool)
         self.state.update(0.016)
         pygame.key.get_pressed = original_get_pressed
         # Verify an enemy bullet was added
@@ -95,7 +90,7 @@ class TestSpaceInvadersShooting(unittest.TestCase):
         self.state.enemy_bullets.append(bullet)
         # Run update (no keys pressed)
         original_get_pressed = pygame.key.get_pressed
-        pygame.key.get_pressed = lambda: [False] * 512
+        pygame.key.get_pressed = lambda: collections.defaultdict(bool)
         self.state.update(0.016)
         pygame.key.get_pressed = original_get_pressed
         # Game should be over
@@ -122,7 +117,7 @@ class TestSpaceInvadersShooting(unittest.TestCase):
         self.state.bullets.append(bullet)
         # Run update (no keys pressed)
         original_get_pressed = pygame.key.get_pressed
-        pygame.key.get_pressed = lambda: [False] * 512
+        pygame.key.get_pressed = lambda: collections.defaultdict(bool)
         self.state.update(0.016)
         pygame.key.get_pressed = original_get_pressed
         # Alien should be removed and score increased

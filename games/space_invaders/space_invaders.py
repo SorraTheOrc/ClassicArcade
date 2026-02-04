@@ -107,8 +107,7 @@ class SpaceInvadersState(Game):
             self.player.move_ip(-PLAYER_SPEED, 0)
         if is_pressed(KEY_RIGHT) and self.player.right < SCREEN_WIDTH:
             self.player.move_ip(PLAYER_SPEED, 0)
-
-        # Move bullets
+        # Move player bullets
         for bullet in self.bullets[:]:
             bullet.move_ip(0, -BULLET_SPEED)
             if bullet.bottom < 0:
@@ -133,7 +132,7 @@ class SpaceInvadersState(Game):
             self.enemy_bullets.append(enemy_bullet)
             self.enemy_shoot_cooldown = random.uniform(1.0, 3.0)
         # Player shooting (with configurable cooldown)
-        if keys[pygame.K_SPACE] and self.player_shoot_cooldown <= 0:
+        if is_pressed(pygame.K_SPACE) and self.player_shoot_cooldown <= 0:
             bullet = pygame.Rect(
                 self.player.centerx - BULLET_WIDTH // 2,
                 self.player.top - BULLET_HEIGHT,
