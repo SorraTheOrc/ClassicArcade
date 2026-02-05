@@ -29,6 +29,7 @@ from config import (
     KEY_RIGHT,
 )
 from utils import draw_text
+from games.highscore import add_score
 
 from typing import List, Tuple, cast as _cast
 from games.game_base import Game
@@ -64,6 +65,9 @@ class TetrisState(Game):
         self.fall_timer = 0.0
         self.fall_interval = FALL_SPEED
         self.game_over = False
+        # High‑score tracking flags
+        self.highscore_recorded = False
+        self.highscores = []
         self.score = 0
         self.level = 1
         self.lines_cleared_total = 0
@@ -185,6 +189,22 @@ class TetrisState(Game):
                 SCREEN_HEIGHT // 2,
                 center=True,
             )
+            # Record high score once (score is self.score)
+            if not getattr(self, "highscore_recorded", False):
+                self.highscores = add_score("tetris", self.score)
+                self.highscore_recorded = True
+            # Show top 5 scores below the game‑over text
+            start_y = SCREEN_HEIGHT // 2 + FONT_SIZE + 10
+            for idx, entry in enumerate(self.highscores[:5], start=1):
+                draw_text(
+                    screen,
+                    f"{idx}. {entry['score']} ({entry['timestamp'][:19]})",
+                    FONT_SIZE,
+                    WHITE,
+                    SCREEN_WIDTH // 2,
+                    start_y + (idx - 1) * (FONT_SIZE + 5),
+                    center=True,
+                )
         # Draw pause overlay if paused
         if self.paused:
             self.draw_pause_overlay(screen)

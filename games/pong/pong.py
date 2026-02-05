@@ -20,6 +20,7 @@ from config import (
     KEY_DOWN,
 )
 from utils import draw_text
+from games.highscore import add_score
 from typing import Optional
 from games.game_base import Game
 
@@ -62,6 +63,9 @@ class PongState(Game):
         self.left_score = 0
         self.right_score = 0
         self.game_over = False
+        # High‑score tracking flags
+        self.highscore_recorded = False
+        self.highscores = []
         self.winner: Optional[str] = None
 
     def handle_event(self, event: pygame.event.Event) -> None:
@@ -161,6 +165,22 @@ class PongState(Game):
                 SCREEN_HEIGHT // 2,
                 center=True,
             )
+            # Record high score for the human player (left side) once
+            if not getattr(self, "highscore_recorded", False):
+                self.highscores = add_score("pong", self.left_score)
+                self.highscore_recorded = True
+            # Show top 5 high scores below the win message
+            start_y = SCREEN_HEIGHT // 2 + FONT_SIZE + 10
+            for idx, entry in enumerate(self.highscores[:5], start=1):
+                draw_text(
+                    screen,
+                    f"{idx}. {entry['score']} ({entry['timestamp'][:19]})",
+                    FONT_SIZE,
+                    WHITE,
+                    SCREEN_WIDTH // 2,
+                    start_y + (idx - 1) * (FONT_SIZE + 5),
+                    center=True,
+                )
         # Draw pause overlay if paused
         if self.paused:
             self.draw_pause_overlay(screen)

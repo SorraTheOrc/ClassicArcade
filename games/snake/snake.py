@@ -23,6 +23,7 @@ from config import (
     KEY_RIGHT,
 )
 from utils import draw_text
+from games.highscore import add_score
 from games.game_base import Game
 from engine import Engine
 
@@ -47,6 +48,9 @@ class SnakeState(Game):
         self.score = 0
         self.font_size = 24
         self.game_over = False
+        # High‑score tracking flags
+        self.highscore_recorded = False
+        self.highscores = []
         self._time_acc = 0.0
 
     def handle_event(self, event: pygame.event.Event) -> None:
@@ -139,6 +143,22 @@ class SnakeState(Game):
                 SCREEN_HEIGHT // 2,
                 center=True,
             )
+            # Record high score (snake length is score) once
+            if not getattr(self, "highscore_recorded", False):
+                self.highscores = add_score("snake", self.score)
+                self.highscore_recorded = True
+            # Show top 5 scores below the game‑over text
+            start_y = SCREEN_HEIGHT // 2 + 24 + 10
+            for idx, entry in enumerate(self.highscores[:5], start=1):
+                draw_text(
+                    screen,
+                    f"{idx}. {entry['score']} ({entry['timestamp'][:19]})",
+                    24,
+                    WHITE,
+                    SCREEN_WIDTH // 2,
+                    start_y + (idx - 1) * (24 + 5),
+                    center=True,
+                )
         # Draw pause overlay if paused
         if self.paused:
             self.draw_pause_overlay(screen)
