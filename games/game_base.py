@@ -14,7 +14,7 @@ logic, reducing duplication across the individual game modules.
 """
 
 import pygame
-from abc import ABC, abstractmethod
+from abc import abstractmethod as _abstractmethod
 from utils import draw_text, WHITE, SCREEN_WIDTH, SCREEN_HEIGHT
 from engine import State, MenuState
 # import get_menu_items lazily in handle_event
@@ -37,6 +37,16 @@ class Game(State):
         self.next_state = None
 
     def handle_event(self, event: pygame.event.Event) -> None:
+        """Handle common key events for all games.
+
+        Supports:
+        - ``K_ESCAPE`` – return to the main menu.
+        - ``K_p`` – toggle the paused flag.
+        - ``K_r`` – restart the current state by re‑initialising it.
+
+        Subclasses can extend this method and should call ``super().handle_event(event)``
+        to retain this behaviour.
+        """
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 # Return to menu (import lazily to avoid circular import)
@@ -54,14 +64,14 @@ class Game(State):
         # Subclasses can extend with additional key handling by calling super().handle_event(event)
         # (no further action needed here)
 
-    @abstractmethod
+    @_abstractmethod
     def update(self, dt: float) -> None:
         """Update the game logic. ``dt`` is the time delta in seconds.
         Subclasses should respect ``self.paused`` if they implement time‑dependent updates.
         """
         pass
 
-    @abstractmethod
+    @_abstractmethod
     def draw(self, screen: pygame.Surface) -> None:
         """Draw the game to ``screen``. ``screen`` is provided by the engine.
         Subclasses typically clear the background and render their objects.
