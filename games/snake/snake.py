@@ -50,6 +50,7 @@ class SnakeState(Game):
         self.score = 0
         self.font_size = 24
         self.game_over = False
+        self.crash_played = False
         # High‑score tracking flags
         self.highscore_recorded = False
         self.highscores = []
@@ -98,11 +99,13 @@ class SnakeState(Game):
                     or new_head[1] >= SCREEN_HEIGHT
                 ):
                     self.game_over = True
-                    # Play crash/game-over sound
-                    try:
-                        audio.play_effect("crash.wav")
-                    except Exception:
-                        pass
+                    if not getattr(self, "crash_played", False):
+                        self.crash_played = True
+                        try:
+                            audio.play_effect("crash.wav")
+                        except Exception:
+                            pass
+                    break
                 else:
                     self.snake.insert(0, new_head)
                     # Food collision
@@ -128,6 +131,13 @@ class SnakeState(Game):
                     # Self collision
                     if new_head in self.snake[1:]:
                         self.game_over = True
+                        if not getattr(self, "crash_played", False):
+                            self.crash_played = True
+                            try:
+                                audio.play_effect("crash.wav")
+                            except Exception:
+                                pass
+                        break
 
     def draw(self, screen: pygame.Surface) -> None:
         """Render the Snake game elements and UI onto the screen.
