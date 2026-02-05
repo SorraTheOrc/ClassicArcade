@@ -179,6 +179,8 @@ class BreakoutState(Game):
         # Draw pause overlay if paused
         if self.paused:
             self.draw_pause_overlay(screen)
+        # Draw mute overlay (Muted or Sound On)
+        self.draw_mute_overlay(screen)
 
 
 def create_bricks() -> List[Tuple[pygame.Rect, Tuple[int, int, int]]]:

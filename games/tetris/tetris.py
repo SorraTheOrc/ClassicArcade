@@ -229,6 +229,8 @@ class TetrisState(Game):
         # Draw pause overlay if paused
         if self.paused:
             self.draw_pause_overlay(screen)
+        # Draw mute overlay (Muted or Sound On)
+        self.draw_mute_overlay(screen)
 
     # Tetromino shapes (list of (x, y) offsets within a 4x4 matrix)
     SHAPES = {

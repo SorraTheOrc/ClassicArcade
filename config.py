@@ -39,6 +39,42 @@ GRAY = COLORS["GRAY"]
 # Global mute flag for audio playback. Defaults to False (audio enabled).
 MUTE = False
 
+# Settings persistence for mute flag
+import json
+import os
+
+_SETTINGS_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "settings.json")
+)
+
+
+def _load_settings() -> None:
+    """Load settings from ``settings.json`` if it exists."""
+    if os.path.isfile(_SETTINGS_PATH):
+        try:
+            with open(_SETTINGS_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict) and "MUTE" in data:
+                    global MUTE
+                    MUTE = bool(data["MUTE"])
+        except Exception:
+            # Ignore errors – default MUTE remains False
+            pass
+
+
+def save_settings() -> None:
+    """Save current settings (currently only ``MUTE``) to ``settings.json``."""
+    data = {"MUTE": MUTE}
+    try:
+        with open(_SETTINGS_PATH, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+    except Exception:
+        pass
+
+
+# Load settings on import
+_load_settings()
+
 # Key bindings (using pygame key constants)
 KEY_QUIT = pygame.K_ESCAPE
 KEY_PAUSE = pygame.K_p
