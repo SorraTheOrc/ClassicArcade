@@ -29,6 +29,8 @@ from config import (
     KEY_RIGHT,
 )
 from utils import draw_text
+
+from typing import List, Tuple, cast as _cast
 from games.game_base import Game
 
 # Game constants
@@ -45,10 +47,13 @@ FONT_SIZE = 24
 class TetrisState(Game):
     """State for the Tetris game, compatible with the engine loop."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize the Tetris game state, setting up the grid, current piece, and game variables."""
         super().__init__()
         # Initialize empty grid
-        self.grid = [[None for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
+        self.grid: List[List[object | None]] = [
+            [None for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)
+        ]
         # Piece state
         self.current_shape_name = random.choice(list(self.SHAPES.keys()))
         self.current_shape = self.SHAPES[self.current_shape_name]
@@ -56,7 +61,7 @@ class TetrisState(Game):
         self.shape_x = GRID_WIDTH // 2 - 2
         self.shape_y = 0
         self.shape_coords = self.current_shape
-        self.fall_timer = 0
+        self.fall_timer = 0.0
         self.fall_interval = FALL_SPEED
         self.game_over = False
         self.score = 0
@@ -64,6 +69,7 @@ class TetrisState(Game):
         self.lines_cleared_total = 0
 
     def handle_event(self, event: pygame.event.Event) -> None:
+        """Handle user input for piece movement and rotation, delegating generic events to base class."""
         # Let base class handle ESC, pause, restart
         super().handle_event(event)
         if event.type == pygame.KEYDOWN:
@@ -89,6 +95,7 @@ class TetrisState(Game):
             # No need to handle R here; base class already restarts
 
     def update(self, dt: float) -> None:
+        """Update the game state: handle falling piece, line clears, level progression, and game over checks."""
         if self.game_over or self.paused:
             return
         # Reset fall speed after handling key press (if not holding down)
@@ -98,7 +105,7 @@ class TetrisState(Game):
         # Update fall timer
         self.fall_timer += dt * 1000  # dt is seconds, convert to ms
         if self.fall_timer >= self.fall_interval:
-            self.fall_timer = 0
+            self.fall_timer = 0.0
             # Attempt to move piece down
             if self.valid_position(
                 self.grid, self.shape_coords, self.shape_x, self.shape_y + 1
@@ -136,6 +143,7 @@ class TetrisState(Game):
                     self.game_over = True
 
     def draw(self, screen: pygame.Surface) -> None:
+        """Render the game grid, current piece, and score onto the screen."""
         screen.fill(BLACK)
         # Draw grid cells
         for y in range(GRID_HEIGHT):
@@ -148,7 +156,9 @@ class TetrisState(Game):
                         CELL_SIZE,
                         CELL_SIZE,
                     )
-                    pygame.draw.rect(screen, cell_color, rect)
+                    pygame.draw.rect(
+                        screen, _cast(Tuple[int, int, int], cell_color), rect
+                    )
         # Draw current falling piece
         for x_offset, y_offset in self.shape_coords:
             gx = self.shape_x + x_offset
@@ -198,7 +208,7 @@ class TetrisState(Game):
     }
 
     @staticmethod
-    def rotate(shape_coords):
+    def rotate(shape_coords: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
         """Rotate shape 90 degrees clockwise around the (1,1) pivot.
         Returns a new list of (x, y) tuples.
         """
@@ -214,7 +224,12 @@ class TetrisState(Game):
         return rotated
 
     @staticmethod
-    def valid_position(grid, shape_coords, offset_x, offset_y):
+    def valid_position(
+        grid: List[List[object | None]],
+        shape_coords: List[Tuple[int, int]],
+        offset_x: int,
+        offset_y: int,
+    ) -> bool:
         """Check if the shape at the given offset is within bounds and not colliding."""
         for x, y in shape_coords:
             gx = x + offset_x
@@ -226,27 +241,38 @@ class TetrisState(Game):
         return True
 
     @staticmethod
-    def lock_piece(grid, shape_coords, offset_x, offset_y, color):
+    def lock_piece(
+        grid: List[List[object | None]],
+        shape_coords: List[Tuple[int, int]],
+        offset_x: int,
+        offset_y: int,
+        color: Tuple[int, int, int],
+    ) -> None:
+        """Lock the piece into the grid at the given offset with the specified color."""
         for x, y in shape_coords:
             gx = x + offset_x
             gy = y + offset_y
             grid[gy][gx] = color
 
     @staticmethod
-    def clear_lines(grid):
+    def clear_lines(grid: List[List[object | None]]) -> int:
+        """Clear completed lines from the grid.
+
+        Returns the number of lines cleared. The grid is updated in‑place with empty rows added at the top.
+        """
         lines_cleared = 0
         new_grid = [row for row in grid if any(cell is None for cell in row)]
         lines_cleared = GRID_HEIGHT - len(new_grid)
         # Add empty rows on top
         for _ in range(lines_cleared):
-            new_grid.insert(0, [None] * GRID_WIDTH)
+            new_grid.insert(0, _cast(List[object | None], [None] * GRID_WIDTH))
         # Replace grid content
         for y in range(GRID_HEIGHT):
             grid[y] = new_grid[y]
         return lines_cleared
 
 
-def run():
+def run() -> None:
     """Run Tetris using the shared run helper."""
     from games.run_helper import run_game
 
@@ -254,4 +280,4 @@ def run():
 
 
 if __name__ == "__main__":
-    TetrisState.run()
+    run()

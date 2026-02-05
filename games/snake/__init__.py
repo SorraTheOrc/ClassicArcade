@@ -12,6 +12,6 @@ from games.run_helper import run_game
 __all__ = ["SnakeState", "SNAKE_SPEED", "run"]
 
 
-def run():
+def run() -> None:
     """Run the Snake game using its default speed as FPS."""
     run_game(SnakeState, fps=SNAKE_SPEED)

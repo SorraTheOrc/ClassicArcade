@@ -13,7 +13,11 @@ from games.space_invaders import SpaceInvadersState
 from games.tetris import TetrisState
 
 
-def get_menu_items():
+from typing import List, Tuple, Type
+from engine import State
+
+
+def get_menu_items() -> List[Tuple[str, Type[State]]]:
     """Return menu items as ``(name, state_class)`` tuples.
 
     The order matches the original menu order in ``main.py``.

@@ -23,6 +23,8 @@ from config import (
     KEY_RIGHT,
 )
 from utils import draw_text
+
+from typing import List, Tuple
 from games.game_base import Game
 
 # Game constants
@@ -63,7 +65,8 @@ SHELTER_BLOCK_HEIGHT = SHELTER_HEIGHT // 3
 class SpaceInvadersState(Game):
     """Game class for Space Invaders, inherits from ``Game`` and compatible with the engine loop."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize the Space Invaders game state, setting up player, aliens, shelters, and game variables."""
         super().__init__()
         # Player ship
         self.player = pygame.Rect(
@@ -72,8 +75,8 @@ class SpaceInvadersState(Game):
             PLAYER_WIDTH,
             PLAYER_HEIGHT,
         )
-        self.bullets = []
-        self.enemy_bullets = []
+        self.bullets: List[pygame.Rect] = []
+        self.enemy_bullets: List[pygame.Rect] = []
         self.enemy_shoot_cooldown = 2.0  # seconds
         self.player_shoot_cooldown = 0.0  # seconds
         self.aliens = create_aliens()
@@ -84,17 +87,19 @@ class SpaceInvadersState(Game):
         self.win = False
 
     def handle_event(self, event: pygame.event.Event) -> None:
+        """Handle events specific to Space Invaders, delegating common keys to the base class."""
         # Let Game base handle ESC, pause, restart
         super().handle_event(event)
         # No additional handling needed for Space Invaders
 
     def update(self, dt: float) -> None:
+        """Update the game state, handling player movement, shooting, alien behavior, and collisions."""
         if self.game_over or self.win or self.paused:
             return
         keys = pygame.key.get_pressed()
 
         # Player movement
-        def is_pressed(key):
+        def is_pressed(key: int) -> bool:
             try:
                 return keys[key]
             except (IndexError, TypeError):
@@ -192,6 +197,7 @@ class SpaceInvadersState(Game):
                 break
 
     def draw(self, screen: pygame.Surface) -> None:
+        """Render the game objects (player, aliens, bullets, shelters) and UI onto the screen."""
         screen.fill(BLACK)
         # Draw player
         pygame.draw.rect(screen, WHITE, self.player)
@@ -233,7 +239,8 @@ class SpaceInvadersState(Game):
             )
 
 
-def create_aliens():
+def create_aliens() -> List[Tuple[pygame.Rect, Tuple[int, int, int]]]:
+    """Create and return a list of alien (rect, color) tuples."""
     aliens = []
     start_x = (
         SCREEN_WIDTH - (ALIEN_COLS * ALIEN_WIDTH + (ALIEN_COLS - 1) * ALIEN_H_SPACING)
@@ -249,7 +256,7 @@ def create_aliens():
     return aliens
 
 
-def create_shelters():
+def create_shelters() -> List[pygame.Rect]:
     """Create bomb shelter blocks.
 
     Each shelter consists of a 3x3 grid of blocks with the shape:
@@ -281,7 +288,7 @@ def create_shelters():
     return shelters
 
 
-def run():
+def run() -> None:
     """Run Space Invaders using the shared run helper."""
     from games.run_helper import run_game
 

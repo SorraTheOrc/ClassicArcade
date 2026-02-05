@@ -11,6 +11,6 @@ from games.run_helper import run_game
 __all__ = ["BreakoutState", "run"]
 
 
-def run():
+def run() -> None:
     """Run the Breakout game using the default engine FPS."""
     run_game(BreakoutState)

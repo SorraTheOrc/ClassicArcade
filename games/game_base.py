@@ -13,8 +13,15 @@ Games can subclass ``Game`` instead of the lower‑level ``State`` to inherit th
 logic, reducing duplication across the individual game modules.
 """
 
+import os
+
+# Use dummy video driver only when running in a headless test environment.
+# Pytest sets the PYTEST_CURRENT_TEST environment variable for each test.
+# Users can also set HEADLESS=1 to force headless mode.
+if os.getenv("PYTEST_CURRENT_TEST") or os.getenv("HEADLESS"):
+    os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 import pygame
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod as _abstractmethod
 from config import SCREEN_WIDTH, SCREEN_HEIGHT, WHITE, KEY_QUIT, KEY_PAUSE, KEY_RESTART
 from utils import draw_text
 from engine import State, MenuState
@@ -28,7 +35,8 @@ class Game(State):
     pause (P) and restart (R).
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize the base game state with pygame screen, clock, and default flags."""
         super().__init__()
         # Initialise pygame screen and clock – the engine will also call pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -37,6 +45,14 @@ class Game(State):
         self.next_state = None
 
     def handle_event(self, event: pygame.event.Event) -> None:
+        """Handle common key events for all games.
+
+        Supports:
+        - ``KEY_QUIT`` (ESC) to transition back to the main menu.
+        - ``KEY_PAUSE`` (P) to toggle the paused flag.
+        - ``KEY_RESTART`` (R) to restart the current state by re‑initialising it.
+        Subclasses can extend this method and should call ``super().handle_event(event)`` to retain this behaviour.
+        """
         if event.type == pygame.KEYDOWN:
             if event.key == KEY_QUIT:
                 # Return to menu (import lazily to avoid circular import)
@@ -49,19 +65,19 @@ class Game(State):
                 return
             if event.key == KEY_RESTART:
                 # Re‑initialise the state – subclasses can override for custom behaviour
-                self.__init__()
+                self.__init__()  # type: ignore[misc]
                 return
         # Subclasses can extend with additional key handling by calling super().handle_event(event)
         # (no further action needed here)
 
-    @abstractmethod
+    @_abstractmethod
     def update(self, dt: float) -> None:
         """Update the game logic. ``dt`` is the time delta in seconds.
         Subclasses should respect ``self.paused`` if they implement time‑dependent updates.
         """
         pass
 
-    @abstractmethod
+    @_abstractmethod
     def draw(self, screen: pygame.Surface) -> None:
         """Draw the game to ``screen``. ``screen`` is provided by the engine.
         Subclasses typically clear the background and render their objects.

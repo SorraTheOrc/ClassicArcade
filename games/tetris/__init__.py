@@ -11,6 +11,6 @@ from games.run_helper import run_game
 __all__ = ["TetrisState", "run"]
 
 
-def run():
+def run() -> None:
     """Run the Tetris game using the default engine FPS."""
     run_game(TetrisState)

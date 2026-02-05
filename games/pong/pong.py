@@ -20,6 +20,7 @@ from config import (
     KEY_DOWN,
 )
 from utils import draw_text
+from typing import Optional
 from games.game_base import Game
 
 # Game constants
@@ -36,7 +37,8 @@ FONT_SIZE = 24
 class PongState(Game):
     """Game class for Pong, inherits from ``Game`` and compatible with the engine loop."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize Pong game state, setting up paddles, ball, and scores."""
         super().__init__()
         # Initialize paddles
         self.left_paddle = pygame.Rect(
@@ -60,14 +62,23 @@ class PongState(Game):
         self.left_score = 0
         self.right_score = 0
         self.game_over = False
-        self.winner = None
+        self.winner: Optional[str] = None
 
     def handle_event(self, event: pygame.event.Event) -> None:
+        """Handle key events for Pong.
+
+        Delegates ESC, pause, and restart handling to the base ``Game`` class.
+        No additional event handling is required for Pong.
+        """
         # Let Game base handle ESC, pause, restart
         super().handle_event(event)
         # No additional handling needed for Pong
 
     def update(self, dt: float) -> None:
+        """Update the Pong game state.
+
+        Handles paddle movement, simple AI for the right paddle, ball movement, collisions, scoring, and win condition.
+        """
         if self.game_over or self.paused:
             return
         keys = pygame.key.get_pressed()
@@ -112,6 +123,10 @@ class PongState(Game):
             self.winner = "AI"
 
     def draw(self, screen: pygame.Surface) -> None:
+        """Render the Pong game elements and UI onto the screen.
+
+        Draws the paddles, ball, and current scores. If the game is over, displays the winner.
+        """
         screen.fill(BLACK)
         # Draw paddles and ball
         pygame.draw.rect(screen, WHITE, self.left_paddle)
@@ -148,7 +163,7 @@ class PongState(Game):
             )
 
 
-def run():
+def run() -> None:
     """Run Pong using the shared run helper."""
     from games.run_helper import run_game
 

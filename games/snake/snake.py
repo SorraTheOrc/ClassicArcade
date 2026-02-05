@@ -34,7 +34,8 @@ SNAKE_SPEED = 10  # frames per second
 class SnakeState(Game):
     """State for the Snake game, compatible with the engine loop."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize Snake game state, setting up the snake, direction, food, and game variables."""
         super().__init__()
         # Initialize game state
         self.snake = [(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)]
@@ -49,6 +50,10 @@ class SnakeState(Game):
         self._time_acc = 0.0
 
     def handle_event(self, event: pygame.event.Event) -> None:
+        """Handle key events for the Snake game.
+
+        Updates the snake's direction based on arrow key presses. Delegates other events (ESC, pause, restart) to the base ``Game`` class.
+        """
         if event.type == pygame.KEYDOWN:
             if not self.game_over:
                 if event.key == KEY_UP:
@@ -63,6 +68,10 @@ class SnakeState(Game):
         super().handle_event(event)
 
     def update(self, dt: float) -> None:
+        """Update the Snake game state.
+
+        Handles timing, moves the snake, processes food consumption, and checks for collisions with walls or self.
+        """
         if self.game_over or self.paused:
             return
         # Accumulate time and move snake at the defined speed
@@ -105,6 +114,10 @@ class SnakeState(Game):
                         self.game_over = True
 
     def draw(self, screen: pygame.Surface) -> None:
+        """Render the Snake game elements and UI onto the screen.
+
+        Draws the background, food, snake segments, and the current score. If the game is over, displays a game‑over message.
+        """
         # Clear background
         screen.fill(BLACK)
         # Draw food

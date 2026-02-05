@@ -20,10 +20,10 @@ Usage::
 
 from typing import Optional, Type
 
-from engine import Engine
+from engine import Engine, State
 
 
-def run_game(state_cls: Type, fps: Optional[int] = None) -> None:
+def run_game(state_cls: Type[State], fps: Optional[int] = None) -> None:
     """Instantiate and run a game state using the :class:`engine.Engine`.
 
     Args:

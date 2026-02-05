@@ -9,17 +9,32 @@ current state. After each loop iteration the engine checks ``state.next_state`` 
 the engine switches to the new state and clears the flag.
 """
 
+import os
+
+# Use dummy video driver only when running in a headless test environment.
+# Pytest sets the PYTEST_CURRENT_TEST environment variable for each test.
+# Users can also set HEADLESS=1 to force headless mode.
+if os.getenv("PYTEST_CURRENT_TEST") or os.getenv("HEADLESS"):
+    os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
+import os
+import sys
+
+# Use dummy video driver only when running under pytest (tests).
+# This ensures normal runs open a real window.
+if "pytest" in sys.modules:
+    os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 import pygame
 import atexit
 
 
-def _pygame_cleanup():
+def _pygame_cleanup() -> None:
+    """Clean up Pygame resources on interpreter exit."""
     pygame.quit()
 
 
 atexit.register(_pygame_cleanup)
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import List, Tuple, Type, Optional
 
 from config import SCREEN_WIDTH, SCREEN_HEIGHT, BLACK, WHITE, YELLOW, KEY_UP, KEY_DOWN
 from utils import draw_text
@@ -32,7 +47,8 @@ class State(ABC):
     To request a transition, set ``self.next_state`` to an instance of another ``State``.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize the state with no pending transition."""
         self.next_state: Optional["State"] = None
 
     @abstractmethod
@@ -52,25 +68,47 @@ class State(ABC):
         self.next_state = new_state
 
     def reset_transition(self) -> None:
+        """Clear any pending state transition."""
         self.next_state = None
 
 
 class Engine:
+    """Main engine class for running the game loop."""
+
     """Main engine that runs the pygame loop and delegates to the active state.
 
     ``initial_state`` should be an instance of a ``State`` subclass.
     ``fps`` controls the target frame rate.
     """
 
-    def __init__(self, initial_state: State, fps: int = 60):
+    def __init__(self, initial_state: State, fps: int = 60) -> None:
+        """Initialize the engine with the given initial state and optional FPS."""
+        import logging
+
+        logger = logging.getLogger(__name__)
         self.fps = fps
         self.state = initial_state
+        # Use dummy video driver in headless test environments.
+        if os.getenv("PYTEST_CURRENT_TEST") or os.getenv("HEADLESS"):
+            os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
         # Initialise pygame and create the screen once.
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Arcade Suite")
         self.clock = pygame.time.Clock()
         self.running = True
+        # Log driver info – warn if using dummy driver (no visible window)
+        try:
+            driver = pygame.display.get_driver()
+            logger.debug("SDL video driver: %s", driver)
+            if driver == "dummy":
+                logger.warning(
+                    "SDL video driver is dummy; no visible window will be created."
+                )
+        except Exception:
+            # get_driver may not be available on some pygame versions
+            logger.debug("Unable to determine SDL video driver.")
+        logger.debug("Engine initialized: fps=%s", fps)
 
     def run(self) -> None:
         """Run the main loop until the user quits or the state signals exit."""
@@ -106,7 +144,8 @@ class MenuState(State):
     instance of the corresponding ``state_class``.
     """
 
-    def __init__(self, menu_items):
+    def __init__(self, menu_items: List[Tuple[str, Type[State]]]) -> None:
+        """Initialize the menu state with a list of (display_name, state_class) tuples."""
         super().__init__()
         self.menu_items = menu_items
         self.selected = 0
@@ -115,6 +154,7 @@ class MenuState(State):
         self.item_font_size = 32
 
     def handle_event(self, event: pygame.event.Event) -> None:
+        """Handle user input events for menu navigation and selection."""
         if event.type == pygame.KEYDOWN:
             if event.key == KEY_UP:
                 self.selected = (self.selected - 1) % len(self.menu_items)
@@ -127,10 +167,12 @@ class MenuState(State):
             # ESC key is ignored in the menu
 
     def update(self, dt: float) -> None:
+        """Update menu state (no time‑dependent logic)."""
         # No time‑dependent logic for the menu
         pass
 
     def draw(self, screen: pygame.Surface) -> None:
+        """Render the menu title and list of menu items onto the screen."""
         # Title
         draw_text(
             screen,
@@ -144,6 +186,7 @@ class MenuState(State):
         # Menu items
         start_y = SCREEN_HEIGHT // 4 + 80
         for idx, (name, _) in enumerate(self.menu_items):
+            # (loop body unchanged)
             color = YELLOW if idx == self.selected else WHITE
             draw_text(
                 screen,
@@ -154,3 +197,7 @@ class MenuState(State):
                 start_y + idx * 50,
                 center=True,
             )
+
+
+# Clean up imported decorator
+del abstractmethod

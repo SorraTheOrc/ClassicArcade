@@ -24,6 +24,7 @@ from config import (
 )
 from utils import draw_text
 from games.game_base import Game
+from typing import List, Tuple
 
 # Game constants
 PADDLE_WIDTH = 100
@@ -42,7 +43,8 @@ FONT_SIZE = 24
 class BreakoutState(Game):
     """State for the Breakout game, compatible with the engine loop."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize Breakout game state, setting up paddle, ball, bricks, and scores."""
         super().__init__()
         # Initialize paddle
         self.paddle = pygame.Rect(
@@ -65,6 +67,7 @@ class BreakoutState(Game):
         self.win = False
 
     def update(self, dt: float) -> None:
+        """Update the game state: handle paddle movement, ball physics, collisions, scoring, and win/lose conditions."""
         if self.game_over or self.win or self.paused:
             return
         keys = pygame.key.get_pressed()
@@ -99,6 +102,7 @@ class BreakoutState(Game):
             self.game_over = True
 
     def draw(self, screen: pygame.Surface) -> None:
+        """Render the breakout game elements and UI onto the screen."""
         screen.fill(BLACK)
         # Draw paddle
         pygame.draw.rect(screen, WHITE, self.paddle)
@@ -133,7 +137,8 @@ class BreakoutState(Game):
             )
 
 
-def create_bricks():
+def create_bricks() -> List[Tuple[pygame.Rect, Tuple[int, int, int]]]:
+    """Create and return a list of brick (rect, color) tuples."""
     bricks = []
     colors = [RED, GREEN, BLUE, YELLOW, CYAN]
     for row in range(BRICK_ROWS):
@@ -148,7 +153,7 @@ def create_bricks():
     return bricks
 
 
-def run():
+def run() -> None:
     """Run Breakout using the shared run helper."""
     from games.run_helper import run_game
 

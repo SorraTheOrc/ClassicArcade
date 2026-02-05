@@ -5,6 +5,8 @@ Provides screen dimensions, color definitions, and a helper function for drawing
 
 import pygame
 
+from typing import Tuple
+
 from config import (
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
@@ -20,7 +22,15 @@ from config import (
 )
 
 
-def draw_text(surface, text, size, color, x, y, center=True):
+def draw_text(
+    surface: pygame.Surface,
+    text: str,
+    size: int,
+    color: Tuple[int, int, int],
+    x: int,
+    y: int,
+    center: bool = True,
+) -> None:
     """Draw text on a surface.
 
     Args:
