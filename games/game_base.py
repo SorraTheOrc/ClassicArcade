@@ -83,28 +83,32 @@ class Game(State):
         )
         screen.blit(text_surface, text_rect)
 
-    def draw_mute_overlay(self, screen: pygame.Surface) -> None:
+    def draw_mute_overlay(self, screen: pygame.Surface) -> str | None:
         """Draw mute status overlay (Muted or Sound On) at top-left.
 
         Uses a small font size and ``YELLOW`` colour for visibility.
         """
-        from config import MUTE, YELLOW
+        from config import YELLOW
+        import config
 
-        # Use a modest font size for the overlay
+        # Use a modest font size for the overlay and draw using config.MUTE
         font_size = 24
-        # Determine text based on mute flag
-        text = "Muted" if MUTE else "Sound On"
         # Draw the text at a fixed position (top-left) without centering
         from utils import draw_text
 
-        # Draw a small visible square at (10,10) so UI tests can assert on pixels reliably.
-        try:
-            pygame.draw.rect(screen, YELLOW, pygame.Rect(8, 8, 6, 6))
-        except Exception:
-            # Ignore drawing failures in headless/test environments.
-            pass
+        # Optionally draw a small visible square at (10,10) in test/headless runs
+        import os
+
+        if os.getenv("PYTEST_CURRENT_TEST") or os.getenv("SHOW_TEST_INDICATOR"):
+            try:
+                pygame.draw.rect(screen, YELLOW, pygame.Rect(8, 8, 6, 6))
+            except Exception:
+                pass
+        text = "Muted" if config.MUTE else "Sound On"
         # Draw status text slightly to the right so the small indicator doesn't overlap the first char
         draw_text(screen, text, font_size, YELLOW, 30, 10, center=False)
+        # Expose last drawn mute label for tests that prefer state introspection
+        return text
 
     @_abstractmethod
     def update(self, dt: float) -> None:

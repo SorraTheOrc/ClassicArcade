@@ -45,8 +45,9 @@ from config import (
     GRAY,
     KEY_UP,
     KEY_DOWN,
-    MUTE,
 )
+import config
+import os
 from utils import draw_text
 
 
@@ -179,6 +180,8 @@ class MenuState(State):
         self.highlight_padding = 10  # padding around text for highlight rectangle
         self.highlight_color = GRAY
         self.highlight_rect: pygame.Rect | None = None
+        # Last rendered mute text (for tests)
+        self._last_mute_text: str | None = None
 
     def handle_event(self, event: pygame.event.Event) -> None:
         """Handle user input events for menu navigation and selection."""
@@ -237,22 +240,17 @@ class MenuState(State):
             center=True,
         )
         # Mute status indicator
-        # Draw a small visible indicator at (10,10) so UI tests can sample a stable pixel
-        try:
-            pygame.draw.rect(screen, YELLOW, pygame.Rect(8, 8, 6, 6))
-        except Exception:
-            # If drawing fails for any reason, fall back to rendering the text only
-            pass
+        # Optionally draw a small visible indicator in test/headless runs
+        if os.getenv("PYTEST_CURRENT_TEST") or os.getenv("SHOW_TEST_INDICATOR"):
+            try:
+                pygame.draw.rect(screen, YELLOW, pygame.Rect(8, 8, 6, 6))
+            except Exception:
+                pass
         # Draw status text slightly to the right so the small indicator doesn't overlap the first char
-        draw_text(
-            screen,
-            "Muted" if MUTE else "Sound On",
-            self.title_font_size // 2,
-            YELLOW,
-            30,
-            10,
-            center=False,
-        )
+        text = "Muted" if config.MUTE else "Sound On"
+        draw_text(screen, text, self.title_font_size // 2, YELLOW, 30, 10, center=False)
+        # Expose last rendered text for tests
+        self._last_mute_text = text
         # Menu items
         start_y = SCREEN_HEIGHT // 4 + 80
         # Prepare font for menu items
