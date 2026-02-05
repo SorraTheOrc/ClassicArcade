@@ -20,6 +20,7 @@ from config import (
     KEY_DOWN,
 )
 from utils import draw_text
+from datetime import datetime
 from games.highscore import add_score
 from typing import Optional
 from games.game_base import Game
@@ -169,12 +170,28 @@ class PongState(Game):
             if not getattr(self, "highscore_recorded", False):
                 self.highscores = add_score("pong", self.left_score)
                 self.highscore_recorded = True
-            # Show top 5 high scores below the win message
+            # Show heading and top 5 high scores below the win message
             start_y = SCREEN_HEIGHT // 2 + FONT_SIZE + 10
+            # Heading
+            draw_text(
+                screen,
+                "High Scores:",
+                FONT_SIZE,
+                WHITE,
+                SCREEN_WIDTH // 2,
+                start_y - (FONT_SIZE + 5),
+                center=True,
+            )
             for idx, entry in enumerate(self.highscores[:5], start=1):
+                try:
+                    date_str = datetime.fromisoformat(entry["timestamp"]).strftime(
+                        "%d-%b-%Y"
+                    )
+                except Exception:
+                    date_str = entry["timestamp"]
                 draw_text(
                     screen,
-                    f"{idx}. {entry['score']} ({entry['timestamp'][:19]})",
+                    f"{idx}. {entry['score']} ({date_str})",
                     FONT_SIZE,
                     WHITE,
                     SCREEN_WIDTH // 2,

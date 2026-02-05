@@ -23,6 +23,7 @@ from config import (
     KEY_RIGHT,
 )
 from utils import draw_text
+from datetime import datetime
 from games.highscore import add_score
 from games.game_base import Game
 from engine import Engine
@@ -147,12 +148,28 @@ class SnakeState(Game):
             if not getattr(self, "highscore_recorded", False):
                 self.highscores = add_score("snake", self.score)
                 self.highscore_recorded = True
-            # Show top 5 scores below the game‑over text
+            # Show heading and top 5 scores below the game‑over text
             start_y = SCREEN_HEIGHT // 2 + 24 + 10
+            # Heading
+            draw_text(
+                screen,
+                "High Scores:",
+                24,
+                WHITE,
+                SCREEN_WIDTH // 2,
+                start_y - (24 + 5),
+                center=True,
+            )
             for idx, entry in enumerate(self.highscores[:5], start=1):
+                try:
+                    date_str = datetime.fromisoformat(entry["timestamp"]).strftime(
+                        "%d-%b-%Y"
+                    )
+                except Exception:
+                    date_str = entry["timestamp"]
                 draw_text(
                     screen,
-                    f"{idx}. {entry['score']} ({entry['timestamp'][:19]})",
+                    f"{idx}. {entry['score']} ({date_str})",
                     24,
                     WHITE,
                     SCREEN_WIDTH // 2,
