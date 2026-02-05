@@ -54,7 +54,32 @@ def test_line_clear_plays_sound(monkeypatch):
     t.fall_timer = t.fall_interval
     t.update(1.0)
 
-    assert calls == ["line_clear.wav"]
+    # Expect a place sound first, then a line_clear sound
+    assert calls == ["place.wav", "line_clear.wav"]
+
+
+def test_place_sound_without_line(monkeypatch):
+    t = TetrisState()
+    # Position piece so it will lock but not clear any lines
+    t.shape_coords = [(0, 0)]
+    t.shape_x = 0
+    t.shape_y = GRID_HEIGHT - 1
+
+    # Force clear_lines to report zero cleared lines
+    monkeypatch.setattr(t, "clear_lines", lambda grid: 0)
+
+    calls = []
+
+    def fake_play(name):
+        calls.append(name)
+
+    monkeypatch.setattr(audio, "play_effect", fake_play)
+
+    # Ensure the fall timer triggers the lock path
+    t.fall_timer = t.fall_interval
+    t.update(1.0)
+
+    assert calls == ["place.wav"]
 
 
 def test_sounds_respect_mute(monkeypatch):

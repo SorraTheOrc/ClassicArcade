@@ -135,6 +135,9 @@ class TetrisState(Game):
                     self.shape_y,
                     self.current_color,
                 )
+                # Play a block-placed sound whenever a piece is locked into place.
+                # This gives immediate feedback even when no lines are cleared.
+                audio.play_effect("place.wav")
                 # Clear lines
                 lines = self.clear_lines(self.grid)
                 if lines:
