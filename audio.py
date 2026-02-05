@@ -42,13 +42,19 @@ def init() -> None:
         if os.path.isfile(mp3_path):
             music_path = mp3_path
         else:
-            placeholder_path = os.path.join(
-                base_dir, "assets", "sounds", "placeholder.wav"
-            )
-            if os.path.isfile(placeholder_path):
-                music_path = placeholder_path
-            else:
-                # No music file available.
+            # Follow the prefixed-placeholder behaviour for background music as well:
+            # If a per-sound placeholder "placeholder_background.wav" exists use it,
+            # otherwise create it from the generic "placeholder.wav" and use that.
+            try:
+                if ensure_sound("background.wav"):
+                    music_path = os.path.join(
+                        base_dir, "assets", "sounds", "background.wav"
+                    )
+                else:
+                    # No music available and no placeholder to create from.
+                    return
+            except Exception:
+                # If anything goes wrong ensuring the sound, bail out silently.
                 return
     try:
         pygame.mixer.music.load(music_path)
@@ -134,28 +140,28 @@ def ensure_sound(filename: str, placeholder_name: str = "placeholder.wav") -> bo
     Returns ``True`` when ``filename`` exists after the call, ``False`` otherwise.
     """
     target = _sound_path(filename)
+    # If the actual sound file exists, we're done.
     if os.path.isfile(target):
         return True
-    # Look for a prefixed placeholder first.
+
+    # Look for a prefixed placeholder first. We should not auto-create the
+    # concrete target file; only the prefixed placeholder is created/copied.
     prefixed_placeholder = _sound_path(f"placeholder_{filename}")
     if os.path.isfile(prefixed_placeholder):
-        # Copy prefixed placeholder to the target name.
-        try:
-            shutil.copyfile(prefixed_placeholder, target)
-            return True
-        except Exception:
-            return False
+        return True
+
     # No prefixed placeholder – create one from the generic placeholder if possible.
     generic_placeholder = _sound_path(placeholder_name)
     if os.path.isfile(generic_placeholder):
         try:
-            # Create the prefixed placeholder.
+            # Create the prefixed placeholder from generic, but do NOT copy it to
+            # the requested target filename. Loading code will use the prefixed
+            # placeholder path when the real file is missing.
             shutil.copyfile(generic_placeholder, prefixed_placeholder)
-            # Then copy it to the target.
-            shutil.copyfile(prefixed_placeholder, target)
             return True
         except Exception:
             return False
+
     # No placeholder available.
     return False
 
