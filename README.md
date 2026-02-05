@@ -30,23 +30,30 @@ The project includes a simple loading screen (menu) that lets you select any gam
 ## Installation
 
 1. Ensure you have **Python 3.10** or newer installed.
-2. Install the required dependency:
+2. Clone the repository (if you haven't already) and navigate to the project directory.
+3. Install the package (including dependencies) with:
 
 ```bash
-pip install pygame
+pip install .
 ```
 
-3. Clone the repository (if you haven't already) and navigate to the project directory.
+   *If you only need the pygame library without installing the package, you can run `pip install pygame` instead.*
 
 ## Running the Arcade Suite
 
-Run the main entry point:
+You can run the suite using the main entry point:
 
 ```bash
 python main.py
 ```
 
-You will see a loading screen with a list of games. Use the **Up/Down** arrow keys to navigate, press **Enter** to launch a game, and **Esc** to quit.
+Or, after installing the package, use the installed console script:
+
+```bash
+classic-arcade
+```
+
+Both commands start the arcade suite and display the loading screen. Use the **Up/Down** arrow keys to navigate, press **Enter** to launch a game, and **Esc** to quit.
 
 ## Running Individual Games
 
