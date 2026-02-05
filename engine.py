@@ -36,7 +36,16 @@ atexit.register(_pygame_cleanup)
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Type, Optional
 
-from config import SCREEN_WIDTH, SCREEN_HEIGHT, BLACK, WHITE, YELLOW, KEY_UP, KEY_DOWN
+from config import (
+    SCREEN_WIDTH,
+    SCREEN_HEIGHT,
+    BLACK,
+    WHITE,
+    YELLOW,
+    GRAY,
+    KEY_UP,
+    KEY_DOWN,
+)
 from utils import draw_text
 
 
@@ -145,13 +154,22 @@ class MenuState(State):
     """
 
     def __init__(self, menu_items: List[Tuple[str, Type[State]]]) -> None:
-        """Initialize the menu state with a list of (display_name, state_class) tuples."""
+        """Initialize the menu state with a list of (display_name, state_class) tuples.
+
+        Adds attributes for highlight animation.
+        """
         super().__init__()
         self.menu_items = menu_items
         self.selected = 0
         # Font size for the menu title and items
         self.title_font_size = 48
         self.item_font_size = 32
+        # Highlight animation attributes
+        self.highlight_anim_phase = 0.0  # animation phase accumulator
+        self.highlight_border_width = 2  # initial border width (pixels)
+        self.highlight_padding = 10  # padding around text for highlight rectangle
+        self.highlight_color = GRAY
+        self.highlight_rect: pygame.Rect | None = None
 
     def handle_event(self, event: pygame.event.Event) -> None:
         """Handle user input events for menu navigation and selection."""
@@ -167,12 +185,30 @@ class MenuState(State):
             # ESC key is ignored in the menu
 
     def update(self, dt: float) -> None:
-        """Update menu state (no time‑dependent logic)."""
-        # No time‑dependent logic for the menu
+        """Update menu state, handling highlight animation.
+
+        The highlight border width pulses over time for a visual effect.
+        """
+        # Update animation phase
+        self.highlight_anim_phase += dt
+        # Compute a pulsing border width between 2 and 6 pixels
+        # Using a sine wave for smooth animation
+        import math
+
+        phase = math.sin(self.highlight_anim_phase * 2 * math.pi)  # -1 to 1
+        # Map phase to range [2, 6]
+        self.highlight_border_width = int(2 + (phase + 1) / 2 * 4)
+        # Ensure minimum width of 2
+        if self.highlight_border_width < 2:
+            self.highlight_border_width = 2
+        # No other time‑dependent logic
         pass
 
     def draw(self, screen: pygame.Surface) -> None:
-        """Render the menu title and list of menu items onto the screen."""
+        """Render the menu title and list of menu items onto the screen.
+
+        The selected menu item is highlighted with a pulsing rectangle outline.
+        """
         # Title
         draw_text(
             screen,
@@ -185,18 +221,29 @@ class MenuState(State):
         )
         # Menu items
         start_y = SCREEN_HEIGHT // 4 + 80
+        # Prepare font for menu items
+        font = pygame.font.Font(None, self.item_font_size)
         for idx, (name, _) in enumerate(self.menu_items):
-            # (loop body unchanged)
+            # Render the text surface
             color = YELLOW if idx == self.selected else WHITE
-            draw_text(
-                screen,
-                name,
-                self.item_font_size,
-                color,
-                SCREEN_WIDTH // 2,
-                start_y + idx * 50,
-                center=True,
-            )
+            text_surface = font.render(name, True, color)
+            text_rect = text_surface.get_rect()
+            text_rect.center = (SCREEN_WIDTH // 2, start_y + idx * 50)
+            # If this is the selected item, draw a highlight rectangle
+            if idx == self.selected:
+                # Compute a rectangle slightly larger than the text
+                self.highlight_rect = text_rect.inflate(
+                    self.highlight_padding * 2, self.highlight_padding * 2
+                )
+                # Draw rectangle outline with current border width
+                pygame.draw.rect(
+                    screen,
+                    self.highlight_color,
+                    self.highlight_rect,
+                    width=self.highlight_border_width,
+                )
+            # Blit the text onto the screen
+            screen.blit(text_surface, text_rect)
 
 
 # Clean up imported decorator
