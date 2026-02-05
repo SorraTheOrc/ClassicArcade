@@ -36,6 +36,9 @@ CYAN = COLORS["CYAN"]
 MAGENTA = COLORS["MAGENTA"]
 GRAY = COLORS["GRAY"]
 
+# Global mute flag for audio playback. Defaults to False (audio enabled).
+MUTE = False
+
 # Key bindings (using pygame key constants)
 KEY_QUIT = pygame.K_ESCAPE
 KEY_PAUSE = pygame.K_p

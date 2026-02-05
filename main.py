@@ -7,6 +7,7 @@ Implemented using the new ``Engine`` and ``MenuState`` for a unified state machi
 from engine import Engine, MenuState
 from games.splash import SplashState
 from menu_items import get_menu_items
+import audio
 
 
 def main() -> None:
@@ -63,6 +64,7 @@ def main() -> None:
         return
     initial_state = SplashState()
     engine = Engine(initial_state)
+    audio.init()
     engine.run()
 
 

@@ -17,6 +17,7 @@ import pygame
 from abc import abstractmethod as _abstractmethod
 from utils import draw_text, WHITE, SCREEN_WIDTH, SCREEN_HEIGHT
 from engine import State, MenuState
+import audio
 # import get_menu_items lazily in handle_event
 
 
@@ -55,6 +56,9 @@ class Game(State):
             if event.key == pygame.K_p:
                 self.paused = not self.paused
                 return
+            if event.key == pygame.K_m:
+                audio.toggle_mute()
+                return
             if event.key == pygame.K_r:
                 # Re‑initialise the state – subclasses can override for custom behaviour
                 self.__init__()
@@ -78,63 +82,6 @@ class Game(State):
             center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
         )
         screen.blit(text_surface, text_rect)
-
-    @_abstractmethod
-    def update(self, dt: float) -> None:
-        """Update the game logic. ``dt`` is the time delta in seconds.
-        Subclasses should respect ``self.paused`` if they implement time‑dependent updates.
-        """
-        pass
-
-    @_abstractmethod
-    def draw(self, screen: pygame.Surface) -> None:
-        """Draw the game to ``screen``. ``screen`` is provided by the engine.
-        Subclasses typically clear the background and render their objects.
-        """
-        pass
-
-    """Base class for all games.
-
-    Subclasses should implement ``update`` and ``draw``. The constructor creates a pygame
-    screen and clock, and the ``handle_event`` method provides common shortcuts for ESC,
-    pause (P) and restart (R).
-    """
-
-    def __init__(self):
-        super().__init__()
-        # Initialise pygame screen and clock – the engine will also call pygame.init()
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        self.clock = pygame.time.Clock()
-        self.paused = False
-        self.next_state = None
-
-    def handle_event(self, event: pygame.event.Event) -> None:
-        """Handle common key events for all games.
-
-        Supports:
-        - ``K_ESCAPE`` – return to the main menu.
-        - ``K_p`` – toggle the paused flag.
-        - ``K_r`` – restart the current state by re‑initialising it.
-
-        Subclasses can extend this method and should call ``super().handle_event(event)``
-        to retain this behaviour.
-        """
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                # Return to menu (import lazily to avoid circular import)
-                from menu_items import get_menu_items
-
-                self.request_transition(MenuState(get_menu_items()))
-                return
-            if event.key == pygame.K_p:
-                self.paused = not self.paused
-                return
-            if event.key == pygame.K_r:
-                # Re‑initialise the state – subclasses can override for custom behaviour
-                self.__init__()
-                return
-        # Subclasses can extend with additional key handling by calling super().handle_event(event)
-        # (no further action needed here)
 
     @_abstractmethod
     def update(self, dt: float) -> None:
