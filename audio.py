@@ -9,8 +9,18 @@ import pygame
 import config
 import shutil
 
+from typing import Dict, List
+
 
 def init() -> None:
+    """Initialise the audio system and preload short‑effect sounds.
+
+    This function now loads the background music (as before) **and** pre‑loads any
+    short sound‑effect files that are used throughout the suite (e.g. ``eat.wav``
+    and ``crash.wav``). Pre‑loading eliminates the I/O latency that would occur
+    on the first call to :func:`play_effect`, ensuring the sound plays
+    immediately when the associated game event occurs.
+    """
     """Initialise the pygame mixer and start looping background music.
 
     The function attempts to load ``assets/sounds/background.wav``. If that file
@@ -44,6 +54,8 @@ def init() -> None:
         pygame.mixer.music.load(music_path)
         pygame.mixer.music.set_volume(0 if config.MUTE else 1)
         pygame.mixer.music.play(-1)  # Loop indefinitely.
+        # Pre‑load short effect sounds used in games to avoid first‑play latency.
+        preload_effects(["eat.wav", "crash.wav"])
     except pygame.error:
         # Loading or playing failed – ignore to keep the game functional.
         return
@@ -101,8 +113,6 @@ def toggle_mute() -> None:
 
 
 # Lightweight sound-effect helper functions
-from typing import Dict
-
 # Cache loaded Sound objects so repeated short effects don't re-open files.
 _SOUND_CACHE: Dict[str, "pygame.mixer.Sound"] = {}
 
@@ -113,25 +123,67 @@ def _sound_path(name: str) -> str:
 
 
 def ensure_sound(filename: str, placeholder_name: str = "placeholder.wav") -> bool:
-    """Ensure a sound asset exists under assets/sounds.
+    """Ensure a sound asset exists under ``assets/sounds``.
 
-    If the named file does not exist but a placeholder is available, copy the
-    placeholder to the target filename. Returns True when the target file
-    exists after the call, False otherwise.
+    The function now follows the *prefixed placeholder* convention:
+    1. If ``filename`` already exists, nothing is done.
+    2. If a per‑sound placeholder ``placeholder_<filename>`` exists, it is copied to
+       ``filename``.
+    3. Otherwise a generic placeholder ``placeholder.wav`` is copied to the
+       per‑sound placeholder name, then that placeholder is copied to ``filename``.
+    Returns ``True`` when ``filename`` exists after the call, ``False`` otherwise.
     """
     target = _sound_path(filename)
     if os.path.isfile(target):
         return True
-    placeholder = _sound_path(placeholder_name)
-    try:
-        if os.path.isfile(placeholder):
-            # Copy placeholder to target name so the game has an asset to play.
-            shutil.copyfile(placeholder, target)
+    # Look for a prefixed placeholder first.
+    prefixed_placeholder = _sound_path(f"placeholder_{filename}")
+    if os.path.isfile(prefixed_placeholder):
+        # Copy prefixed placeholder to the target name.
+        try:
+            shutil.copyfile(prefixed_placeholder, target)
             return True
-    except Exception:
-        # Never raise from asset handling
-        return False
+        except Exception:
+            return False
+    # No prefixed placeholder – create one from the generic placeholder if possible.
+    generic_placeholder = _sound_path(placeholder_name)
+    if os.path.isfile(generic_placeholder):
+        try:
+            # Create the prefixed placeholder.
+            shutil.copyfile(generic_placeholder, prefixed_placeholder)
+            # Then copy it to the target.
+            shutil.copyfile(prefixed_placeholder, target)
+            return True
+        except Exception:
+            return False
+    # No placeholder available.
     return False
+
+
+def preload_effects(filenames: List[str]) -> None:
+    """Preload a list of short sound‑effect files.
+
+    This loads each sound into the global ``_SOUND_CACHE`` so subsequent calls to
+    :func:`play_effect` can play instantly without disk I/O. It also ensures the
+    placeholder asset is copied if the target file does not exist.
+    """
+    if not pygame.mixer.get_init():
+        return
+    for filename in filenames:
+        # Ensure the file exists (copy placeholder if missing)
+        try:
+            ensure_sound(filename)
+        except Exception:
+            # If placeholder copy fails, continue – play_effect will handle missing file.
+            pass
+        try:
+            if filename not in _SOUND_CACHE:
+                path = _sound_path(filename)
+                if os.path.isfile(path):
+                    _SOUND_CACHE[filename] = pygame.mixer.Sound(path)
+        except Exception:
+            # Ignore load errors – playback will fallback gracefully.
+            pass
 
 
 def play_effect(filename: str) -> None:
@@ -151,6 +203,8 @@ def play_effect(filename: str) -> None:
         # If mixer isn't available, bail out silently
         return
 
+    # Ensure the sound file exists (handle prefixed placeholder if needed).
+    ensure_sound(filename)
     path = _sound_path(filename)
     try:
         if filename not in _SOUND_CACHE:
