@@ -37,8 +37,10 @@ def test_preload_effects(monkeypatch):
     mock_sound = mock.Mock()
 
     def fake_sound(path):
-        # Verify the path matches the expected target.
-        assert os.path.abspath(path) == os.path.abspath(target_path)
+        # Verify the path matches the expected placeholder path (we no longer
+        # auto-create the concrete target file; we load the prefixed placeholder).
+        expected = audio._sound_path(f"placeholder_{filename}")
+        assert os.path.abspath(path) == os.path.abspath(expected)
         return mock_sound
 
     monkeypatch.setattr(pygame.mixer, "Sound", fake_sound)
@@ -50,6 +52,7 @@ def test_preload_effects(monkeypatch):
     assert filename in audio._SOUND_CACHE
     assert audio._SOUND_CACHE[filename] is mock_sound
 
-    # Clean up the temporary file.
-    if os.path.isfile(target_path):
-        os.remove(target_path)
+    # Clean up the placeholder we created.
+    ph = audio._sound_path(f"placeholder_{filename}")
+    if os.path.isfile(ph):
+        os.remove(ph)

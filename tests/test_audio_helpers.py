@@ -28,10 +28,12 @@ def test_ensure_sound_copies_placeholder(tmp_path):
     # Call the function – it should copy the placeholder.
     result = audio.ensure_sound(fname)
     assert result is True
-    # The file now exists.
-    assert os.path.isfile(target)
-    # Clean up.
-    os.remove(target)
+    # The prefixed placeholder should now exist, but we intentionally do not
+    # auto-create the concrete sound file.
+    ph = _asset_path(f"placeholder_{fname}")
+    assert os.path.isfile(ph)
+    # Clean up the generated placeholder.
+    os.remove(ph)
 
 
 def test_play_effect_plays_when_not_muted(monkeypatch):
@@ -46,14 +48,16 @@ def test_play_effect_plays_when_not_muted(monkeypatch):
     # Remove any prior file.
     if os.path.isfile(target):
         os.remove(target)
-    # Ensure the placeholder will be copied.
+    # Ensure the placeholder will be copied (we expect a prefixed placeholder
+    # to be created, and play_effect should load that placeholder path).
     audio.ensure_sound(fname)
     # Mock the Sound class.
     mock_sound = mock.Mock()
 
     def fake_sound(path):
-        # Verify the path matches what we expect.
-        assert os.path.abspath(path) == os.path.abspath(target)
+        # play_effect should attempt to load the prefixed placeholder file.
+        expected = _asset_path(f"placeholder_{fname}")
+        assert os.path.abspath(path) == os.path.abspath(expected)
         return mock_sound
 
     monkeypatch.setattr(pygame.mixer, "Sound", fake_sound)
@@ -61,9 +65,10 @@ def test_play_effect_plays_when_not_muted(monkeypatch):
     audio.play_effect(fname)
     # The mock's ``play`` method should have been called exactly once.
     mock_sound.play.assert_called_once()
-    # Clean up.
-    if os.path.isfile(target):
-        os.remove(target)
+    # Clean up the placeholder file.
+    ph = _asset_path(f"placeholder_{fname}")
+    if os.path.isfile(ph):
+        os.remove(ph)
 
 
 def test_play_effect_respects_mute(monkeypatch):
