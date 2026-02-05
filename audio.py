@@ -7,6 +7,7 @@ functions to toggle mute and play looping background music.
 import os
 import pygame
 import config
+import shutil
 
 
 def init() -> None:
@@ -97,3 +98,75 @@ def toggle_mute() -> None:
             pygame.mixer.music.set_volume(0 if config.MUTE else 1)
         except Exception:
             pass
+
+
+# Lightweight sound-effect helper functions
+from typing import Dict
+
+# Cache loaded Sound objects so repeated short effects don't re-open files.
+_SOUND_CACHE: Dict[str, "pygame.mixer.Sound"] = {}
+
+
+def _sound_path(name: str) -> str:
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    return os.path.join(base_dir, "assets", "sounds", name)
+
+
+def ensure_sound(filename: str, placeholder_name: str = "placeholder.wav") -> bool:
+    """Ensure a sound asset exists under assets/sounds.
+
+    If the named file does not exist but a placeholder is available, copy the
+    placeholder to the target filename. Returns True when the target file
+    exists after the call, False otherwise.
+    """
+    target = _sound_path(filename)
+    if os.path.isfile(target):
+        return True
+    placeholder = _sound_path(placeholder_name)
+    try:
+        if os.path.isfile(placeholder):
+            # Copy placeholder to target name so the game has an asset to play.
+            shutil.copyfile(placeholder, target)
+            return True
+    except Exception:
+        # Never raise from asset handling
+        return False
+    return False
+
+
+def play_effect(filename: str) -> None:
+    """Play a short sound effect from assets/sounds.
+
+    The function respects the global `config.MUTE` flag and will return
+    immediately when muted. It attempts to load the sound once and cache
+    it for subsequent calls. Errors are swallowed to keep the game running
+    even when audio fails.
+    """
+    if config.MUTE:
+        return
+    try:
+        if not pygame.mixer.get_init():
+            return
+    except Exception:
+        # If mixer isn't available, bail out silently
+        return
+
+    path = _sound_path(filename)
+    try:
+        if filename not in _SOUND_CACHE:
+            if not os.path.isfile(path):
+                return
+            _SOUND_CACHE[filename] = pygame.mixer.Sound(path)
+        sound = _SOUND_CACHE[filename]
+        try:
+            sound.play()
+        except Exception:
+            # Some mock objects may not implement play exactly as expected.
+            try:
+                # In pygame Sound.play can accept kwargs; try a safe call.
+                getattr(sound, "play")()
+            except Exception:
+                pass
+    except Exception:
+        # Never raise from audio playback
+        return

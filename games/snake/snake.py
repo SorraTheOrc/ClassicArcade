@@ -27,6 +27,7 @@ from datetime import datetime
 from games.highscore import add_score
 from games.game_base import Game
 from engine import Engine
+import audio
 
 # Game constants
 BLOCK_SIZE = 20
@@ -97,11 +98,21 @@ class SnakeState(Game):
                     or new_head[1] >= SCREEN_HEIGHT
                 ):
                     self.game_over = True
+                    # Play crash/game-over sound
+                    try:
+                        audio.play_effect("crash.wav")
+                    except Exception:
+                        pass
                 else:
                     self.snake.insert(0, new_head)
                     # Food collision
                     if new_head == self.food:
                         self.score += 1
+                        # Play food-eat sound effect
+                        try:
+                            audio.play_effect("eat.wav")
+                        except Exception:
+                            pass
                         # Place new food not on the snake
                         while True:
                             self.food = (
