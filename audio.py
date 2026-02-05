@@ -51,5 +51,10 @@ def init() -> None:
 def toggle_mute() -> None:
     """Toggle the global mute flag and update music volume accordingly."""
     config.MUTE = not config.MUTE
+    # Persist the mute setting
+    try:
+        config.save_settings()
+    except Exception:
+        pass
     if pygame.mixer.get_init():
         pygame.mixer.music.set_volume(0 if config.MUTE else 1)

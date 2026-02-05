@@ -103,6 +103,14 @@ class Engine:
             os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
         # Initialise pygame and create the screen once.
         pygame.init()
+        # Initialise audio system (mixer + background music) if available.
+        try:
+            import audio
+
+            audio.init()
+        except Exception:
+            # Audio initialisation should not prevent the engine from running.
+            pass
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Arcade Suite")
         self.clock = pygame.time.Clock()
@@ -183,6 +191,14 @@ class MenuState(State):
                 # Transition to the selected game state
                 _, state_cls = self.menu_items[self.selected]
                 self.request_transition(state_cls())
+            elif event.key == pygame.K_m:
+                # Allow toggling mute from the menu as well
+                try:
+                    import audio
+
+                    audio.toggle_mute()
+                except Exception:
+                    pass
             # ESC key is ignored in the menu
 
     def update(self, dt: float) -> None:
@@ -227,12 +243,13 @@ class MenuState(State):
         except Exception:
             # If drawing fails for any reason, fall back to rendering the text only
             pass
+        # Draw status text slightly to the right so the small indicator doesn't overlap the first char
         draw_text(
             screen,
             "Muted" if MUTE else "Sound On",
             self.title_font_size // 2,
             YELLOW,
-            10,
+            30,
             10,
             center=False,
         )

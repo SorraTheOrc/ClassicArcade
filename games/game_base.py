@@ -103,7 +103,8 @@ class Game(State):
         except Exception:
             # Ignore drawing failures in headless/test environments.
             pass
-        draw_text(screen, text, font_size, YELLOW, 10, 10, center=False)
+        # Draw status text slightly to the right so the small indicator doesn't overlap the first char
+        draw_text(screen, text, font_size, YELLOW, 30, 10, center=False)
 
     @_abstractmethod
     def update(self, dt: float) -> None:
