@@ -23,14 +23,22 @@ def init() -> None:
         return
 
     base_dir = os.path.abspath(os.path.dirname(__file__))
+    # Prefer an explicit background music file; fall back to mp3, then placeholder.
     music_path = os.path.join(base_dir, "assets", "sounds", "background.wav")
     if not os.path.isfile(music_path):
-        placeholder_path = os.path.join(base_dir, "assets", "sounds", "placeholder.wav")
-        if os.path.isfile(placeholder_path):
-            music_path = placeholder_path
+        # Try MP3 music file if present.
+        mp3_path = os.path.join(base_dir, "assets", "sounds", "music.mp3")
+        if os.path.isfile(mp3_path):
+            music_path = mp3_path
         else:
-            # No music file available.
-            return
+            placeholder_path = os.path.join(
+                base_dir, "assets", "sounds", "placeholder.wav"
+            )
+            if os.path.isfile(placeholder_path):
+                music_path = placeholder_path
+            else:
+                # No music file available.
+                return
     try:
         pygame.mixer.music.load(music_path)
         pygame.mixer.music.set_volume(0 if config.MUTE else 1)
