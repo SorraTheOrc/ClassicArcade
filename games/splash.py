@@ -25,6 +25,8 @@ class SplashState(State):
         self.elapsed: float = 0.0
         self.alpha: int = 0  # 0‑255 opacity of the title text
         # Prepare a font for the splash title – size chosen to be readable
+        # Ensure the font module is initialized before creating a Font object
+        pygame.font.init()
         self._font = pygame.font.Font(None, 48)
         # Pre‑render the text surface (without alpha) – we will apply alpha each frame
         self._text_surface = self._font.render("Arcade Suite", True, WHITE)
