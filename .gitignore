@@ -20,3 +20,6 @@ Worklog Specific Ignores
 
 # Ignore compiled python files
 __pycache__
+
+# Local settings file (user-specific) should not be committed
+settings.json
