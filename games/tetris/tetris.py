@@ -10,6 +10,7 @@ Controls:
 """
 
 import pygame
+import audio
 import random
 from config import (
     SCREEN_WIDTH,
@@ -97,15 +98,24 @@ class TetrisState(Game):
                         self.grid, new_coords, self.shape_x, self.shape_y
                     ):
                         self.shape_coords = new_coords
+                        # Play rotate sound
+                        audio.play_effect("rotate.wav")
             # No need to handle R here; base class already restarts
 
     def update(self, dt: float) -> None:
         """Update the game state: handle falling piece, line clears, level progression, and game over checks."""
         if self.game_over or self.paused:
             return
-        # Reset fall speed after handling key press (if not holding down)
+        # Reset fall speed after handling key press (if not holding down).
+        # Some test environments may provide an unexpected return from
+        # `pygame.key.get_pressed()` (e.g. an empty sequence), so guard
+        # against IndexError by treating an unknown state as "not pressed".
         keys = pygame.key.get_pressed()
-        if not keys[KEY_DOWN]:
+        try:
+            down_is_pressed = bool(keys[KEY_DOWN])
+        except Exception:
+            down_is_pressed = False
+        if not down_is_pressed:
             self.fall_interval = FALL_SPEED
         # Update fall timer
         self.fall_timer += dt * 1000  # dt is seconds, convert to ms
@@ -130,6 +140,12 @@ class TetrisState(Game):
                 if lines:
                     self.lines_cleared_total += lines
                     self.score += (lines**2) * 100
+                    # Play line clear sound once per cleared line.
+                    # This should happen regardless of whether the level
+                    # increased — moving playback out of the level-up block
+                    # ensures the player always receives audio feedback.
+                    for _ in range(lines):
+                        audio.play_effect("line_clear.wav")
                     # Increase level every 5 lines cleared
                     if self.lines_cleared_total // 5 > (self.level - 1):
                         self.level += 1
