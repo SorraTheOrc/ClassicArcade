@@ -34,35 +34,48 @@ def init() -> None:
         return
 
     base_dir = os.path.abspath(os.path.dirname(__file__))
-    # Prefer an explicit background music file; fall back to mp3, then placeholder.
-    music_path = os.path.join(base_dir, "assets", "sounds", "background.wav")
-    if not os.path.isfile(music_path):
-        # Try MP3 music file if present.
-        mp3_path = os.path.join(base_dir, "assets", "sounds", "music.mp3")
-        if os.path.isfile(mp3_path):
-            music_path = mp3_path
-        else:
-            # Follow the prefixed-placeholder behaviour for background music as well:
-            # If a per-sound placeholder "placeholder_background.wav" exists use it,
-            # otherwise create it from the generic "placeholder.wav" and use that.
-            try:
-                if ensure_sound("background.wav"):
-                    music_path = os.path.join(
-                        base_dir, "assets", "sounds", "background.wav"
-                    )
-                else:
-                    # No music available and no placeholder to create from.
-                    return
-            except Exception:
-                # If anything goes wrong ensuring the sound, bail out silently.
-                return
+    # Prefer an explicit background music file in sounds; however some users
+    # keep music under assets/music — try both locations and accept mp3 as a
+    # fallback. If nothing is available, fall back to the placeholder behaviour.
+    sounds_dir = os.path.join(base_dir, "assets", "sounds")
+    music_dir = os.path.join(base_dir, "assets", "music")
+
+    candidates = [
+        os.path.join(sounds_dir, "background.wav"),
+        os.path.join(sounds_dir, "music.mp3"),
+        os.path.join(music_dir, "background.wav"),
+        os.path.join(music_dir, "music.mp3"),
+    ]
+
+    music_path = None
+    for c in candidates:
+        if os.path.isfile(c):
+            music_path = c
+            break
+
+    if music_path is None:
+        # Try to create a prefixed placeholder in the sounds directory first.
+        try:
+            if ensure_sound("background.wav"):
+                music_path = os.path.join(sounds_dir, "background.wav")
+        except Exception:
+            # If anything goes wrong ensuring the sound, leave music_path None.
+            music_path = None
+
+    if music_path is None:
+        # No music available and no placeholder to create from – nothing to do.
+        return
+
+    # Load and start playback; guard against FileNotFoundError and other
+    # exceptions in addition to pygame.error so missing files don't crash the
+    # launcher when users have reorganised assets.
     try:
         pygame.mixer.music.load(music_path)
         pygame.mixer.music.set_volume(0 if config.MUTE else 1)
         pygame.mixer.music.play(-1)  # Loop indefinitely.
         # Pre‑load short effect sounds used in games to avoid first‑play latency.
         preload_effects(["eat.wav", "crash.wav"])
-    except pygame.error:
+    except (pygame.error, FileNotFoundError, OSError, Exception):
         # Loading or playing failed – ignore to keep the game functional.
         return
 
