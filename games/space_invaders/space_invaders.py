@@ -10,6 +10,7 @@ Controls:
 
 import pygame
 import random
+import audio
 from config import (
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
@@ -140,6 +141,7 @@ class SpaceInvadersState(Game):
                 BULLET_HEIGHT,
             )
             self.enemy_bullets.append(enemy_bullet)
+            audio.play_effect("enemy_shoot.wav")
             self.enemy_shoot_cooldown = random.uniform(1.0, 3.0)
         # Player shooting (with configurable cooldown)
         if is_pressed(pygame.K_SPACE) and self.player_shoot_cooldown <= 0:
@@ -150,6 +152,7 @@ class SpaceInvadersState(Game):
                 BULLET_HEIGHT,
             )
             self.bullets.append(bullet)
+            audio.play_effect("shoot.wav")
             self.player_shoot_cooldown = PLAYER_SHOOT_COOLDOWN
         # Move aliens horizontally
         move_down = False
@@ -168,6 +171,7 @@ class SpaceInvadersState(Game):
                 # Destroy alien and the bullet
                 self.aliens.pop(hit_index)
                 self.bullets.remove(bullet)
+                audio.play_effect("alien_hit.wav")
                 self.score += 10
                 continue
             # Player bullet vs shelter blocks
@@ -186,10 +190,13 @@ class SpaceInvadersState(Game):
                 # Bullet hits a shelter block, remove the block and the bullet
                 self.shelters.pop(hit_idx)
                 self.enemy_bullets.remove(bullet)
+                audio.play_effect("cover.wav")
                 continue
             if bullet.colliderect(self.player):
                 # Player hit (no shelter block protecting)
+                audio.play_effect("player_hit.wav")
                 self.game_over = True
+                audio.play_effect("game_over.wav")
                 self.enemy_bullets.remove(bullet)
                 break
         # Check win
@@ -198,6 +205,7 @@ class SpaceInvadersState(Game):
         # Check lose
         for rect, _ in self.aliens:
             if rect.bottom >= self.player.top:
+                audio.play_effect("game_over.wav")
                 self.game_over = True
                 break
 
