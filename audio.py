@@ -56,5 +56,44 @@ def toggle_mute() -> None:
         config.save_settings()
     except Exception:
         pass
-    if pygame.mixer.get_init():
-        pygame.mixer.music.set_volume(0 if config.MUTE else 1)
+    if not pygame.mixer.get_init():
+        return
+
+    # When muting, perform a fade-out over 0.5 seconds instead of cutting audio instantly.
+    # When unmuting, restore volume and (re)start music playback if needed.
+    try:
+        if config.MUTE:
+            # fadeout stops playback after the fade duration
+            pygame.mixer.music.fadeout(500)
+        else:
+            # Fade in: restore volume and (re)start playback with a 0.5s fade-in
+            try:
+                # Ensure target volume is 1. Start playback with fade-in so it ramps smoothly.
+                pygame.mixer.music.set_volume(1)
+                if not pygame.mixer.music.get_busy():
+                    try:
+                        pygame.mixer.music.play(-1, fade_ms=500)
+                    except TypeError:
+                        # Some pygame versions expect fade_ms as keyword-only or don't support it
+                        try:
+                            pygame.mixer.music.play(-1)
+                        except Exception:
+                            pass
+                else:
+                    # Music is already playing (unlikely after fadeout) — emulate fade-in by
+                    # setting volume to 0 and ramping up in a background timer would be ideal.
+                    # For simplicity, set volume to 1 immediately in this case.
+                    pygame.mixer.music.set_volume(1)
+            except Exception:
+                # If anything goes wrong, fallback to setting volume directly
+                try:
+                    pygame.mixer.music.set_volume(1)
+                except Exception:
+                    pass
+    except Exception:
+        # Any mixer error should not propagate
+        try:
+            # Fallback: force volume to expected value
+            pygame.mixer.music.set_volume(0 if config.MUTE else 1)
+        except Exception:
+            pass
