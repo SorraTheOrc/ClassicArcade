@@ -5,6 +5,7 @@ Implemented using the new ``Engine`` and ``MenuState`` for a unified state machi
 """
 
 from engine import Engine, MenuState
+from games.splash import SplashState
 from menu_items import get_menu_items
 
 
@@ -60,7 +61,7 @@ def main() -> None:
         # No display available – exit gracefully to avoid hanging in a headless environment.
         logger.info("No DISPLAY detected – exiting without launching the graphical UI.")
         return
-    initial_state = MenuState(get_menu_items())
+    initial_state = SplashState()
     engine = Engine(initial_state)
     engine.run()
 
