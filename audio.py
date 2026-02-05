@@ -184,7 +184,13 @@ def preload_effects(filenames: List[str]) -> None:
             pass
         try:
             if filename not in _SOUND_CACHE:
+                # Prefer the real sound file; if it's not present, try the
+                # prefixed placeholder file (which ensure_sound may have created).
                 path = _sound_path(filename)
+                if not os.path.isfile(path):
+                    prefixed = _sound_path(f"placeholder_{filename}")
+                    if os.path.isfile(prefixed):
+                        path = prefixed
                 if os.path.isfile(path):
                     _SOUND_CACHE[filename] = pygame.mixer.Sound(path)
         except Exception:
@@ -209,9 +215,14 @@ def play_effect(filename: str) -> None:
         # If mixer isn't available, bail out silently
         return
 
-    # Ensure the sound file exists (handle prefixed placeholder if needed).
+    # Ensure the sound or its prefixed placeholder exists.
     ensure_sound(filename)
+    # Prefer the real file; if missing, use the prefixed placeholder path.
     path = _sound_path(filename)
+    if not os.path.isfile(path):
+        prefixed = _sound_path(f"placeholder_{filename}")
+        if os.path.isfile(prefixed):
+            path = prefixed
     try:
         if filename not in _SOUND_CACHE:
             if not os.path.isfile(path):
