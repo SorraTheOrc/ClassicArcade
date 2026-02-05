@@ -181,21 +181,13 @@ class TetrisState(Game):
             screen, f"Score: {self.score}", FONT_SIZE, WHITE, 60, 20, center=False
         )
         if self.game_over:
-            draw_text(
-                screen,
-                "Game Over! Press R to restart or ESC to menu",
-                FONT_SIZE,
-                RED,
-                SCREEN_WIDTH // 2,
-                SCREEN_HEIGHT // 2,
-                center=True,
-            )
             # Record high score once (score is self.score)
             if not getattr(self, "highscore_recorded", False):
                 self.highscores = add_score("tetris", self.score)
                 self.highscore_recorded = True
-            # Show heading and top 5 scores below the game‑over text
-            start_y = SCREEN_HEIGHT // 2 + FONT_SIZE + 10
+            # Layout positions
+            heading_y = int(SCREEN_HEIGHT * 0.20)
+            instr_y = int(SCREEN_HEIGHT * 0.80)
             # Heading
             draw_text(
                 screen,
@@ -203,9 +195,10 @@ class TetrisState(Game):
                 FONT_SIZE,
                 WHITE,
                 SCREEN_WIDTH // 2,
-                start_y - (FONT_SIZE + 5),
+                heading_y,
                 center=True,
             )
+            # Scores
             for idx, entry in enumerate(self.highscores[:5], start=1):
                 try:
                     date_str = datetime.fromisoformat(entry["timestamp"]).strftime(
@@ -213,15 +206,26 @@ class TetrisState(Game):
                     )
                 except Exception:
                     date_str = entry["timestamp"]
+                score_y = heading_y + FONT_SIZE + 5 + (idx - 1) * (FONT_SIZE + 5)
                 draw_text(
                     screen,
                     f"{idx}. {entry['score']} ({date_str})",
                     FONT_SIZE,
                     WHITE,
                     SCREEN_WIDTH // 2,
-                    start_y + (idx - 1) * (FONT_SIZE + 5),
+                    score_y,
                     center=True,
                 )
+            # Instruction line at bottom
+            draw_text(
+                screen,
+                "Game Over! Press R to restart or ESC to menu",
+                FONT_SIZE,
+                RED,
+                SCREEN_WIDTH // 2,
+                instr_y,
+                center=True,
+            )
         # Draw pause overlay if paused
         if self.paused:
             self.draw_pause_overlay(screen)
