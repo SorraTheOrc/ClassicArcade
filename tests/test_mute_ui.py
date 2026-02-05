@@ -114,18 +114,18 @@ class TestMuteUI(unittest.TestCase):
         # Ensure mute flag is false and saved
         self.assertFalse(config.MUTE)
         save_settings()
-        # Verify settings file contains false
+        # Verify settings file contains false (lowercase "mute" key)
         with open(_SETTINGS_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
-        self.assertIn("MUTE", data)
-        self.assertFalse(data["MUTE"])
+        self.assertIn("mute", data)
+        self.assertFalse(data["mute"])
         # Toggle mute (saves automatically)
         toggle_mute()
         self.assertTrue(config.MUTE)
-        # Load file directly
+        # Load file directly and verify lowercase key updated
         with open(_SETTINGS_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
-        self.assertTrue(data["MUTE"])
+        self.assertTrue(data["mute"])
         # Reload config module to simulate new session
         import config as cfg_mod
 

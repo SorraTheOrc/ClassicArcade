@@ -54,9 +54,12 @@ def _load_settings() -> None:
         try:
             with open(_SETTINGS_PATH, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                if isinstance(data, dict) and "MUTE" in data:
+                # Only accept the canonical lowercase "mute" key when loading.
+                # Legacy uppercase "MUTE" is no longer supported to keep the
+                # settings file format consistent and predictable.
+                if isinstance(data, dict) and "mute" in data:
                     global MUTE
-                    MUTE = bool(data["MUTE"])
+                    MUTE = bool(data.get("mute", False))
         except Exception:
             # Ignore errors – default MUTE remains False
             pass
@@ -64,7 +67,9 @@ def _load_settings() -> None:
 
 def save_settings() -> None:
     """Save current settings (currently only ``MUTE``) to ``settings.json``."""
-    data = {"MUTE": MUTE}
+    # Persist using lowercase "mute" key (preferred). The loader still
+    # accepts the legacy uppercase "MUTE" for backward compatibility.
+    data = {"mute": MUTE}
     try:
         with open(_SETTINGS_PATH, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)

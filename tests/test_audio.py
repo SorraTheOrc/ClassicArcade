@@ -17,6 +17,7 @@ import audio
 def test_mute_default():
     """The global mute flag should default to ``False``."""
     assert hasattr(config, "MUTE"), "config should have MUTE attribute"
+    # The module exposes a `MUTE` name but it should default to False.
     assert config.MUTE is False
 
 
