@@ -20,6 +20,8 @@ from config import (
     KEY_DOWN,
 )
 from utils import draw_text
+from datetime import datetime
+from games.highscore import add_score
 from typing import Optional
 from games.game_base import Game
 
@@ -62,6 +64,9 @@ class PongState(Game):
         self.left_score = 0
         self.right_score = 0
         self.game_over = False
+        # High‑score tracking flags
+        self.highscore_recorded = False
+        self.highscores = []
         self.winner: Optional[str] = None
 
     def handle_event(self, event: pygame.event.Event) -> None:
@@ -152,15 +157,56 @@ class PongState(Game):
             center=True,
         )
         if self.game_over:
+            # Record high score for the human player (left side) once
+            if not getattr(self, "highscore_recorded", False):
+                self.highscores = add_score("pong", self.left_score)
+                self.highscore_recorded = True
+            # Layout positions
+            heading_y = int(SCREEN_HEIGHT * 0.20)
+            instr_y = int(SCREEN_HEIGHT * 0.80)
+            # Heading
+            draw_text(
+                screen,
+                "High Scores:",
+                FONT_SIZE,
+                WHITE,
+                SCREEN_WIDTH // 2,
+                heading_y,
+                center=True,
+            )
+            # Scores
+            for idx, entry in enumerate(self.highscores[:5], start=1):
+                try:
+                    date_str = datetime.fromisoformat(entry["timestamp"]).strftime(
+                        "%d-%b-%Y"
+                    )
+                except Exception:
+                    date_str = entry["timestamp"]
+                score_y = heading_y + FONT_SIZE + 5 + (idx - 1) * (FONT_SIZE + 5)
+                draw_text(
+                    screen,
+                    f"{idx}. {entry['score']} ({date_str})",
+                    FONT_SIZE,
+                    WHITE,
+                    SCREEN_WIDTH // 2,
+                    score_y,
+                    center=True,
+                )
+            # Instruction line at bottom
             draw_text(
                 screen,
                 f"{self.winner} wins! Press R to restart or ESC to menu",
                 FONT_SIZE,
                 RED,
                 SCREEN_WIDTH // 2,
-                SCREEN_HEIGHT // 2,
+                instr_y,
                 center=True,
             )
+        # Draw pause overlay if paused
+        if self.paused:
+            self.draw_pause_overlay(screen)
+        # Draw mute overlay (Muted or Sound On)
+        self.draw_mute_overlay(screen)
 
 
 def run() -> None:

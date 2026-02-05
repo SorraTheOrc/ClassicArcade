@@ -23,6 +23,8 @@ from config import (
     KEY_RIGHT,
 )
 from utils import draw_text
+from datetime import datetime
+from games.highscore import add_score
 
 from typing import List, Tuple
 from games.game_base import Game
@@ -84,6 +86,9 @@ class SpaceInvadersState(Game):
         self.alien_direction = 1
         self.score = 0
         self.game_over = False
+        # High‑score tracking flags
+        self.highscore_recorded = False
+        self.highscores = []
         self.win = False
 
     def handle_event(self, event: pygame.event.Event) -> None:
@@ -218,13 +223,49 @@ class SpaceInvadersState(Game):
             screen, f"Score: {self.score}", FONT_SIZE, WHITE, 60, 20, center=False
         )
         if self.game_over:
+            # Record high score once (score is stored in self.score)
+            if not getattr(self, "highscore_recorded", False):
+                self.highscores = add_score("space_invaders", self.score)
+                self.highscore_recorded = True
+            # Layout positions
+            heading_y = int(SCREEN_HEIGHT * 0.20)
+            instr_y = int(SCREEN_HEIGHT * 0.80)
+            # Heading
+            draw_text(
+                screen,
+                "High Scores:",
+                FONT_SIZE,
+                WHITE,
+                SCREEN_WIDTH // 2,
+                heading_y,
+                center=True,
+            )
+            # Scores
+            for idx, entry in enumerate(self.highscores[:5], start=1):
+                try:
+                    date_str = datetime.fromisoformat(entry["timestamp"]).strftime(
+                        "%d-%b-%Y"
+                    )
+                except Exception:
+                    date_str = entry["timestamp"]
+                score_y = heading_y + FONT_SIZE + 5 + (idx - 1) * (FONT_SIZE + 5)
+                draw_text(
+                    screen,
+                    f"{idx}. {entry['score']} ({date_str})",
+                    FONT_SIZE,
+                    WHITE,
+                    SCREEN_WIDTH // 2,
+                    score_y,
+                    center=True,
+                )
+            # Instruction line at bottom
             draw_text(
                 screen,
                 "Game Over! Press R to restart or ESC to menu",
                 FONT_SIZE,
                 RED,
                 SCREEN_WIDTH // 2,
-                SCREEN_HEIGHT // 2,
+                instr_y,
                 center=True,
             )
         if self.win:
@@ -237,6 +278,11 @@ class SpaceInvadersState(Game):
                 SCREEN_HEIGHT // 2,
                 center=True,
             )
+        # Draw pause overlay if paused
+        if self.paused:
+            self.draw_pause_overlay(screen)
+        # Draw mute overlay (Muted or Sound On)
+        self.draw_mute_overlay(screen)
 
 
 def create_aliens() -> List[Tuple[pygame.Rect, Tuple[int, int, int]]]:
