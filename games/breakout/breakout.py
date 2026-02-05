@@ -23,6 +23,7 @@ from config import (
     KEY_RIGHT,
 )
 from utils import draw_text
+import audio
 from datetime import datetime
 from games.highscore import add_score
 from games.game_base import Game
@@ -93,12 +94,20 @@ class BreakoutState(Game):
             self.ball_vel[1] = -self.ball_vel[1]
             offset = (self.ball.centerx - self.paddle.centerx) / (PADDLE_WIDTH / 2)
             self.ball_vel[0] = int(BALL_SPEED * offset)
+            try:
+                audio.play_effect("bounce.wav")
+            except Exception:
+                pass
         # Collision with bricks
         hit_index = self.ball.collidelist([br[0] for br in self.bricks])
         if hit_index != -1:
             brick_rect, brick_color = self.bricks.pop(hit_index)
             self.score += 1
             self.ball_vel[1] = -self.ball_vel[1]
+            try:
+                audio.play_effect("brick.wav")
+            except Exception:
+                pass
         # Check win
         if not self.bricks:
             self.win = True
