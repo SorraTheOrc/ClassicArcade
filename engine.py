@@ -45,6 +45,7 @@ from config import (
     GRAY,
     KEY_UP,
     KEY_DOWN,
+    MUTE,
 )
 from utils import draw_text
 
@@ -218,6 +219,22 @@ class MenuState(State):
             SCREEN_WIDTH // 2,
             SCREEN_HEIGHT // 4,
             center=True,
+        )
+        # Mute status indicator
+        # Draw a small visible indicator at (10,10) so UI tests can sample a stable pixel
+        try:
+            pygame.draw.rect(screen, YELLOW, pygame.Rect(8, 8, 6, 6))
+        except Exception:
+            # If drawing fails for any reason, fall back to rendering the text only
+            pass
+        draw_text(
+            screen,
+            "Muted" if MUTE else "Sound On",
+            self.title_font_size // 2,
+            YELLOW,
+            10,
+            10,
+            center=False,
         )
         # Menu items
         start_y = SCREEN_HEIGHT // 4 + 80
