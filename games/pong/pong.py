@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 # Game constants
 PADDLE_WIDTH = 10
-PADDLE_HEIGHT = 100
+PADDLE_HEIGHT = 60
 BALL_SIZE = 10
 MAX_SCORE = 10
 # Base speed values
@@ -102,6 +102,8 @@ class PongState(Game):
         self.highscore_recorded = False
         self.highscores = []
         self.winner: Optional[str] = None
+        self.ai_target_center_y: Optional[int] = None
+        self.ai_delay_timer: float = 0.0
         self.multiplayer = getattr(self, "MULTIPLAYER", False)
 
     def handle_event(self, event: pygame.event.Event) -> None:
@@ -140,36 +142,51 @@ class PongState(Game):
             if keys[KEY_DOWN] and self.right_paddle.bottom < SCREEN_HEIGHT:
                 self.right_paddle.move_ip(0, AI_PADDLE_SPEED)
         else:
-            # AI control with predictive movement and random error
+            # AI control with predictive movement and a single random error per ball approach
             import random
 
             if self.ball_vel[0] > 0:
-                distance = self.right_paddle.left - self.ball.right
-                steps = distance // self.ball_vel[0] if distance > 0 else 0
-                pred_y = self.ball.top
-                pred_vy = self.ball_vel[1]
-                for _ in range(int(steps)):
-                    pred_y += pred_vy
-                    if pred_y <= 0:
-                        pred_y = -pred_y
-                        pred_vy = -pred_vy
-                    elif pred_y + BALL_SIZE >= SCREEN_HEIGHT:
-                        pred_y = 2 * (SCREEN_HEIGHT - BALL_SIZE) - pred_y
-                        pred_vy = -pred_vy
-                error_range = 15
-                error = random.randint(-error_range, error_range)
-                target_center_y = pred_y + BALL_SIZE // 2 + error
-                if (
-                    self.right_paddle.centery < target_center_y
-                    and self.right_paddle.bottom < SCREEN_HEIGHT
-                ):
-                    self.right_paddle.move_ip(0, AI_PADDLE_SPEED)
-                elif (
-                    self.right_paddle.centery > target_center_y
-                    and self.right_paddle.top > 0
-                ):
-                    self.right_paddle.move_ip(0, -AI_PADDLE_SPEED)
+                # Compute a new target only when we don't have one for the current ball approach
+                if self.ai_target_center_y is None:
+                    distance = self.right_paddle.left - self.ball.right
+                    steps = distance // self.ball_vel[0] if distance > 0 else 0
+                    pred_y = self.ball.top
+                    pred_vy = self.ball_vel[1]
+                    for _ in range(int(steps)):
+                        pred_y += pred_vy
+                        if pred_y <= 0:
+                            pred_y = -pred_y
+                            pred_vy = -pred_vy
+                        elif pred_y + BALL_SIZE >= SCREEN_HEIGHT:
+                            pred_y = 2 * (SCREEN_HEIGHT - BALL_SIZE) - pred_y
+                            pred_vy = -pred_vy
+                    # error up to 50% of paddle height
+                    error_range = int(PADDLE_HEIGHT * 0.5)
+                    error = random.randint(-error_range, error_range)
+                    # Store the target with the random error applied once per approach
+                    self.ai_target_center_y = pred_y + BALL_SIZE // 2 + error
+                    # Random response delay between 0 and 0.5 seconds
+                    self.ai_delay_timer = random.uniform(0, 0.5)
+
+                # Apply delay before moving
+                if self.ai_delay_timer > 0:
+                    self.ai_delay_timer -= dt
+                if self.ai_delay_timer <= 0:
+                    target_center_y = self.ai_target_center_y
+                    if (
+                        self.right_paddle.centery < target_center_y
+                        and self.right_paddle.bottom < SCREEN_HEIGHT
+                    ):
+                        self.right_paddle.move_ip(0, AI_PADDLE_SPEED)
+                    elif (
+                        self.right_paddle.centery > target_center_y
+                        and self.right_paddle.top > 0
+                    ):
+                        self.right_paddle.move_ip(0, -AI_PADDLE_SPEED)
             else:
+                # Ball moving away – reset target and delay, simple tracking
+                self.ai_target_center_y = None
+                self.ai_delay_timer = 0.0
                 if (
                     self.ball.centery < self.right_paddle.centery
                     and self.right_paddle.top > 0
