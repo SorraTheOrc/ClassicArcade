@@ -22,6 +22,7 @@ from config import (
     KEY_LEFT,
     KEY_RIGHT,
 )
+import config
 from utils import draw_text
 import audio
 from datetime import datetime
@@ -43,12 +44,38 @@ BRICK_SPACING = 5
 FONT_SIZE = 24
 
 
+# Apply difficulty‑based speed settings for Breakout
+def _apply_breakout_speed_settings() -> None:
+    """Set global speed and brick variables based on the current Breakout difficulty.
+
+    Easy: default paddle speed 6, ball speed 5, brick rows 5.
+    Medium: paddle speed = int(6 * 1.2), ball speed = int(5 * 1.5), brick rows = 6 (extra bricks).
+    Hard: paddle speed = int(6 * 1.5), ball speed = int(5 * 2), brick rows = 7 (more bricks).
+    """
+    global PADDLE_SPEED, BALL_SPEED, BRICK_ROWS
+    if config.BREAKOUT_DIFFICULTY == config.DIFFICULTY_EASY:
+        PADDLE_SPEED = 6
+        BALL_SPEED = 5
+        BRICK_ROWS = 5
+    elif config.BREAKOUT_DIFFICULTY == config.DIFFICULTY_MEDIUM:
+        PADDLE_SPEED = int(6 * 1.2)
+        BALL_SPEED = int(5 * 1.5)
+        BRICK_ROWS = 6
+    else:
+        # Hard difficulty
+        PADDLE_SPEED = int(6 * 1.5)
+        BALL_SPEED = int(5 * 2)
+        BRICK_ROWS = 7
+
+
 class BreakoutState(Game):
     """State for the Breakout game, compatible with the engine loop."""
 
     def __init__(self) -> None:
         """Initialize Breakout game state, setting up paddle, ball, bricks, and scores."""
         super().__init__()
+        # Apply difficulty‑based speed settings
+        _apply_breakout_speed_settings()
         # Initialize paddle
         self.paddle = pygame.Rect(
             (SCREEN_WIDTH - PADDLE_WIDTH) // 2,
