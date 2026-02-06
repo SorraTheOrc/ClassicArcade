@@ -202,6 +202,12 @@ class MenuState(State):
                     audio.toggle_mute()
                 except Exception:
                     pass
+            elif event.key == pygame.K_s:
+                # Open settings UI
+                from games.settings import SettingsState
+
+                self.request_transition(SettingsState())
+                return
             # ESC key is ignored in the menu
 
     def update(self, dt: float) -> None:
@@ -257,7 +263,11 @@ class MenuState(State):
         font = pygame.font.Font(None, self.item_font_size)
         for idx, (name, _) in enumerate(self.menu_items):
             # Render the text surface
-            color = YELLOW if idx == self.selected else WHITE
+            if name == "Settings":
+                base_color = GRAY
+            else:
+                base_color = WHITE
+            color = YELLOW if idx == self.selected else base_color
             text_surface = font.render(name, True, color)
             text_rect = text_surface.get_rect()
             text_rect.center = (SCREEN_WIDTH // 2, start_y + idx * 50)

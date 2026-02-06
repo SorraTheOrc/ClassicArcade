@@ -11,6 +11,7 @@ from games.pong import PongState
 from games.breakout import BreakoutState
 from games.space_invaders import SpaceInvadersState
 from games.tetris import TetrisState
+from games.settings import SettingsState
 
 
 from typing import List, Tuple, Type
@@ -22,10 +23,12 @@ def get_menu_items() -> List[Tuple[str, Type[State]]]:
 
     The order matches the original menu order in ``main.py``.
     """
+    # Settings UI is added as the last option with a lighter colour.
     return [
         ("Snake", SnakeState),
         ("Pong", PongState),
         ("Breakout", BreakoutState),
         ("Space Invaders", SpaceInvadersState),
         ("Tetris", TetrisState),
+        ("Settings", SettingsState),
     ]

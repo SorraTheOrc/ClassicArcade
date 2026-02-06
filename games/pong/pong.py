@@ -8,6 +8,7 @@ Controls:
 """
 
 import pygame
+import config
 from config import (
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
@@ -30,9 +31,27 @@ PADDLE_WIDTH = 10
 PADDLE_HEIGHT = 100
 BALL_SIZE = 10
 MAX_SCORE = 10
-PADDLE_SPEED = 5
-BALL_SPEED_X = 4
-BALL_SPEED_Y = 4
+# Base speed values
+BASE_PADDLE_SPEED = 5
+BASE_BALL_SPEED_X = 4
+BASE_BALL_SPEED_Y = 4
+# Determine speeds based on difficulty setting
+if config.PONG_DIFFICULTY == config.DIFFICULTY_EASY:
+    PADDLE_SPEED = BASE_PADDLE_SPEED
+    BALL_SPEED_X = BASE_BALL_SPEED_X
+    BALL_SPEED_Y = BASE_BALL_SPEED_Y
+    AI_PADDLE_SPEED = BASE_PADDLE_SPEED
+elif config.PONG_DIFFICULTY == config.DIFFICULTY_MEDIUM:
+    PADDLE_SPEED = int(BASE_PADDLE_SPEED * 1.2)
+    BALL_SPEED_X = int(BASE_BALL_SPEED_X * 1.5)
+    BALL_SPEED_Y = int(BASE_BALL_SPEED_Y * 1.5)
+    AI_PADDLE_SPEED = int(BASE_PADDLE_SPEED * 1.2)
+else:
+    # Hard difficulty
+    PADDLE_SPEED = int(BASE_PADDLE_SPEED * 1.5)
+    BALL_SPEED_X = int(BASE_BALL_SPEED_X * 2)
+    BALL_SPEED_Y = int(BASE_BALL_SPEED_Y * 2)
+    AI_PADDLE_SPEED = int(BASE_PADDLE_SPEED * 1.5)
 FONT_SIZE = 24
 
 
@@ -94,12 +113,12 @@ class PongState(Game):
             self.left_paddle.move_ip(0, PADDLE_SPEED)
         # Simple AI for right paddle: follow ball Y position
         if self.ball.centery < self.right_paddle.centery and self.right_paddle.top > 0:
-            self.right_paddle.move_ip(0, -PADDLE_SPEED)
+            self.right_paddle.move_ip(0, -AI_PADDLE_SPEED)
         elif (
             self.ball.centery > self.right_paddle.centery
             and self.right_paddle.bottom < SCREEN_HEIGHT
         ):
-            self.right_paddle.move_ip(0, PADDLE_SPEED)
+            self.right_paddle.move_ip(0, AI_PADDLE_SPEED)
         # Ball movement
         self.ball.move_ip(*self.ball_vel)
         # Collisions with top/bottom
