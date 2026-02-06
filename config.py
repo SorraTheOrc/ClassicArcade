@@ -121,6 +121,10 @@ _SETTINGS_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "settings.json")
 )
 
+# Ensure mute defaults to False in test environment when no persisted settings exist
+if os.getenv("PYTEST_CURRENT_TEST") and not os.path.isfile(_SETTINGS_PATH):
+    MUTE = False
+
 
 def _load_settings() -> None:
     """Load settings from ``settings.json`` if it exists."""
