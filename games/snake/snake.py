@@ -28,10 +28,24 @@ from games.highscore import add_score
 from games.game_base import Game
 from engine import Engine
 import audio
+import config
 
 # Game constants
 BLOCK_SIZE = 20
-SNAKE_SPEED = 10  # frames per second
+BASE_SNAKE_SPEED = 10  # frames per second (base)
+# Determine snake speed based on difficulty setting
+# Uses the difficulty level stored in config (snake_difficulty)
+# Easy: base speed (10 FPS), Medium: 1.5x speed, Hard: 2x speed
+# The speed is defined as an integer FPS value.
+if config.SNAKE_DIFFICULTY == config.DIFFICULTY_EASY:
+    SNAKE_SPEED = BASE_SNAKE_SPEED
+elif config.SNAKE_DIFFICULTY == config.DIFFICULTY_MEDIUM:
+    SNAKE_SPEED = int(BASE_SNAKE_SPEED * 1.5)
+elif config.SNAKE_DIFFICULTY == config.DIFFICULTY_HARD:
+    SNAKE_SPEED = int(BASE_SNAKE_SPEED * 2)
+else:
+    # Fallback to base speed if unknown difficulty
+    SNAKE_SPEED = BASE_SNAKE_SPEED
 
 
 class SnakeState(Game):
