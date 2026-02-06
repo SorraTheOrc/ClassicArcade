@@ -21,8 +21,14 @@ def test_rotate_plays_sound(monkeypatch):
 
     calls = []
 
-    def fake_play(name):
-        calls.append(name)
+    def fake_play(*args):
+        """Capture audio.play_effect calls, handling both old and new signatures."""
+        if len(args) == 2:
+            calls.append(args[1])
+        elif len(args) == 1:
+            calls.append(args[0])
+        else:
+            pass
 
     monkeypatch.setattr(audio, "play_effect", fake_play)
 
@@ -45,8 +51,14 @@ def test_line_clear_plays_sound(monkeypatch):
 
     calls = []
 
-    def fake_play(name):
-        calls.append(name)
+    def fake_play(*args):
+        """Capture audio.play_effect calls, handling both old and new signatures."""
+        if len(args) == 2:
+            calls.append(args[1])
+        elif len(args) == 1:
+            calls.append(args[0])
+        else:
+            pass
 
     monkeypatch.setattr(audio, "play_effect", fake_play)
 
@@ -70,8 +82,14 @@ def test_place_sound_without_line(monkeypatch):
 
     calls = []
 
-    def fake_play(name):
-        calls.append(name)
+    def fake_play(*args):
+        """Capture audio.play_effect calls, handling both old and new signatures."""
+        if len(args) == 2:
+            calls.append(args[1])
+        elif len(args) == 1:
+            calls.append(args[0])
+        else:
+            pass
 
     monkeypatch.setattr(audio, "play_effect", fake_play)
 
@@ -91,10 +109,16 @@ def test_sounds_respect_mute(monkeypatch):
 
     called = []
 
-    def fake_play(name):
-        # Respect the global mute flag like the real helper does.
+    def fake_play(*args):
+        """Capture audio.play_effect calls, handling both old and new signatures, respecting mute."""
+        if len(args) == 2:
+            filename = args[1]
+        elif len(args) == 1:
+            filename = args[0]
+        else:
+            return
         if not config.MUTE:
-            called.append(name)
+            called.append(filename)
 
     monkeypatch.setattr(audio, "play_effect", fake_play)
 

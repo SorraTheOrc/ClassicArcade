@@ -102,7 +102,7 @@ class SnakeState(Game):
                     if not getattr(self, "crash_played", False):
                         self.crash_played = True
                         try:
-                            audio.play_effect("crash.wav")
+                            audio.play_effect("snake", "crash.wav")
                         except Exception:
                             pass
                     break
@@ -113,7 +113,7 @@ class SnakeState(Game):
                         self.score += 1
                         # Play food-eat sound effect
                         try:
-                            audio.play_effect("eat.wav")
+                            audio.play_effect("snake", "eat.wav")
                         except Exception:
                             pass
                         # Place new food not on the snake
@@ -134,7 +134,7 @@ class SnakeState(Game):
                         if not getattr(self, "crash_played", False):
                             self.crash_played = True
                             try:
-                                audio.play_effect("crash.wav")
+                                audio.play_effect("snake", "crash.wav")
                             except Exception:
                                 pass
                         break

@@ -99,7 +99,7 @@ class TetrisState(Game):
                     ):
                         self.shape_coords = new_coords
                         # Play rotate sound
-                        audio.play_effect("rotate.wav")
+                        audio.play_effect("tetris", "rotate.wav")
             # No need to handle R here; base class already restarts
 
     def update(self, dt: float) -> None:
@@ -137,7 +137,7 @@ class TetrisState(Game):
                 )
                 # Play a block-placed sound whenever a piece is locked into place.
                 # This gives immediate feedback even when no lines are cleared.
-                audio.play_effect("place.wav")
+                audio.play_effect("tetris", "place.wav")
                 # Clear lines
                 lines = self.clear_lines(self.grid)
                 if lines:
@@ -148,7 +148,7 @@ class TetrisState(Game):
                     # increased — moving playback out of the level-up block
                     # ensures the player always receives audio feedback.
                     for _ in range(lines):
-                        audio.play_effect("line_clear.wav")
+                        audio.play_effect("tetris", "line_clear.wav")
                     # Increase level every 5 lines cleared
                     if self.lines_cleared_total // 5 > (self.level - 1):
                         self.level += 1

@@ -95,7 +95,7 @@ class BreakoutState(Game):
             offset = (self.ball.centerx - self.paddle.centerx) / (PADDLE_WIDTH / 2)
             self.ball_vel[0] = int(BALL_SPEED * offset)
             try:
-                audio.play_effect("bounce.wav")
+                audio.play_effect("breakout", "bounce.wav")
             except Exception:
                 pass
         # Collision with bricks
@@ -105,7 +105,7 @@ class BreakoutState(Game):
             self.score += 1
             self.ball_vel[1] = -self.ball_vel[1]
             try:
-                audio.play_effect("brick.wav")
+                audio.play_effect("breakout", "brick.wav")
             except Exception:
                 pass
         # Check win

@@ -17,8 +17,17 @@ def test_brick_hit_plays_sound(monkeypatch):
     # Capture calls to audio.play_effect
     calls = []
 
-    def fake_play_effect(name):
-        calls.append(name)
+    def fake_play_effect(*args):
+        """Capture audio.play_effect calls, handling both old and new signatures."""
+        if len(args) == 2:
+            # Two-argument form: (sound_type, filename)
+            calls.append(args[1])
+        elif len(args) == 1:
+            # Old single-argument form
+            calls.append(args[0])
+        else:
+            # Unexpected; ignore
+            pass
 
     monkeypatch.setattr(audio, "play_effect", fake_play_effect)
     # Mock pygame key presses to return no keys pressed
@@ -41,8 +50,17 @@ def test_brick_hit_plays_sound(monkeypatch):
 def test_paddle_collision_plays_sound(monkeypatch):
     calls = []
 
-    def fake_play_effect(name):
-        calls.append(name)
+    def fake_play_effect(*args):
+        """Capture audio.play_effect calls, handling both old and new signatures."""
+        if len(args) == 2:
+            # Two-argument form: (sound_type, filename)
+            calls.append(args[1])
+        elif len(args) == 1:
+            # Old single-argument form
+            calls.append(args[0])
+        else:
+            # Unexpected; ignore
+            pass
 
     monkeypatch.setattr(audio, "play_effect", fake_play_effect)
     monkeypatch.setattr(pygame.key, "get_pressed", lambda: _dummy_keys())
