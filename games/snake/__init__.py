@@ -6,12 +6,12 @@ Exports:
 - ``run()`` – convenience function to launch the game.
 """
 
-from .snake import SnakeState, SNAKE_SPEED
+from .snake import SnakeState, get_snake_speed
 from games.run_helper import run_game
 
-__all__ = ["SnakeState", "SNAKE_SPEED", "run"]
+__all__ = ["SnakeState", "run"]
 
 
 def run() -> None:
     """Run the Snake game using its default speed as FPS."""
-    run_game(SnakeState, fps=SNAKE_SPEED)
+    run_game(SnakeState, fps=get_snake_speed())

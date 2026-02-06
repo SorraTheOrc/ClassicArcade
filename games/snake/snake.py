@@ -8,6 +8,9 @@ Controls:
 """
 
 import pygame
+import logging
+
+logger = logging.getLogger(__name__)
 import random
 from config import (
     SCREEN_WIDTH,
@@ -29,23 +32,27 @@ from games.game_base import Game
 from engine import Engine
 import audio
 import config
+import logging
+
+logger = logging.getLogger(__name__)
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Game constants
 BLOCK_SIZE = 20
 BASE_SNAKE_SPEED = 10  # frames per second (base)
-# Determine snake speed based on difficulty setting
-# Uses the difficulty level stored in config (snake_difficulty)
-# Easy: base speed (slowest), Medium: 1.5x base speed (faster), Hard: 2x base speed (fastest).
-# The speed is defined as an integer FPS value.
-if config.SNAKE_DIFFICULTY == config.DIFFICULTY_EASY:
-    SNAKE_SPEED = BASE_SNAKE_SPEED
-elif config.SNAKE_DIFFICULTY == config.DIFFICULTY_MEDIUM:
-    SNAKE_SPEED = int(BASE_SNAKE_SPEED * 1.5)
-elif config.SNAKE_DIFFICULTY == config.DIFFICULTY_HARD:
-    SNAKE_SPEED = int(BASE_SNAKE_SPEED * 2)
-else:
-    # Fallback to base speed if unknown difficulty
-    SNAKE_SPEED = BASE_SNAKE_SPEED
+# Determine snake speed based on difficulty setting (computed per game start)
+
+
+def get_snake_speed() -> int:
+    """Calculate snake speed based on the current difficulty.
+
+    Uses the difficulty multiplier defined in ``config`` to compute the speed.
+    Returns an integer FPS value.
+    """
+    multiplier = config.difficulty_multiplier(config.SNAKE_DIFFICULTY)
+    return int(BASE_SNAKE_SPEED * multiplier)
 
 
 class SnakeState(Game):
@@ -54,6 +61,12 @@ class SnakeState(Game):
     def __init__(self) -> None:
         """Initialize Snake game state, setting up the snake, direction, food, and game variables."""
         super().__init__()
+        # Compute snake speed based on current difficulty
+        self.snake_speed = get_snake_speed()
+        # Log game start with difficulty and speed
+        logger.info(
+            f"Snake game started: difficulty={config.SNAKE_DIFFICULTY}, speed={self.snake_speed}"
+        )
         # Initialize game state
         self.snake = [(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)]
         self.direction = (0, 0)
@@ -97,7 +110,8 @@ class SnakeState(Game):
             return
         # Accumulate time and move snake at the defined speed
         self._time_acc += dt
-        interval = 1.0 / SNAKE_SPEED
+        interval = 1.0 / self.snake_speed
+
         while self._time_acc >= interval:
             self._time_acc -= interval
             if self.direction != (0, 0):
@@ -113,6 +127,9 @@ class SnakeState(Game):
                     or new_head[1] >= SCREEN_HEIGHT
                 ):
                     self.game_over = True
+                    logger.info(
+                        f"Snake game over (wall collision). Score: {self.score}"
+                    )
                     if not getattr(self, "crash_played", False):
                         self.crash_played = True
                         try:
@@ -145,6 +162,9 @@ class SnakeState(Game):
                     # Self collision
                     if new_head in self.snake[1:]:
                         self.game_over = True
+                        logger.info(
+                            f"Snake game over (self collision). Score: {self.score}"
+                        )
                         if not getattr(self, "crash_played", False):
                             self.crash_played = True
                             try:
