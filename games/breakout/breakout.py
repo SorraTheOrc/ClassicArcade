@@ -29,6 +29,9 @@ from datetime import datetime
 from games.highscore import add_score
 from games.game_base import Game
 from typing import List, Tuple
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Game constants
 PADDLE_WIDTH = 100
@@ -76,6 +79,9 @@ class BreakoutState(Game):
         super().__init__()
         # Apply difficulty‑based speed settings
         _apply_breakout_speed_settings()
+        logger.info(
+            f"Breakout game started: difficulty={config.BREAKOUT_DIFFICULTY}, paddle_speed={PADDLE_SPEED}, ball_speed={BALL_SPEED}, brick_rows={BRICK_ROWS}"
+        )
         # Initialize paddle
         self.paddle = pygame.Rect(
             (SCREEN_WIDTH - PADDLE_WIDTH) // 2,

@@ -24,16 +24,30 @@ from config import (
     KEY_RIGHT,
 )
 from utils import draw_text
+import config
+
+# Apply difficulty‑based speed settings for Space Invaders
+
+
 from datetime import datetime
 from games.highscore import add_score
 
 from typing import List, Tuple
 from games.game_base import Game
+import logging
+
+logger = logging.getLogger(__name__)
+import config
 
 # Game constants
 PLAYER_WIDTH = 50
 PLAYER_HEIGHT = 30
 PLAYER_SPEED = 5  # pixels per frame
+# Base speed values for difficulty scaling
+BASE_PLAYER_SPEED = 5
+BASE_BULLET_SPEED = 7
+BASE_ALIEN_SPEED = 1
+BASE_ENEMY_SHOOT_COOLDOWN = 2.0
 BULLET_WIDTH = 4
 BULLET_HEIGHT = 10
 BULLET_SPEED = 7
@@ -49,6 +63,7 @@ FONT_SIZE = 24
 
 # Configurable constants
 PLAYER_SHOOT_COOLDOWN = 0.5  # seconds between player shots
+ENEMY_SHOOT_COOLDOWN = 2.0  # seconds between enemy shots
 # Bomb shelter constants
 SHELTER_WIDTH = 80
 SHELTER_HEIGHT = 30
@@ -65,12 +80,31 @@ SHELTER_BLOCK_WIDTH = SHELTER_WIDTH // 3
 SHELTER_BLOCK_HEIGHT = SHELTER_HEIGHT // 3
 
 
+def _apply_space_invaders_speed_settings() -> None:
+    """Set global speed variables based on the current Space Invaders difficulty.
+
+    Easy: default PLAYER_SPEED=5, BULLET_SPEED=7, ALIEN_SPEED=1, ENEMY_SHOOT_COOLDOWN=2.0 seconds.
+    Medium: increase speeds by 1.5x and reduce cooldown accordingly.
+    Hard: increase speeds by 2x and reduce cooldown further.
+    """
+    global PLAYER_SPEED, BULLET_SPEED, ALIEN_SPEED, ENEMY_SHOOT_COOLDOWN
+    multiplier = config.difficulty_multiplier(config.SPACE_INVADERS_DIFFICULTY)
+    PLAYER_SPEED = int(BASE_PLAYER_SPEED * multiplier)
+    BULLET_SPEED = int(BASE_BULLET_SPEED * multiplier)
+    ALIEN_SPEED = int(BASE_ALIEN_SPEED * multiplier)
+    ENEMY_SHOOT_COOLDOWN = BASE_ENEMY_SHOOT_COOLDOWN / multiplier
+
+
 class SpaceInvadersState(Game):
     """Game class for Space Invaders, inherits from ``Game`` and compatible with the engine loop."""
 
     def __init__(self) -> None:
         """Initialize the Space Invaders game state, setting up player, aliens, shelters, and game variables."""
         super().__init__()
+        _apply_space_invaders_speed_settings()
+        logger.info(
+            f"Space Invaders game started: difficulty={config.SPACE_INVADERS_DIFFICULTY}, player_speed={PLAYER_SPEED}, bullet_speed={BULLET_SPEED}, alien_speed={ALIEN_SPEED}, enemy_shoot_cooldown={ENEMY_SHOOT_COOLDOWN}"
+        )
         # Player ship
         self.player = pygame.Rect(
             (SCREEN_WIDTH - PLAYER_WIDTH) // 2,
@@ -80,7 +114,7 @@ class SpaceInvadersState(Game):
         )
         self.bullets: List[pygame.Rect] = []
         self.enemy_bullets: List[pygame.Rect] = []
-        self.enemy_shoot_cooldown = 2.0  # seconds
+        self.enemy_shoot_cooldown = ENEMY_SHOOT_COOLDOWN  # seconds
         self.player_shoot_cooldown = 0.0  # seconds
         self.aliens = create_aliens()
         self.shelters = create_shelters()
@@ -118,7 +152,15 @@ class SpaceInvadersState(Game):
             self.player.move_ip(-PLAYER_SPEED, 0)
         if is_pressed(KEY_RIGHT) and self.player.right < SCREEN_WIDTH:
             self.player.move_ip(PLAYER_SPEED, 0)
-        # Move player bullets
+        # Move player bullets (pre-shelter collision check)
+        # First, handle bullet hitting shelter blocks before moving
+        for bullet in self.bullets[:]:
+            shelter_hit = bullet.collidelist(self.shelters)
+            if shelter_hit != -1:
+                self.shelters.pop(shelter_hit)
+                self.bullets.remove(bullet)
+                continue
+        # Now move remaining player bullets
         for bullet in self.bullets[:]:
             bullet.move_ip(0, -BULLET_SPEED)
             if bullet.bottom < 0:

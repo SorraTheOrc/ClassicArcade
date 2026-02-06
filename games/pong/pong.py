@@ -25,6 +25,9 @@ from datetime import datetime
 from games.highscore import add_score
 from typing import Optional
 from games.game_base import Game
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Game constants
 PADDLE_WIDTH = 10
@@ -69,6 +72,9 @@ class PongState(Game):
         super().__init__()
         # Apply current difficulty speed settings
         _apply_pong_speed_settings()
+        logger.info(
+            f"Pong game started: difficulty={config.PONG_DIFFICULTY}, paddle_speed={PADDLE_SPEED}, ball_speed_x={BALL_SPEED_X}, ball_speed_y={BALL_SPEED_Y}, ai_paddle_speed={AI_PADDLE_SPEED}"
+        )
         # Initialize paddles
         self.left_paddle = pygame.Rect(
             20, SCREEN_HEIGHT // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT

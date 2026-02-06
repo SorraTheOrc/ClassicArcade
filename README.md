@@ -15,6 +15,7 @@ The project includes a simple loading screen (menu) that lets you select any gam
 - Each game is a standalone module with its own controls.
 - Simple graphics using only basic shapes and colors (no external assets).
 - Restart a game after a game over and return to the main menu.
+- Adjustable difficulty levels (Easy, Medium, Hard) for each game, affecting speed, AI, and spawn rates.
 - Works with Python 3.10+ and Pygame 2.x.
 
 ## Controls

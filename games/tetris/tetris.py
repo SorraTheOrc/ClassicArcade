@@ -35,16 +35,42 @@ from games.highscore import add_score
 
 from typing import List, Tuple, cast as _cast
 from games.game_base import Game
+import logging
 
-# Game constants
+logger = logging.getLogger(__name__)
+
+# Base speed values for difficulty scaling (default values)
+BASE_FALL_SPEED = 500
+BASE_FAST_FALL_SPEED = 50
+
+# Game constants (initial values, may be overridden by difficulty settings)
 CELL_SIZE = 20
 GRID_WIDTH = 10
 GRID_HEIGHT = 20
 GRID_X_OFFSET = (SCREEN_WIDTH - GRID_WIDTH * CELL_SIZE) // 2
 GRID_Y_OFFSET = (SCREEN_HEIGHT - GRID_HEIGHT * CELL_SIZE) // 2
-FALL_SPEED = 500  # milliseconds per grid step (initial)
-FAST_FALL_SPEED = 50
+FALL_SPEED = BASE_FALL_SPEED  # milliseconds per grid step (initial)
+FAST_FALL_SPEED = BASE_FAST_FALL_SPEED
 FONT_SIZE = 24
+
+# Apply difficulty‑based speed settings for Tetris
+
+
+def _apply_tetris_speed_settings() -> None:
+    """Set fall speed variables based on the current Tetris difficulty.
+
+    Easy: default FALL_SPEED=500 ms, FAST_FALL_SPEED=50 ms.
+    Medium: speed increased by 1.5x (i.e., interval reduced).
+    Hard: speed increased by 2x (interval reduced further).
+    """
+    global FALL_SPEED, FAST_FALL_SPEED
+    multiplier = config.difficulty_multiplier(config.TETRIS_DIFFICULTY)
+    # Reduce interval for higher difficulty (faster falling)
+    FALL_SPEED = int(BASE_FALL_SPEED / multiplier)
+    FAST_FALL_SPEED = int(BASE_FAST_FALL_SPEED / multiplier)
+
+
+import config
 
 
 class TetrisState(Game):
@@ -53,6 +79,10 @@ class TetrisState(Game):
     def __init__(self) -> None:
         """Initialize the Tetris game state, setting up the grid, current piece, and game variables."""
         super().__init__()
+        _apply_tetris_speed_settings()
+        logger.info(
+            f"Tetris game started: difficulty={config.TETRIS_DIFFICULTY}, fall_speed={FALL_SPEED}, fast_fall_speed={FAST_FALL_SPEED}"
+        )
         # Initialize empty grid
         self.grid: List[List[object | None]] = [
             [None for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)
