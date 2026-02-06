@@ -8,12 +8,69 @@ import os
 import pygame
 import config
 import shutil
+import subprocess
 
 from typing import Dict, List, Optional
 
 # ---------------------------------------------------------------------------
 # Helper path functions
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Worklog integration for missing assets
+# ---------------------------------------------------------------------------
+
+# Parent work item ID for audio-related tasks (the "Add sound and music with mute toggle" task)
+_AUDIO_PARENT_WORK_ITEM_ID = "G1-0ML5DRK5F02XA14R"
+
+
+def _create_missing_asset_work_item(
+    name: str, sound_type: Optional[str] = None
+) -> None:
+    """Create a child work item for a missing audio asset.
+
+    In production builds (when the environment variable ``PRODUCTION`` is set to a truthy value),
+    this function becomes a no‑op to avoid creating work items.
+    """
+    # Skip work‑log creation in production environments.
+    if os.getenv("PRODUCTION", "").lower() in ("1", "true", "yes"):
+        return
+
+    title = f"Missing sound asset: {name}"
+    if sound_type:
+        description = (
+            f"The sound file '{name}' for game type '{sound_type}' is missing. "
+            "A placeholder has been generated. Please replace it with the proper asset."
+        )
+    else:
+        description = (
+            f"The generic sound file '{name}' is missing. A placeholder has been generated. "
+            "Please replace it with the proper asset."
+        )
+    try:
+        subprocess.run(
+            [
+                "wl",
+                "create",
+                "--title",
+                title,
+                "--description",
+                description,
+                "--parent",
+                _AUDIO_PARENT_WORK_ITEM_ID,
+                "--issue-type",
+                "task",
+                "--priority",
+                "medium",
+                "--json",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except Exception:
+        # Silently ignore any errors (e.g., wl not configured)
+        pass
 
 
 def _sound_path(name: str) -> str:
@@ -177,6 +234,8 @@ def ensure_sound(filename: str, placeholder_name: str = "placeholder.wav") -> bo
     if os.path.isfile(generic_placeholder):
         try:
             shutil.copyfile(generic_placeholder, prefixed_placeholder)
+            # Create a work item for the missing asset
+            _create_missing_asset_work_item(filename)
             return True
         except Exception:
             return False
@@ -203,6 +262,8 @@ def ensure_sound_type(
         os.makedirs(os.path.dirname(prefixed_placeholder), exist_ok=True)
         try:
             shutil.copyfile(generic_placeholder, prefixed_placeholder)
+            # Create a work item for the missing asset in the specific sound type
+            _create_missing_asset_work_item(filename, sound_type)
             return True
         except Exception:
             return False
