@@ -149,17 +149,17 @@ def init() -> None:
         pygame.mixer.music.set_volume(0 if config.MUTE else 1)
         pygame.mixer.music.play(-1)
         # Pre‑load generic short‑effect sounds used across multiple games.
-        preload_effects(["eat.wav", "crash.wav"])
-        # Pre‑load Pong‑specific short‑effect sounds under the ``pong`` sub‑folder.
-        preload_effects(
-            [
-                "pong_hit.wav",
-                "pong_wall.wav",
-                "pong_score.wav",
-                "pong_game_over.wav",
-            ],
-            sound_type="pong",
-        )
+        # preload_effects(["eat.wav", "crash.wav"])  # Removed generic preload; snake sounds are loaded via type‑specific path
+        # Pre‑load Pong‑specific short‑effect sounds removed – lazy loading via play_effect will handle them.
+        # preload_effects(
+        #     [
+        #         "pong_hit.wav",
+        #         "pong_wall.wav",
+        #         "pong_score.wav",
+        #         "pong_game_over.wav",
+        #     ],
+        #     sound_type="pong",
+        # )
     except (pygame.error, FileNotFoundError, OSError, Exception):
         return
 
