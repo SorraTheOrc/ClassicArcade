@@ -7,7 +7,7 @@ state when the user selects an entry.
 
 # Import the state classes from each game module
 from games.snake import SnakeState
-from games.pong import PongState
+from games.pong import PongState, PongSinglePlayerState, PongMultiplayerState
 from games.breakout import BreakoutState
 from games.space_invaders import SpaceInvadersState
 from games.tetris import TetrisState
@@ -26,7 +26,8 @@ def get_menu_items() -> List[Tuple[str, Type[State]]]:
     # Settings UI is added as the last option with a lighter colour.
     return [
         ("Snake", SnakeState),
-        ("Pong", PongState),
+        ("Pong (Single-player)", PongSinglePlayerState),
+        ("Pong (Multiplayer)", PongMultiplayerState),
         ("Breakout", BreakoutState),
         ("Space Invaders", SpaceInvadersState),
         ("Tetris", TetrisState),

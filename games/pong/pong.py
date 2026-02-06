@@ -1,8 +1,9 @@
-# games/pong.py
+# games/pong/pong.py
 """Simple Pong game implementation using Pygame.
 
 Controls:
-    Up/Down arrow keys - move the left paddle (player).
+    W/S keys - move the left paddle (player) in single-player and multiplayer.
+    Up/Down arrow keys - move the right paddle (player in multiplayer) or also control left paddle in single-player.
     R - restart after game over.
     ESC - return to main menu.
 """
@@ -19,6 +20,8 @@ from config import (
     BLUE,
     KEY_UP,
     KEY_DOWN,
+    KEY_W,
+    KEY_S,
 )
 from utils import draw_text
 from datetime import datetime
@@ -67,15 +70,16 @@ FONT_SIZE = 24
 class PongState(Game):
     """Game class for Pong, inherits from ``Game`` and compatible with the engine loop."""
 
+    # Class attribute to indicate multiplayer mode (False for single‑player AI)
+    MULTIPLAYER = False
+
     def __init__(self) -> None:
         """Initialize Pong game state, setting up paddles, ball, and scores."""
         super().__init__()
-        # Apply current difficulty speed settings
         _apply_pong_speed_settings()
         logger.info(
             f"Pong game started: difficulty={config.PONG_DIFFICULTY}, paddle_speed={PADDLE_SPEED}, ball_speed_x={BALL_SPEED_X}, ball_speed_y={BALL_SPEED_Y}, ai_paddle_speed={AI_PADDLE_SPEED}"
         )
-        # Initialize paddles
         self.left_paddle = pygame.Rect(
             20, SCREEN_HEIGHT // 2 - PADDLE_HEIGHT // 2, PADDLE_WIDTH, PADDLE_HEIGHT
         )
@@ -85,7 +89,6 @@ class PongState(Game):
             PADDLE_WIDTH,
             PADDLE_HEIGHT,
         )
-        # Initialize ball
         self.ball = pygame.Rect(
             SCREEN_WIDTH // 2 - BALL_SIZE // 2,
             SCREEN_HEIGHT // 2 - BALL_SIZE // 2,
@@ -93,14 +96,13 @@ class PongState(Game):
             BALL_SIZE,
         )
         self.ball_vel = [BALL_SPEED_X, BALL_SPEED_Y]
-        # Scores
         self.left_score = 0
         self.right_score = 0
         self.game_over = False
-        # High‑score tracking flags
         self.highscore_recorded = False
         self.highscores = []
         self.winner: Optional[str] = None
+        self.multiplayer = getattr(self, "MULTIPLAYER", False)
 
     def handle_event(self, event: pygame.event.Event) -> None:
         """Handle key events for Pong.
@@ -108,31 +110,76 @@ class PongState(Game):
         Delegates ESC, pause, and restart handling to the base ``Game`` class.
         No additional event handling is required for Pong.
         """
-        # Let Game base handle ESC, pause, restart
         super().handle_event(event)
-        # No additional handling needed for Pong
 
     def update(self, dt: float) -> None:
         """Update the Pong game state.
 
-        Handles paddle movement, simple AI for the right paddle, ball movement, collisions, scoring, and win condition.
+        Handles paddle movement, AI or multiplayer control for the right paddle, ball movement,
+        collisions, scoring, and win condition.
         """
         if self.game_over or self.paused:
             return
         keys = pygame.key.get_pressed()
-        # Player paddle movement
-        if keys[KEY_UP] and self.left_paddle.top > 0:
+        # Player paddle (left) movement: W/A always control left paddle; in single-player mode, also allow UP/DOWN
+        move_up = (
+            keys[KEY_W] or (not self.multiplayer and keys[KEY_UP])
+        ) and self.left_paddle.top > 0
+        move_down = (
+            keys[KEY_S] or (not self.multiplayer and keys[KEY_DOWN])
+        ) and self.left_paddle.bottom < SCREEN_HEIGHT
+        if move_up:
             self.left_paddle.move_ip(0, -PADDLE_SPEED)
-        if keys[KEY_DOWN] and self.left_paddle.bottom < SCREEN_HEIGHT:
+        if move_down:
             self.left_paddle.move_ip(0, PADDLE_SPEED)
-        # Simple AI for right paddle: follow ball Y position
-        if self.ball.centery < self.right_paddle.centery and self.right_paddle.top > 0:
-            self.right_paddle.move_ip(0, -AI_PADDLE_SPEED)
-        elif (
-            self.ball.centery > self.right_paddle.centery
-            and self.right_paddle.bottom < SCREEN_HEIGHT
-        ):
-            self.right_paddle.move_ip(0, AI_PADDLE_SPEED)
+        # Right paddle control
+        if self.multiplayer:
+            # Human control: UP/DOWN keys move the right paddle
+            if keys[KEY_UP] and self.right_paddle.top > 0:
+                self.right_paddle.move_ip(0, -AI_PADDLE_SPEED)
+            if keys[KEY_DOWN] and self.right_paddle.bottom < SCREEN_HEIGHT:
+                self.right_paddle.move_ip(0, AI_PADDLE_SPEED)
+        else:
+            # AI control with predictive movement and random error
+            import random
+
+            if self.ball_vel[0] > 0:
+                distance = self.right_paddle.left - self.ball.right
+                steps = distance // self.ball_vel[0] if distance > 0 else 0
+                pred_y = self.ball.top
+                pred_vy = self.ball_vel[1]
+                for _ in range(int(steps)):
+                    pred_y += pred_vy
+                    if pred_y <= 0:
+                        pred_y = -pred_y
+                        pred_vy = -pred_vy
+                    elif pred_y + BALL_SIZE >= SCREEN_HEIGHT:
+                        pred_y = 2 * (SCREEN_HEIGHT - BALL_SIZE) - pred_y
+                        pred_vy = -pred_vy
+                error_range = 15
+                error = random.randint(-error_range, error_range)
+                target_center_y = pred_y + BALL_SIZE // 2 + error
+                if (
+                    self.right_paddle.centery < target_center_y
+                    and self.right_paddle.bottom < SCREEN_HEIGHT
+                ):
+                    self.right_paddle.move_ip(0, AI_PADDLE_SPEED)
+                elif (
+                    self.right_paddle.centery > target_center_y
+                    and self.right_paddle.top > 0
+                ):
+                    self.right_paddle.move_ip(0, -AI_PADDLE_SPEED)
+            else:
+                if (
+                    self.ball.centery < self.right_paddle.centery
+                    and self.right_paddle.top > 0
+                ):
+                    self.right_paddle.move_ip(0, -AI_PADDLE_SPEED)
+                elif (
+                    self.ball.centery > self.right_paddle.centery
+                    and self.right_paddle.bottom < SCREEN_HEIGHT
+                ):
+                    self.right_paddle.move_ip(0, AI_PADDLE_SPEED)
         # Ball movement
         self.ball.move_ip(*self.ball_vel)
         # Collisions with top/bottom
@@ -161,16 +208,11 @@ class PongState(Game):
             self.winner = "AI"
 
     def draw(self, screen: pygame.Surface) -> None:
-        """Render the Pong game elements and UI onto the screen.
-
-        Draws the paddles, ball, and current scores. If the game is over, displays the winner.
-        """
+        """Render Pong UI."""
         screen.fill(BLACK)
-        # Draw paddles and ball
         pygame.draw.rect(screen, WHITE, self.left_paddle)
         pygame.draw.rect(screen, WHITE, self.right_paddle)
         pygame.draw.ellipse(screen, GREEN, self.ball)
-        # Draw scores
         draw_text(
             screen,
             f"{self.left_score}",
@@ -190,56 +232,30 @@ class PongState(Game):
             center=True,
         )
         if self.game_over:
-            # Record high score for the human player (left side) once
-            if not getattr(self, "highscore_recorded", False):
-                self.highscores = add_score("pong", self.left_score)
-                self.highscore_recorded = True
-            # Layout positions
-            heading_y = int(SCREEN_HEIGHT * 0.20)
-            instr_y = int(SCREEN_HEIGHT * 0.80)
-            # Heading
             draw_text(
                 screen,
-                "High Scores:",
-                FONT_SIZE,
-                WHITE,
-                SCREEN_WIDTH // 2,
-                heading_y,
-                center=True,
-            )
-            # Scores
-            for idx, entry in enumerate(self.highscores[:5], start=1):
-                try:
-                    date_str = datetime.fromisoformat(entry["timestamp"]).strftime(
-                        "%d-%b-%Y"
-                    )
-                except Exception:
-                    date_str = entry["timestamp"]
-                score_y = heading_y + FONT_SIZE + 5 + (idx - 1) * (FONT_SIZE + 5)
-                draw_text(
-                    screen,
-                    f"{idx}. {entry['score']} ({date_str})",
-                    FONT_SIZE,
-                    WHITE,
-                    SCREEN_WIDTH // 2,
-                    score_y,
-                    center=True,
-                )
-            # Instruction line at bottom
-            draw_text(
-                screen,
-                f"{self.winner} wins! Press R to restart or ESC to menu",
+                f"{self.winner} wins!",
                 FONT_SIZE,
                 RED,
                 SCREEN_WIDTH // 2,
-                instr_y,
+                SCREEN_HEIGHT // 2,
                 center=True,
             )
-        # Draw pause overlay if paused
         if self.paused:
             self.draw_pause_overlay(screen)
-        # Draw mute overlay (Muted or Sound On)
         self.draw_mute_overlay(screen)
+
+
+class PongSinglePlayerState(PongState):
+    """Single-player Pong (default AI)."""
+
+    MULTIPLAYER = False
+
+
+class PongMultiplayerState(PongState):
+    """Two-player Pong where both paddles are human-controlled."""
+
+    MULTIPLAYER = True
 
 
 def run() -> None:

@@ -257,8 +257,14 @@ class MenuState(State):
         draw_text(screen, text, self.title_font_size // 2, YELLOW, 30, 10, center=False)
         # Expose last rendered text for tests
         self._last_mute_text = text
-        # Menu items
-        start_y = SCREEN_HEIGHT // 4 + 80
+        # Menu items - dynamically compute layout to fit screen
+        num_items = len(self.menu_items)
+        # Determine vertical margins and spacing
+        margin_top = SCREEN_HEIGHT // 3
+        available_height = SCREEN_HEIGHT - 2 * margin_top
+        # Ensure at least 1 item to avoid division by zero
+        item_spacing = max(30, available_height // max(num_items, 1))
+        start_y = margin_top
         # Prepare font for menu items
         font = pygame.font.Font(None, self.item_font_size)
         for idx, (name, _) in enumerate(self.menu_items):
@@ -270,7 +276,8 @@ class MenuState(State):
             color = YELLOW if idx == self.selected else base_color
             text_surface = font.render(name, True, color)
             text_rect = text_surface.get_rect()
-            text_rect.center = (SCREEN_WIDTH // 2, start_y + idx * 50)
+            # Compute vertical position for this item
+            text_rect.center = (SCREEN_WIDTH // 2, start_y + idx * item_spacing)
             # If this is the selected item, draw a highlight rectangle
             if idx == self.selected:
                 # Compute a rectangle slightly larger than the text
