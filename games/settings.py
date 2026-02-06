@@ -14,6 +14,9 @@ Controls:
 
 import pygame
 import config
+import logging
+
+logger = logging.getLogger(__name__)
 from games.game_base import Game
 from utils import draw_text, WHITE, BLACK, YELLOW, SCREEN_WIDTH, SCREEN_HEIGHT
 
@@ -33,6 +36,7 @@ class SettingsState(Game):
         such as font sizes and highlight styling.
         """
         super().__init__()
+        logger.info("Settings UI initialized")
         self._games = [
             ("snake", "Snake"),
             ("pong", "Pong"),
@@ -40,6 +44,8 @@ class SettingsState(Game):
             ("space_invaders", "Space Invaders"),
             ("tetris", "Tetris"),
         ]
+        # Flag to avoid spamming the display log
+        self._displayed_logged = False
         self.selected = 0
         self.title_font_size = 48
         self.item_font_size = 32
@@ -113,6 +119,9 @@ class SettingsState(Game):
             idx = levels.index(current)
             new_level = levels[(idx + 1) % len(levels)]
             self._set_difficulty(key, new_level)
+        elif event.key == pygame.K_ESCAPE:
+            # ESC handled by Game.handle_event which will request transition back to menu
+            logger.info("Settings UI closed (return to menu via ESC)")
 
     # ---------------------------------------------------------------------
     # Update (no time‑dependent logic needed)
@@ -170,6 +179,10 @@ class SettingsState(Game):
                     screen, self.highlight_color, highlight_rect, self.highlight_width
                 )
             screen.blit(text_surface, text_rect)
+        # Log that the settings UI was rendered (once per session)
+        if not getattr(self, "_displayed_logged", False):
+            logger.info("Settings UI displayed")
+            self._displayed_logged = True
         if self.paused:
             self.draw_pause_overlay(screen)
         self.draw_mute_overlay(screen)
