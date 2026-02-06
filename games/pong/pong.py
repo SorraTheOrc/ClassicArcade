@@ -161,12 +161,19 @@ class PongState(Game):
                             pred_y = 2 * (SCREEN_HEIGHT - BALL_SIZE) - pred_y
                             pred_vy = -pred_vy
                     # error up to 50% of paddle height
-                    error_range = int(PADDLE_HEIGHT * 0.5)
+                    error_range = int(PADDLE_HEIGHT * 0.8)
                     error = random.randint(-error_range, error_range)
                     # Store the target with the random error applied once per approach
                     self.ai_target_center_y = pred_y + BALL_SIZE // 2 + error
-                    # Random response delay between 0 and 0.5 seconds
-                    self.ai_delay_timer = random.uniform(0, 0.5)
+                    # Random response delay based on difficulty (up to 1 sec for Easy)
+                    # Random response delay based on difficulty
+                    if config.PONG_DIFFICULTY == config.DIFFICULTY_EASY:
+                        max_delay = 1.0
+                    elif config.PONG_DIFFICULTY == config.DIFFICULTY_MEDIUM:
+                        max_delay = 0.5
+                    else:
+                        max_delay = 0.25
+                    self.ai_delay_timer = random.uniform(0, max_delay)
 
                 # Apply delay before moving
                 if self.ai_delay_timer > 0:
