@@ -35,7 +35,7 @@ BLOCK_SIZE = 20
 BASE_SNAKE_SPEED = 10  # frames per second (base)
 # Determine snake speed based on difficulty setting
 # Uses the difficulty level stored in config (snake_difficulty)
-# Easy: base speed (10 FPS), Medium: 1.5x speed, Hard: 2x speed
+# Easy: base speed (slowest), Medium: 1.5x base speed (faster), Hard: 2x base speed (fastest).
 # The speed is defined as an integer FPS value.
 if config.SNAKE_DIFFICULTY == config.DIFFICULTY_EASY:
     SNAKE_SPEED = BASE_SNAKE_SPEED
