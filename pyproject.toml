@@ -18,7 +18,7 @@ classic-arcade = "main:main"
 [tool.setuptools]
 # Include the top-level module `main.py` as a py_module so the console script
 # entry point `main:main` can be imported after installation.
-py-modules = ["main"]
+py-modules = ["main", "audio", "engine", "config", "menu_items", "utils"]
 
 [tool.setuptools.packages.find]
 # Only discover python packages under the `games` package to avoid picking up
