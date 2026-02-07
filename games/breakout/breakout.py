@@ -18,6 +18,7 @@ from config import (
     GREEN,
     BLUE,
     YELLOW,
+    MAGENTA,
     CYAN,
     KEY_LEFT,
     KEY_RIGHT,
@@ -45,6 +46,13 @@ BRICK_WIDTH = (SCREEN_WIDTH - (BRICK_COLS + 1) * 5) // BRICK_COLS
 BRICK_HEIGHT = 20
 BRICK_SPACING = 5
 FONT_SIZE = 24
+
+# Power-up configuration
+POWERUP_SPAWN_CHANCE = 0.2
+POWERUP_DURATION = 10.0
+PADDLE_EXPANSION = 50
+POWERUP_TYPES = ["expand_paddle", "multiball", "slow_ball"]
+POWERUP_SIZE = 18
 
 
 # Apply difficulty‑based speed settings for Breakout
@@ -97,13 +105,62 @@ class BreakoutState(Game):
             BALL_RADIUS * 2,
         )
         self.ball_vel = [random.choice([-BALL_SPEED, BALL_SPEED]), -BALL_SPEED]
+        # Bricks are a list of (rect, color). Hit points are stored in
+        # a parallel list `brick_hps` to preserve the original public API
+        # where tests expect tuples of two values.
         self.bricks = create_bricks()
+        # Parallel list of hit points (1 or 2) matching indices in self.bricks
+        self.brick_hps: List[int] = [
+            2 if col == MAGENTA else 1 for _, col in self.bricks
+        ]
         self.score = 0
         self.game_over = False
         self.win = False
         # High‑score tracking flags
         self.highscore_recorded = False
         self.highscores = []
+        # Power‑up management
+        # falling powerups: dicts {type, rect, speed}
+        self.powerups = []
+        # active timed effects: mapping -> remaining seconds
+        self.active_powerups = {}
+        # extra balls list used when multiball is active
+        self.extra_balls = []
+
+    # -------------------------
+    # Power-up helpers
+    # -------------------------
+    def _spawn_powerup(self, x: int, y: int) -> None:
+        """Spawn a falling power-up at (x, y)."""
+        pu_type = random.choice(POWERUP_TYPES)
+        rect = pygame.Rect(
+            x - POWERUP_SIZE // 2, y - POWERUP_SIZE // 2, POWERUP_SIZE, POWERUP_SIZE
+        )
+        self.powerups.append({"type": pu_type, "rect": rect, "speed": 3})
+
+    def _apply_powerup(self, pu_type: str) -> None:
+        """Apply the collected power-up effect."""
+        if pu_type == "expand_paddle":
+            self.paddle.width = PADDLE_WIDTH + PADDLE_EXPANSION
+            self.active_powerups["expand_paddle"] = POWERUP_DURATION
+        elif pu_type == "multiball":
+            # spawn two extra balls
+            for _ in range(2):
+                new_rect = pygame.Rect(
+                    self.paddle.centerx - BALL_RADIUS,
+                    self.paddle.top - 2 * BALL_RADIUS,
+                    BALL_RADIUS * 2,
+                    BALL_RADIUS * 2,
+                )
+                new_vel = [random.choice([-BALL_SPEED, BALL_SPEED]), -BALL_SPEED]
+                self.extra_balls.append((new_rect, new_vel))
+        elif pu_type == "slow_ball":
+            # slow all balls
+            self.active_powerups["slow_ball"] = POWERUP_DURATION
+            # scale velocities down
+            for b_rect, vel in [(self.ball, self.ball_vel)] + list(self.extra_balls):
+                vel[0] = int(vel[0] * 0.5) if vel[0] != 0 else 0
+                vel[1] = int(vel[1] * 0.5) if vel[1] != 0 else 0
 
     def update(self, dt: float) -> None:
         """Update the game state: handle paddle movement, ball physics, collisions, scoring, and win/lose conditions."""
@@ -115,36 +172,71 @@ class BreakoutState(Game):
             self.paddle.move_ip(-PADDLE_SPEED, 0)
         if keys[KEY_RIGHT] and self.paddle.right < SCREEN_WIDTH:
             self.paddle.move_ip(PADDLE_SPEED, 0)
-        # Ball movement
-        self.ball.move_ip(*self.ball_vel)
-        # Collisions with walls
-        if self.ball.left <= 0 or self.ball.right >= SCREEN_WIDTH:
-            self.ball_vel[0] = -self.ball_vel[0]
-        if self.ball.top <= 0:
-            self.ball_vel[1] = -self.ball_vel[1]
-        # Collision with paddle
-        if self.ball.colliderect(self.paddle) and self.ball_vel[1] > 0:
-            self.ball_vel[1] = -self.ball_vel[1]
-            offset = (self.ball.centerx - self.paddle.centerx) / (PADDLE_WIDTH / 2)
-            self.ball_vel[0] = int(BALL_SPEED * offset)
-            try:
-                audio.play_effect("breakout", "bounce.wav")
-            except Exception:
-                pass
-        # Collision with bricks
-        hit_index = self.ball.collidelist([br[0] for br in self.bricks])
-        if hit_index != -1:
-            brick_rect, brick_color = self.bricks.pop(hit_index)
-            self.score += 1
-            self.ball_vel[1] = -self.ball_vel[1]
-            try:
-                audio.play_effect("breakout", "brick.wav")
-            except Exception:
-                pass
+        # Ball movement (handle main ball and any extra balls)
+        all_balls = [
+            (self.ball, self.ball_vel),
+        ] + [(b[0], b[1]) for b in self.extra_balls]
+
+        for ball_rect, vel in all_balls:
+            ball_rect.move_ip(*vel)
+            # Collisions with walls
+            if ball_rect.left <= 0 or ball_rect.right >= SCREEN_WIDTH:
+                vel[0] = -vel[0]
+            if ball_rect.top <= 0:
+                vel[1] = -vel[1]
+            # Collision with paddle (only if ball moving downwards)
+            if ball_rect.colliderect(self.paddle) and vel[1] > 0:
+                vel[1] = -vel[1]
+                offset = (ball_rect.centerx - self.paddle.centerx) / (
+                    self.paddle.width / 2
+                )
+                vel[0] = int(BALL_SPEED * offset)
+                try:
+                    audio.play_effect("breakout", "bounce.wav")
+                except Exception:
+                    pass
+            # Collision with bricks — bricks now carry hit points
+            if not self.bricks:
+                continue
+            hit_index = ball_rect.collidelist([br[0] for br in self.bricks])
+            if hit_index != -1:
+                brick_rect, brick_color = self.bricks[hit_index]
+                hp = self.brick_hps[hit_index]
+                # Reduce hit points or destroy
+                if hp > 1:
+                    hp -= 1
+                    self.brick_hps[hit_index] = hp
+                    # Optionally change colour to indicate damage; keep MAGENTA for strong bricks
+                    self.bricks[hit_index] = (brick_rect, MAGENTA)
+                else:
+                    # destroyed: remove both lists' entries
+                    self.bricks.pop(hit_index)
+                    self.brick_hps.pop(hit_index)
+                    self.score += 1
+                    # chance to drop a powerup
+                    if random.random() < POWERUP_SPAWN_CHANCE:
+                        self._spawn_powerup(brick_rect.centerx, brick_rect.centery)
+                # bounce the ball vertically
+                vel[1] = -vel[1]
+                try:
+                    audio.play_effect("breakout", "brick.wav")
+                except Exception:
+                    pass
+        # Move falling powerups and check collection
+        for pu in self.powerups[:]:
+            pu_rect = pu["rect"]
+            pu_rect.move_ip(0, pu["speed"])
+            if pu_rect.top > SCREEN_HEIGHT:
+                self.powerups.remove(pu)
+                continue
+            if pu_rect.colliderect(self.paddle):
+                self._apply_powerup(pu["type"])
+                self.powerups.remove(pu)
+
         # Check win
         if not self.bricks:
             self.win = True
-        # Check lose
+        # Check lose: if main ball goes off bottom the game is over
         if self.ball.bottom >= SCREEN_HEIGHT:
             self.game_over = True
 
@@ -155,7 +247,7 @@ class BreakoutState(Game):
         pygame.draw.rect(screen, WHITE, self.paddle)
         # Draw ball
         pygame.draw.ellipse(screen, GREEN, self.ball)
-        # Draw bricks
+        # Draw bricks (support hp-aware bricks)
         for rect, color in self.bricks:
             pygame.draw.rect(screen, color, rect)
         # Draw score
@@ -226,17 +318,22 @@ class BreakoutState(Game):
 
 
 def create_bricks() -> List[Tuple[pygame.Rect, Tuple[int, int, int]]]:
-    """Create and return a list of brick (rect, color) tuples."""
-    bricks = []
+    """Create and return a list of brick (rect, color) tuples.
+
+    Strong bricks are coloured MAGENTA and will be represented in the
+    parallel `brick_hps` list on the BreakoutState instance.
+    """
+    bricks: List[Tuple[pygame.Rect, Tuple[int, int, int]]] = []
     colors = [RED, GREEN, BLUE, YELLOW, CYAN]
     for row in range(BRICK_ROWS):
         for col in range(BRICK_COLS):
             x = BRICK_SPACING + col * (BRICK_WIDTH + BRICK_SPACING)
-            y = (
-                BRICK_SPACING + row * (BRICK_HEIGHT + BRICK_SPACING) + 50
-            )  # offset from top
+            y = BRICK_SPACING + row * (BRICK_HEIGHT + BRICK_SPACING) + 50
             rect = pygame.Rect(x, y, BRICK_WIDTH, BRICK_HEIGHT)
-            color = colors[row % len(colors)]
+            if random.random() < 0.2:
+                color = MAGENTA
+            else:
+                color = colors[row % len(colors)]
             bricks.append((rect, color))
     return bricks
 
