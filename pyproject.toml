@@ -8,9 +8,19 @@ version = "0.1.0"
 description = "Classic Arcade Suite (Pygame)"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = "MIT"
 authors = [{name = "Rogardle"}]
 dependencies = ["pygame>=2.0"]
 
 [project.scripts]
 classic-arcade = "main:main"
+
+[tool.setuptools]
+# Include the top-level module `main.py` as a py_module so the console script
+# entry point `main:main` can be imported after installation.
+py-modules = ["main"]
+
+[tool.setuptools.packages.find]
+# Only discover python packages under the `games` package to avoid picking up
+# non-python top-level directories (e.g. assets).
+include = ["games*"]
