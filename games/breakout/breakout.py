@@ -271,6 +271,17 @@ class BreakoutState(Game):
                 x2, y2 = rect.right - 4, rect.bottom - 4
                 pygame.draw.line(screen, CRACK_COLOR, (x1, y1), (x2, y2), 2)
                 pygame.draw.line(screen, CRACK_COLOR, (x1, y2), (x2, y1), 2)
+        # Draw falling power-ups
+        for pu in self.powerups:
+            pu_rect = pu["rect"]
+            pu_type = pu["type"]
+            if pu_type == "expand_paddle":
+                pu_color = YELLOW
+            elif pu_type == "multiball":
+                pu_color = CYAN
+            else:  # slow_ball
+                pu_color = MAGENTA
+            pygame.draw.rect(screen, pu_color, pu_rect)
         # Draw score
         draw_text(
             screen, f"Score: {self.score}", FONT_SIZE, WHITE, 60, 20, center=False
