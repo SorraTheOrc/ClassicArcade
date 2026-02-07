@@ -106,10 +106,12 @@ jobs:
           TAG=nightly-${DATE}-${SHORT}
           echo "commit=$COMMIT_SHA" >> $GITHUB_OUTPUT
           echo "tag=$TAG" >> $GITHUB_OUTPUT
+            echo "TAG=$TAG" >> $GITHUB_ENV
           echo "short=$SHORT" >> $GITHUB_OUTPUT
           echo "tag prepared: $TAG"
 
       - name: Create or get GitHub release (robust, race-safe)
+        if: steps.merge_check.outputs.no_merges != 'true'
         id: create_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
