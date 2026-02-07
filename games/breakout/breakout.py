@@ -49,7 +49,7 @@ FONT_SIZE = 24
 
 # Power-up configuration
 POWERUP_SPAWN_CHANCE = 0.2
-POWERUP_DURATION = 10.0
+POWERUP_DURATION = 5.0
 PADDLE_EXPANSION = 50
 POWERUP_TYPES = ["expand_paddle", "multiball", "slow_ball"]
 POWERUP_SIZE = 18
@@ -252,6 +252,9 @@ class BreakoutState(Game):
         pygame.draw.rect(screen, WHITE, self.paddle)
         # Draw ball
         pygame.draw.ellipse(screen, GREEN, self.ball)
+        # Draw extra balls (multiball)
+        for ball_rect, _ in self.extra_balls:
+            pygame.draw.ellipse(screen, GREEN, ball_rect)
         # Draw bricks (support hp-aware bricks). We iterate by index so we can
         # reference parallel hp arrays and render a "cracked" overlay for
         # strong bricks that have been damaged once.
