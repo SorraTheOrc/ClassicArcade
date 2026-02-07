@@ -1,15 +1,16 @@
-import unittest
-import pygame
-import sys
 import os
+import sys
+import unittest
+
+import pygame
 
 # Ensure the project root is on sys.path for imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from engine import MenuState
-from games.snake import SnakeState
-from games.pong import PongState
 from games.breakout import BreakoutState
+from games.pong import PongState
+from games.snake import SnakeState
 from games.space_invaders import SpaceInvadersState
 from games.tetris import TetrisState
 

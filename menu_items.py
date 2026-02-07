@@ -5,17 +5,16 @@ which the ``MenuState`` uses to build the menu and transition to the appropriate
 state when the user selects an entry.
 """
 
+from typing import List, Tuple, Type
+
+from engine import State
+from games.breakout import BreakoutState
+from games.pong import PongMultiplayerState, PongSinglePlayerState, PongState
+from games.settings import SettingsState
 # Import the state classes from each game module
 from games.snake import SnakeState
-from games.pong import PongState, PongSinglePlayerState, PongMultiplayerState
-from games.breakout import BreakoutState
 from games.space_invaders import SpaceInvadersState
 from games.tetris import TetrisState
-from games.settings import SettingsState
-
-
-from typing import List, Tuple, Type
-from engine import State
 
 
 def get_menu_items() -> List[Tuple[str, Type[State]]]:

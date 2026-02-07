@@ -5,8 +5,9 @@ Exports:
 - ``run()`` – convenience function to launch the game.
 """
 
-from .breakout import BreakoutState
 from games.run_helper import run_game
+
+from .breakout import BreakoutState
 
 __all__ = ["BreakoutState", "run"]
 

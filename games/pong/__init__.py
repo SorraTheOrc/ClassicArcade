@@ -5,8 +5,9 @@ Exports:
 - ``run()`` – convenience function to launch the game.
 """
 
-from .pong import PongState, PongSinglePlayerState, PongMultiplayerState
 from games.run_helper import run_game
+
+from .pong import PongMultiplayerState, PongSinglePlayerState, PongState
 
 __all__ = ["PongState", "PongSinglePlayerState", "PongMultiplayerState", "run"]
 

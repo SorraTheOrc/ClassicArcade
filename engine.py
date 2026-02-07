@@ -23,8 +23,9 @@ import sys
 # This ensures normal runs open a real window.
 if "pytest" in sys.modules:
     os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-import pygame
 import atexit
+
+import pygame
 
 
 def _pygame_cleanup() -> None:
@@ -33,21 +34,13 @@ def _pygame_cleanup() -> None:
 
 
 atexit.register(_pygame_cleanup)
-from abc import ABC, abstractmethod
-from typing import List, Tuple, Type, Optional
-
-from config import (
-    SCREEN_WIDTH,
-    SCREEN_HEIGHT,
-    BLACK,
-    WHITE,
-    YELLOW,
-    GRAY,
-    KEY_UP,
-    KEY_DOWN,
-)
-import config
 import os
+from abc import ABC, abstractmethod
+from typing import List, Optional, Tuple, Type
+
+import config
+from config import (BLACK, GRAY, KEY_DOWN, KEY_UP, SCREEN_HEIGHT, SCREEN_WIDTH,
+                    WHITE, YELLOW)
 from utils import draw_text
 
 

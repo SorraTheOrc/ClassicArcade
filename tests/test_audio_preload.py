@@ -4,12 +4,14 @@ These tests verify that ``preload_effects`` loads the sound file and caches the
 ``pygame.mixer.Sound`` instance without playing it.
 """
 
-import os
 import importlib
+import os
+from unittest import mock
+
+import pygame
+
 import audio
 import config
-import pygame
-from unittest import mock
 
 
 def test_preload_effects(monkeypatch):

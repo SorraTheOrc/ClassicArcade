@@ -7,6 +7,7 @@ global speed/parameter constants based on the difficulty setting stored in
 """
 
 import importlib
+
 import config
 
 # Helper to reset config difficulties to easy after each test

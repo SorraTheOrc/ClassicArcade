@@ -5,8 +5,9 @@ Displays a simple title with a fade‑in effect, holds briefly, then transitions
 """
 
 import pygame
-from config import SCREEN_WIDTH, SCREEN_HEIGHT, WHITE, BLACK
-from engine import State, MenuState
+
+from config import BLACK, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
+from engine import MenuState, State
 from menu_items import get_menu_items
 
 

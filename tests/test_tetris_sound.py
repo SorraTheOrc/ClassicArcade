@@ -5,10 +5,10 @@ the global mute flag prevents playback.
 """
 
 import pygame
-import config
 
-from games.tetris.tetris import TetrisState, GRID_HEIGHT
 import audio
+import config
+from games.tetris.tetris import GRID_HEIGHT, TetrisState
 
 
 def test_rotate_plays_sound(monkeypatch):

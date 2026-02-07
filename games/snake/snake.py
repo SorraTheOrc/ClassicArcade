@@ -7,32 +7,23 @@ Controls:
     ESC - return to main menu.
 """
 
-import pygame
 import logging
 
+import pygame
+
 logger = logging.getLogger(__name__)
+import logging
 import random
-from config import (
-    SCREEN_WIDTH,
-    SCREEN_HEIGHT,
-    WHITE,
-    BLACK,
-    RED,
-    GREEN,
-    YELLOW,
-    KEY_UP,
-    KEY_DOWN,
-    KEY_LEFT,
-    KEY_RIGHT,
-)
-from utils import draw_text
 from datetime import datetime
-from games.highscore import add_score
-from games.game_base import Game
-from engine import Engine
+
 import audio
 import config
-import logging
+from config import (BLACK, GREEN, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_UP, RED,
+                    SCREEN_HEIGHT, SCREEN_WIDTH, WHITE, YELLOW)
+from engine import Engine
+from games.game_base import Game
+from games.highscore import add_score
+from utils import draw_text
 
 logger = logging.getLogger(__name__)
 import logging

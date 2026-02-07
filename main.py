@@ -4,10 +4,10 @@ Provides a loading screen with a menu to select one of the classic arcade games.
 Implemented using the new ``Engine`` and ``MenuState`` for a unified state machine.
 """
 
+import audio
 from engine import Engine, MenuState
 from games.splash import SplashState
 from menu_items import get_menu_items
-import audio
 
 
 def main() -> None:
@@ -35,7 +35,7 @@ def main() -> None:
     logger = logging.getLogger(__name__)
 
     # Log configuration and available games
-    from config import SCREEN_WIDTH, SCREEN_HEIGHT
+    from config import SCREEN_HEIGHT, SCREEN_WIDTH
 
     logger.info("Starting Arcade Suite")
     logger.debug("Screen size: %dx%d", SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -45,8 +45,9 @@ def main() -> None:
 
     # Ensure pygame quits cleanly on unexpected exit
     import atexit
-    import pygame
     import os
+
+    import pygame
 
     def _cleanup() -> None:
         pygame.quit()

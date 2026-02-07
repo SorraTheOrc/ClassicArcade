@@ -9,33 +9,21 @@ Controls:
     ESC - return to main menu.
 """
 
-import pygame
-import audio
-import random
-from config import (
-    SCREEN_WIDTH,
-    SCREEN_HEIGHT,
-    WHITE,
-    BLACK,
-    RED,
-    GREEN,
-    BLUE,
-    YELLOW,
-    CYAN,
-    MAGENTA,
-    GRAY,
-    KEY_UP,
-    KEY_DOWN,
-    KEY_LEFT,
-    KEY_RIGHT,
-)
-from utils import draw_text
-from datetime import datetime
-from games.highscore import add_score
-
-from typing import List, Tuple, cast as _cast
-from games.game_base import Game
 import logging
+import random
+from datetime import datetime
+from typing import List, Tuple
+from typing import cast as _cast
+
+import pygame
+
+import audio
+from config import (BLACK, BLUE, CYAN, GRAY, GREEN, KEY_DOWN, KEY_LEFT,
+                    KEY_RIGHT, KEY_UP, MAGENTA, RED, SCREEN_HEIGHT,
+                    SCREEN_WIDTH, WHITE, YELLOW)
+from games.game_base import Game
+from games.highscore import add_score
+from utils import draw_text
 
 logger = logging.getLogger(__name__)
 

@@ -1,6 +1,7 @@
 import unittest
-from games.game_base import Game
+
 from games.breakout import BreakoutState
+from games.game_base import Game
 
 
 class TestBreakoutInheritance(unittest.TestCase):

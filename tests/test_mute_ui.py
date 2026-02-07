@@ -7,24 +7,24 @@ This suite verifies:
 - The mute flag persists across sessions via ``settings.json``.
 """
 
-import os
-import json
 import importlib
-import unittest
-import pygame
-
+import json
+import os
 # Ensure project root is on sys.path for imports
 import sys
+import unittest
+
+import pygame
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import config
-from config import save_settings, _SETTINGS_PATH, YELLOW, BLACK
 from audio import toggle_mute
+from config import _SETTINGS_PATH, BLACK, YELLOW, save_settings
 from engine import MenuState
-from menu_items import get_menu_items
-from games.snake import SnakeState
 from games.game_base import Game
+from games.snake import SnakeState
+from menu_items import get_menu_items
 
 
 class TestMuteUI(unittest.TestCase):

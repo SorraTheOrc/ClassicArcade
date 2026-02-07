@@ -5,8 +5,9 @@ Exports:
 - ``run()`` – convenience function to launch the game.
 """
 
-from .tetris import TetrisState
 from games.run_helper import run_game
+
+from .tetris import TetrisState
 
 __all__ = ["TetrisState", "run"]
 

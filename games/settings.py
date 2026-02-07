@@ -12,13 +12,15 @@ Controls:
     M       - Toggle mute (inherited from ``Game``).
 """
 
-import pygame
-import config
 import logging
+
+import pygame
+
+import config
 
 logger = logging.getLogger(__name__)
 from games.game_base import Game
-from utils import draw_text, WHITE, BLACK, YELLOW, SCREEN_WIDTH, SCREEN_HEIGHT
+from utils import BLACK, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE, YELLOW, draw_text
 
 
 class SettingsState(Game):

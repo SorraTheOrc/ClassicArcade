@@ -5,13 +5,14 @@ functions to toggle mute and play looping background music.
 """
 
 import os
-import pygame
-import config
 import shutil
 import subprocess
 import sys
-
 from typing import Dict, List, Optional
+
+import pygame
+
+import config
 
 # ---------------------------------------------------------------------------
 # Helper path functions
