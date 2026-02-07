@@ -173,7 +173,7 @@ jobs:
 
       - name: Upload release artifact (if created)
         uses: actions/upload-release-asset@v1
-        if: steps.build.outcome == 'success'
+        if: steps.build.outcome == 'success' && steps.merge_check.outputs.no_merges != 'true'
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: release-artifact.tar.gz
