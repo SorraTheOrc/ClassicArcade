@@ -91,12 +91,7 @@ def set_difficulty(game_key: str, level: str) -> None:
     """
     if level not in _DIFFICULTY_LEVELS:
         raise ValueError(f"Invalid difficulty level: {level}")
-    global \
-        SNAKE_DIFFICULTY, \
-        PONG_DIFFICULTY, \
-        BREAKOUT_DIFFICULTY, \
-        SPACE_INVADERS_DIFFICULTY, \
-        TETRIS_DIFFICULTY
+    global SNAKE_DIFFICULTY, PONG_DIFFICULTY, BREAKOUT_DIFFICULTY, SPACE_INVADERS_DIFFICULTY, TETRIS_DIFFICULTY
     if game_key == "snake":
         SNAKE_DIFFICULTY = level
     elif game_key == "pong":
