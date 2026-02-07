@@ -42,6 +42,8 @@ def draw_text(
         y (int): Y coordinate.
         center (bool): If True, (x, y) is the center of the text; otherwise top-left.
     """
+    if not pygame.font.get_init():
+        pygame.font.init()
     font = pygame.font.Font(None, size)
     text_surface = font.render(text, True, color)
     text_rect = text_surface.get_rect()

@@ -187,26 +187,19 @@ def toggle_mute() -> None:
         return
     try:
         if config.MUTE:
-            pygame.mixer.music.fadeout(500)
+            # Mute: set volume to 0 and stop playback
+            pygame.mixer.music.set_volume(0)
+            pygame.mixer.music.stop()
         else:
-            try:
-                pygame.mixer.music.set_volume(1)
-                if not pygame.mixer.music.get_busy():
-                    try:
-                        pygame.mixer.music.play(-1, fade_ms=500)
-                    except TypeError:
-                        try:
-                            pygame.mixer.music.play(-1)
-                        except Exception:
-                            pass
-                else:
-                    pygame.mixer.music.set_volume(1)
-            except Exception:
+            # Unmute: set volume to full and ensure music is playing
+            pygame.mixer.music.set_volume(1)
+            if not pygame.mixer.music.get_busy():
                 try:
-                    pygame.mixer.music.set_volume(1)
+                    pygame.mixer.music.play(-1)
                 except Exception:
                     pass
     except Exception:
+        # Fallback: set volume according to mute state
         try:
             pygame.mixer.music.set_volume(0 if config.MUTE else 1)
         except Exception:
