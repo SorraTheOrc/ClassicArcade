@@ -24,3 +24,6 @@ __pycache__
 # Local settings file (user-specific) should not be committed
 settings.json
 highscore_*.json
+
+# Virtual environments
+.venv*/

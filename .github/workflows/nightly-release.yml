@@ -56,32 +56,21 @@ jobs:
             echo "EOF" >> $GITHUB_OUTPUT
           fi
 
-      - name: Run tests and linters (if present)
+      - name: Run tests (pytest)
         id: tests
         run: |
           set -e
-          ran_any=0
-          if [ -f package.json ]; then
-            echo "Found package.json — running npm CI, tests and linters"
-            npm ci
-            if npm run -s test --silent; then echo "npm tests passed"; else echo "npm tests failed"; exit 1; fi
-            if npm run -s lint --silent; then echo "lint passed"; else echo "lint failed"; exit 1; fi
-            # run build if defined
-            npm run -s build --if-present
-            ran_any=1
-          fi
-          if [ -f go.mod ]; then
-            echo "Found go.mod — running go test"
-            go test ./...
-            ran_any=1
-          fi
           if [ -f pyproject.toml ] || [ -f setup.py ]; then
-            echo "Found python project — running pytest if installed"
-            if command -v pytest >/dev/null 2>&1; then pytest || exit 1; else echo "pytest not available — skipping"; fi
-            ran_any=1
-          fi
-          if [ "$ran_any" -eq 0 ]; then
-            echo "No recognized test system detected — skipping test steps (acceptable if repo has none)."
+            echo "Running pytest for Python project"
+            if command -v pytest >/dev/null 2>&1; then
+              pytest -q
+            else
+              echo "pytest not installed – installing"
+              python -m pip install --upgrade pip setuptools wheel build pytest
+              pytest -q
+            fi
+          else
+            echo "No Python project detected – nothing to test"
           fi
 
       - name: Build release artifact
@@ -90,21 +79,11 @@ jobs:
           set -e
           ART_DIR=release-artifact
           rm -rf $ART_DIR && mkdir -p $ART_DIR
-          # Common build outputs
-          if [ -f package.json ]; then
-            npm run -s build --if-present || true
-            # collect dist or build folders
-            if [ -d dist ]; then cp -r dist $ART_DIR/; fi
-            if [ -d build ]; then cp -r build $ART_DIR/; fi
-          fi
-          if [ -f go.mod ]; then
-            mkdir -p $ART_DIR/bin
-            go build -o $ART_DIR/bin/app ./...
-          fi
-          # fallback: if repo has a 'release' script, run it
-          if [ -f package.json ]; then
-            npm run -s release --if-present || true
-          fi
+          # Python package build
+          echo "Building Python package"
+          python -m pip install --upgrade build
+          python -m build
+          if [ -d dist ]; then cp -r dist $ART_DIR/; fi
           ls -la $ART_DIR || true
           # Package artifact for upload
           if [ -d $ART_DIR ]; then
@@ -141,14 +120,14 @@ jobs:
 
           # Prepare JSON payload using python to ensure safe escaping
           PAYLOAD=$(python3 - <<'PY'
-import json,os
-tag=os.environ['TAG']
-merges=os.environ.get('MERGES','')
-body=f"Automated nightly release for {tag}\n\nMerged commits:\n{merges}"
-data={"tag_name":tag,"name":tag,"body":body,"draft":False,"prerelease":False}
-print(json.dumps(data))
-PY
-)
+          import json,os
+          tag=os.environ['TAG']
+          merges=os.environ.get('MERGES','')
+          body=f"Automated nightly release for {tag}\n\nMerged commits:\n{merges}"
+          data={"tag_name":tag,"name":tag,"body":body,"draft":False,"prerelease":False}
+          print(json.dumps(data))
+          PY
+          )
 
           # Try to create the release
           resp_file=$(mktemp)
