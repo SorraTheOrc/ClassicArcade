@@ -25,10 +25,7 @@ jobs:
           fetch-depth: 0
 
       # Running at midnight UTC so no local-time guard is required
-      - name: Set nightly TAG
-        run: |
-          TAG=nightly-$(date -u +%Y%m%d)-${GITHUB_SHA}
-          echo "TAG=$TAG" >> $GITHUB_ENV
+
 
       - name: Determine default branch
         id: defbranch
