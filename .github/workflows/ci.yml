@@ -37,7 +37,7 @@ jobs:
       - name: Run style checks (black / isort)
         run: |
           black --check .
-          isort --check-only .
+          isort --profile black --check-only .
 
       - name: Run tests with coverage
         run: |
