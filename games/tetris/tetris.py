@@ -18,9 +18,23 @@ from typing import cast as _cast
 import pygame
 
 import audio
-from config import (BLACK, BLUE, CYAN, GRAY, GREEN, KEY_DOWN, KEY_LEFT,
-                    KEY_RIGHT, KEY_UP, MAGENTA, RED, SCREEN_HEIGHT,
-                    SCREEN_WIDTH, WHITE, YELLOW)
+from config import (
+    BLACK,
+    BLUE,
+    CYAN,
+    GRAY,
+    GREEN,
+    KEY_DOWN,
+    KEY_LEFT,
+    KEY_RIGHT,
+    KEY_UP,
+    MAGENTA,
+    RED,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    WHITE,
+    YELLOW,
+)
 from games.game_base import Game
 from games.highscore import add_score
 from utils import draw_text
