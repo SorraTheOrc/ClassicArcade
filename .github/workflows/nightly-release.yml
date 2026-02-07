@@ -25,6 +25,10 @@ jobs:
           fetch-depth: 0
 
       # Running at midnight UTC so no local-time guard is required
+      - name: Set nightly TAG
+        run: |
+          TAG=nightly-$(date -u +%Y%m%d)-${GITHUB_SHA}
+          echo "TAG=$TAG" >> $GITHUB_ENV
 
       - name: Determine default branch
         id: defbranch
@@ -106,7 +110,7 @@ jobs:
           TAG=nightly-${DATE}-${SHORT}
           echo "commit=$COMMIT_SHA" >> $GITHUB_OUTPUT
           echo "tag=$TAG" >> $GITHUB_OUTPUT
-            echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "TAG=$TAG" >> $GITHUB_ENV
           echo "short=$SHORT" >> $GITHUB_OUTPUT
           echo "tag prepared: $TAG"
 
@@ -115,7 +119,7 @@ jobs:
         id: create_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ steps.tag.outputs.tag }}
+          # TAG is set via GITHUB_ENV in the Prepare tag step
           MERGES: ${{ steps.merge_check.outputs.merges }}
         run: |
           set -euo pipefail
