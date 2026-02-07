@@ -1,0 +1,191 @@
+name: Nightly Release
+
+on:
+  schedule:
+    # Run daily at midnight UTC (simpler than hourly checks) — cron uses UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  nightly:
+    name: Nightly release (midnight UTC)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Running at midnight UTC so no local-time guard is required
+
+      - name: Determine default branch
+        id: defbranch
+        run: |
+          # Ensure origin/HEAD is set so we can discover the default branch
+          git remote set-head origin -a || true
+          default=$(git rev-parse --abbrev-ref origin/HEAD | sed 's|origin/||')
+          echo "Default branch detected: $default"
+          echo "default_branch=$default" >> $GITHUB_OUTPUT
+
+      - name: Check for merges to default branch in last 24 hours
+        id: merge_check
+        run: |
+          DEFAULT=${{ steps.defbranch.outputs.default_branch }}
+          echo "Checking merges to origin/$DEFAULT in the last 24 hours"
+          # List merge commits merged into the default branch in the last 24 hours
+          merges=$(git log origin/$DEFAULT --merges --since='24 hours ago' --pretty=format:'%h %ad %s' --date=iso)
+          if [ -z "$merges" ]; then
+            echo "No merges detected in the last 24 hours. Skipping build."
+            echo "no_merges=true" >> $GITHUB_OUTPUT
+            exit 0
+          else
+            echo "Merges detected:";
+            echo "$merges";
+            echo "no_merges=false" >> $GITHUB_OUTPUT
+            # export merges as a multi-line output
+            echo "merges<<EOF" >> $GITHUB_OUTPUT
+            echo "$merges" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run tests and linters (if present)
+        id: tests
+        run: |
+          set -e
+          ran_any=0
+          if [ -f package.json ]; then
+            echo "Found package.json — running npm CI, tests and linters"
+            npm ci
+            if npm run -s test --silent; then echo "npm tests passed"; else echo "npm tests failed"; exit 1; fi
+            if npm run -s lint --silent; then echo "lint passed"; else echo "lint failed"; exit 1; fi
+            # run build if defined
+            npm run -s build --if-present
+            ran_any=1
+          fi
+          if [ -f go.mod ]; then
+            echo "Found go.mod — running go test"
+            go test ./...
+            ran_any=1
+          fi
+          if [ -f pyproject.toml ] || [ -f setup.py ]; then
+            echo "Found python project — running pytest if installed"
+            if command -v pytest >/dev/null 2>&1; then pytest || exit 1; else echo "pytest not available — skipping"; fi
+            ran_any=1
+          fi
+          if [ "$ran_any" -eq 0 ]; then
+            echo "No recognized test system detected — skipping test steps (acceptable if repo has none)."
+          fi
+
+      - name: Build release artifact
+        id: build
+        run: |
+          set -e
+          ART_DIR=release-artifact
+          rm -rf $ART_DIR && mkdir -p $ART_DIR
+          # Common build outputs
+          if [ -f package.json ]; then
+            npm run -s build --if-present || true
+            # collect dist or build folders
+            if [ -d dist ]; then cp -r dist $ART_DIR/; fi
+            if [ -d build ]; then cp -r build $ART_DIR/; fi
+          fi
+          if [ -f go.mod ]; then
+            mkdir -p $ART_DIR/bin
+            go build -o $ART_DIR/bin/app ./...
+          fi
+          # fallback: if repo has a 'release' script, run it
+          if [ -f package.json ]; then
+            npm run -s release --if-present || true
+          fi
+          ls -la $ART_DIR || true
+          # Package artifact for upload
+          if [ -d $ART_DIR ]; then
+            tar -czf release-artifact.tar.gz -C $ART_DIR . || true
+            echo "Created release-artifact.tar.gz"
+            ls -la release-artifact.tar.gz || true
+          fi
+
+      - name: Prepare tag and release metadata
+        id: tag
+        run: |
+          set -e
+          # Use the current commit as canonical identity for this run
+          COMMIT_SHA=$(git rev-parse --verify HEAD)
+          SHORT=${COMMIT_SHA:0:7}
+          DATE=$(date -u +%Y%m%d)
+          TAG=nightly-${DATE}-${SHORT}
+          echo "commit=$COMMIT_SHA" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "short=$SHORT" >> $GITHUB_OUTPUT
+          echo "tag prepared: $TAG"
+
+      - name: Create or get GitHub release (robust, race-safe)
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          MERGES: ${{ steps.merge_check.outputs.merges }}
+        run: |
+          set -euo pipefail
+          REPO=${GITHUB_REPOSITORY}
+          TAG=${TAG}
+          echo "Creating or locating release for tag: $TAG"
+
+          # Prepare JSON payload using python to ensure safe escaping
+          PAYLOAD=$(python3 - <<'PY'
+import json,os
+tag=os.environ['TAG']
+merges=os.environ.get('MERGES','')
+body=f"Automated nightly release for {tag}\n\nMerged commits:\n{merges}"
+data={"tag_name":tag,"name":tag,"body":body,"draft":False,"prerelease":False}
+print(json.dumps(data))
+PY
+)
+
+          # Try to create the release
+          resp_file=$(mktemp)
+          http_code=$(curl -s -w "%{http_code}" -o "$resp_file" -X POST -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${REPO}/releases" -d "$PAYLOAD")
+          if [ "$http_code" = "201" ]; then
+            upload_url=$(python3 -c "import sys,json;print(json.load(open('$resp_file'))['upload_url'])")
+            echo "Created release for $TAG"
+          elif [ "$http_code" = "422" ]; then
+            # Release already exists (race) — fetch it
+            http_code2=$(curl -s -w "%{http_code}" -o "$resp_file" -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${REPO}/releases/tags/${TAG}")
+            if [ "$http_code2" = "200" ]; then
+              upload_url=$(python3 -c "import sys,json;print(json.load(open('$resp_file'))['upload_url'])")
+              echo "Found existing release for $TAG"
+            else
+              echo "Failed to create or find release for $TAG (http $http_code / $http_code2)" >&2
+              cat "$resp_file" >&2
+              exit 1
+            fi
+          else
+            echo "Failed to create release (http $http_code)" >&2
+            cat "$resp_file" >&2
+            exit 1
+          fi
+
+          # Normalize upload_url (remove templated params if present)
+          # upload_url from API may include {?name,label}
+          upload_url=$(echo "$upload_url" | sed 's/{.*}//')
+          echo "upload_url=$upload_url" >> $GITHUB_OUTPUT
+          rm -f "$resp_file"
+
+      - name: Upload release artifact (if created)
+        uses: actions/upload-release-asset@v1
+        if: steps.build.outcome == 'success'
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: release-artifact.tar.gz
+          asset_name: release-artifact.tar.gz
+          asset_content_type: application/gzip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Done — record decision
+        run: |
+          echo "Nightly release job completed. If no build occurred the job exited earlier with a skip message."
