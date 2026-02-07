@@ -160,12 +160,8 @@ class BreakoutState(Game):
                 new_vel = [random.choice([-BALL_SPEED, BALL_SPEED]), -BALL_SPEED]
                 self.extra_balls.append((new_rect, new_vel))
         elif pu_type == "slow_ball":
-            # slow all balls
+            # activate slow-ball effect (temporary speed reduction)
             self.active_powerups["slow_ball"] = POWERUP_DURATION
-            # scale velocities down
-            for b_rect, vel in [(self.ball, self.ball_vel)] + list(self.extra_balls):
-                vel[0] = int(vel[0] * 0.5) if vel[0] != 0 else 0
-                vel[1] = int(vel[1] * 0.5) if vel[1] != 0 else 0
 
     def update(self, dt: float) -> None:
         """Update the game state: handle paddle movement, ball physics, collisions, scoring, and win/lose conditions."""
@@ -178,12 +174,17 @@ class BreakoutState(Game):
         if keys[KEY_RIGHT] and self.paddle.right < SCREEN_WIDTH:
             self.paddle.move_ip(PADDLE_SPEED, 0)
         # Ball movement (handle main ball and any extra balls)
+        # Determine speed factor for slow-ball effect
+        speed_factor = 0.5 if "slow_ball" in self.active_powerups else 1.0
         all_balls = [
             (self.ball, self.ball_vel),
         ] + [(b[0], b[1]) for b in self.extra_balls]
 
         for ball_rect, vel in all_balls:
-            ball_rect.move_ip(*vel)
+            # Apply speed factor when moving the ball
+            move_x = int(vel[0] * speed_factor)
+            move_y = int(vel[1] * speed_factor)
+            ball_rect.move_ip(move_x, move_y)
             # Collisions with walls
             if ball_rect.left <= 0 or ball_rect.right >= SCREEN_WIDTH:
                 vel[0] = -vel[0]
@@ -227,7 +228,16 @@ class BreakoutState(Game):
                     audio.play_effect("breakout", "brick.wav")
                 except Exception:
                     pass
-        # Move falling powerups and check collection
+        # Update active power‑up timers (expand paddle and slow ball)
+        for power in list(self.active_powerups.keys()):
+            self.active_powerups[power] -= dt
+            if self.active_powerups[power] <= 0:
+                if power == "expand_paddle":
+                    # Revert paddle width to original
+                    self.paddle.width = PADDLE_WIDTH
+                # Remove the expired power‑up
+                del self.active_powerups[power]
+        # Move falling power‑ups and check collection
         for pu in self.powerups[:]:
             pu_rect = pu["rect"]
             pu_rect.move_ip(0, pu["speed"])
