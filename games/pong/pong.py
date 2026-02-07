@@ -15,8 +15,19 @@ from typing import Optional
 import pygame
 
 import config
-from config import (BLACK, BLUE, GREEN, KEY_DOWN, KEY_S, KEY_UP, KEY_W, RED,
-                    SCREEN_HEIGHT, SCREEN_WIDTH, WHITE)
+from config import (
+    BLACK,
+    BLUE,
+    GREEN,
+    KEY_DOWN,
+    KEY_S,
+    KEY_UP,
+    KEY_W,
+    RED,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    WHITE,
+)
 from games.game_base import Game
 from games.highscore import add_score
 from utils import draw_text

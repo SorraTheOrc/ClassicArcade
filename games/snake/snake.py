@@ -18,8 +18,19 @@ from datetime import datetime
 
 import audio
 import config
-from config import (BLACK, GREEN, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_UP, RED,
-                    SCREEN_HEIGHT, SCREEN_WIDTH, WHITE, YELLOW)
+from config import (
+    BLACK,
+    GREEN,
+    KEY_DOWN,
+    KEY_LEFT,
+    KEY_RIGHT,
+    KEY_UP,
+    RED,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    WHITE,
+    YELLOW,
+)
 from engine import Engine
 from games.game_base import Game
 from games.highscore import add_score
