@@ -17,15 +17,23 @@ import pygame
 
 import audio
 import config
-from config import (BLACK, BLUE, GREEN, KEY_LEFT, KEY_RIGHT, RED,
-                    SCREEN_HEIGHT, SCREEN_WIDTH, WHITE, YELLOW)
+from config import (
+    BLACK,
+    BLUE,
+    GREEN,
+    KEY_LEFT,
+    KEY_RIGHT,
+    RED,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    WHITE,
+    YELLOW,
+)
 from games.game_base import Game
 from games.highscore import add_score
 from utils import draw_text
 
 # Apply difficulty‑based speed settings for Space Invaders
-
-
 
 
 logger = logging.getLogger(__name__)

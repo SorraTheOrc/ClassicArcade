@@ -7,10 +7,20 @@ Exports:
 
 from games.run_helper import run_game
 
-from .space_invaders import (ALIEN_COLS, ALIEN_ROWS, BULLET_HEIGHT,
-                             BULLET_SPEED, BULLET_WIDTH, NUM_SHELTERS,
-                             PLAYER_HEIGHT, PLAYER_WIDTH, SHELTER_COLOR,
-                             SHELTER_HEIGHT, SHELTER_WIDTH, SpaceInvadersState)
+from .space_invaders import (
+    ALIEN_COLS,
+    ALIEN_ROWS,
+    BULLET_HEIGHT,
+    BULLET_SPEED,
+    BULLET_WIDTH,
+    NUM_SHELTERS,
+    PLAYER_HEIGHT,
+    PLAYER_WIDTH,
+    SHELTER_COLOR,
+    SHELTER_HEIGHT,
+    SHELTER_WIDTH,
+    SpaceInvadersState,
+)
 
 __all__ = [
     "SpaceInvadersState",
