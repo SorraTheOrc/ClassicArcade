@@ -3,13 +3,14 @@
 These tests cover the placeholder handling and the short‑effect playback logic.
 """
 
-import os
 import importlib
+import os
 from unittest import mock
 
 import pygame
-import config
+
 import audio
+import config
 
 
 # Helper to get the absolute path to a sound asset via the module function.

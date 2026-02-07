@@ -8,27 +8,29 @@ Controls:
     ESC - return to main menu.
 """
 
+import logging
+from datetime import datetime
+from typing import Optional
+
 import pygame
+
 import config
 from config import (
-    SCREEN_WIDTH,
-    SCREEN_HEIGHT,
-    WHITE,
     BLACK,
-    GREEN,
-    RED,
     BLUE,
-    KEY_UP,
+    GREEN,
     KEY_DOWN,
-    KEY_W,
     KEY_S,
+    KEY_UP,
+    KEY_W,
+    RED,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    WHITE,
 )
-from utils import draw_text
-from datetime import datetime
-from games.highscore import add_score
-from typing import Optional
 from games.game_base import Game
-import logging
+from games.highscore import add_score
+from utils import draw_text
 
 logger = logging.getLogger(__name__)
 

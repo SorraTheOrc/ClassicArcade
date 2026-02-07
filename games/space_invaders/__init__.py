@@ -5,22 +5,22 @@ Exports:
 - ``run()`` – convenience function to launch the game.
 """
 
+from games.run_helper import run_game
+
 from .space_invaders import (
-    SpaceInvadersState,
-    BULLET_SPEED,
+    ALIEN_COLS,
+    ALIEN_ROWS,
     BULLET_HEIGHT,
+    BULLET_SPEED,
     BULLET_WIDTH,
+    NUM_SHELTERS,
     PLAYER_HEIGHT,
     PLAYER_WIDTH,
-    ALIEN_ROWS,
-    ALIEN_COLS,
     SHELTER_COLOR,
-    SHELTER_WIDTH,
     SHELTER_HEIGHT,
-    NUM_SHELTERS,
+    SHELTER_WIDTH,
+    SpaceInvadersState,
 )
-
-from games.run_helper import run_game
 
 __all__ = [
     "SpaceInvadersState",

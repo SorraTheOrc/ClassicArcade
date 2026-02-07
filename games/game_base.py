@@ -13,11 +13,14 @@ Games can subclass ``Game`` instead of the lower‑level ``State`` to inherit th
 logic, reducing duplication across the individual game modules.
 """
 
-import pygame
 from abc import abstractmethod as _abstractmethod
-from utils import draw_text, WHITE, SCREEN_WIDTH, SCREEN_HEIGHT
-from engine import State, MenuState
+
+import pygame
+
 import audio
+from engine import MenuState, State
+from utils import SCREEN_HEIGHT, SCREEN_WIDTH, WHITE, draw_text
+
 # import get_menu_items lazily in handle_event
 
 
@@ -88,16 +91,16 @@ class Game(State):
 
         Uses a small font size and ``YELLOW`` colour for visibility.
         """
-        from config import YELLOW
         import config
+        from config import YELLOW
 
         # Use a modest font size for the overlay and draw using config.MUTE
         font_size = 24
         # Draw the text at a fixed position (top-left) without centering
-        from utils import draw_text
-
         # Optionally draw a small visible square at (10,10) in test/headless runs
         import os
+
+        from utils import draw_text
 
         if os.getenv("PYTEST_CURRENT_TEST") or os.getenv("SHOW_TEST_INDICATOR"):
             try:

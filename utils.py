@@ -3,22 +3,22 @@
 Provides screen dimensions, color definitions, and a helper function for drawing text.
 """
 
-import pygame
-
 from typing import Tuple
 
+import pygame
+
 from config import (
-    SCREEN_WIDTH,
-    SCREEN_HEIGHT,
-    WHITE,
     BLACK,
-    RED,
-    GREEN,
     BLUE,
-    YELLOW,
     CYAN,
-    MAGENTA,
     GRAY,
+    GREEN,
+    MAGENTA,
+    RED,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    WHITE,
+    YELLOW,
 )
 
 

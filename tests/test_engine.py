@@ -4,6 +4,7 @@ Ensures that a state can request a transition and the Engine updates the current
 """
 
 import os
+
 import pygame
 
 # Ensure headless mode
@@ -11,7 +12,7 @@ os.environ["HEADLESS"] = "1"
 
 pygame.init()
 
-from engine import State, Engine
+from engine import Engine, State
 
 
 class DummyStateA(State):

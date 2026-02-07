@@ -1,9 +1,10 @@
 import unittest
+
 import pygame
 
+from config import BLACK, GRAY, SCREEN_HEIGHT, SCREEN_WIDTH
 from engine import MenuState
 from menu_items import get_menu_items
-from config import SCREEN_WIDTH, SCREEN_HEIGHT, BLACK, GRAY
 
 
 class TestMenuHighlight(unittest.TestCase):

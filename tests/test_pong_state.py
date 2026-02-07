@@ -1,8 +1,9 @@
 import unittest
+
 import pygame
 
-from games.pong import PongState
 from engine import MenuState
+from games.pong import PongState
 
 
 class TestPongEscKey(unittest.TestCase):

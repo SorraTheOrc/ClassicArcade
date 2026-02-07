@@ -3,8 +3,8 @@
 Ensures difficulty multiplier, get/set difficulty functions work correctly.
 """
 
-import os
 import json
+import os
 
 import pytest
 

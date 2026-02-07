@@ -8,33 +8,33 @@ Controls:
     ESC - return to main menu.
 """
 
-import pygame
+import logging
 import random
+from datetime import datetime
+from typing import List, Tuple
+
+import pygame
+
 import audio
+import config
 from config import (
-    SCREEN_WIDTH,
-    SCREEN_HEIGHT,
-    WHITE,
     BLACK,
-    RED,
-    GREEN,
     BLUE,
-    YELLOW,
+    GREEN,
     KEY_LEFT,
     KEY_RIGHT,
+    RED,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    WHITE,
+    YELLOW,
 )
+from games.game_base import Game
+from games.highscore import add_score
 from utils import draw_text
-import config
 
 # Apply difficulty‑based speed settings for Space Invaders
 
-
-from datetime import datetime
-from games.highscore import add_score
-
-from typing import List, Tuple
-from games.game_base import Game
-import logging
 
 logger = logging.getLogger(__name__)
 import config

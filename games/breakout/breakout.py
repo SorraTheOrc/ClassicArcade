@@ -7,30 +7,32 @@ Controls:
     ESC - return to main menu.
 """
 
-import pygame
+import logging
 import random
+from datetime import datetime
+from typing import List, Tuple
+
+import pygame
+
+import audio
+import config
 from config import (
-    SCREEN_WIDTH,
-    SCREEN_HEIGHT,
-    WHITE,
     BLACK,
-    RED,
-    GREEN,
     BLUE,
-    YELLOW,
-    MAGENTA,
     CYAN,
+    GREEN,
     KEY_LEFT,
     KEY_RIGHT,
+    MAGENTA,
+    RED,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    WHITE,
+    YELLOW,
 )
-import config
-from utils import draw_text
-import audio
-from datetime import datetime
-from games.highscore import add_score
 from games.game_base import Game
-from typing import List, Tuple
-import logging
+from games.highscore import add_score
+from utils import draw_text
 
 logger = logging.getLogger(__name__)
 

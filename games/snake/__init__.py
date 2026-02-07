@@ -6,8 +6,9 @@ Exports:
 - ``run()`` – convenience function to launch the game.
 """
 
-from .snake import SnakeState, get_snake_speed
 from games.run_helper import run_game
+
+from .snake import SnakeState, get_snake_speed
 
 __all__ = ["SnakeState", "run"]
 

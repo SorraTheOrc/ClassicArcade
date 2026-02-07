@@ -1,21 +1,22 @@
-import unittest
 import collections
-import pygame
-import sys
 import os
+import sys
+import unittest
+
+import pygame
 
 # Ensure the project root is on sys.path for imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from games.space_invaders import (
-    SpaceInvadersState,
-    BULLET_SPEED,
+    ALIEN_COLS,
+    ALIEN_ROWS,
     BULLET_HEIGHT,
+    BULLET_SPEED,
     BULLET_WIDTH,
     PLAYER_HEIGHT,
     PLAYER_WIDTH,
-    ALIEN_ROWS,
-    ALIEN_COLS,
+    SpaceInvadersState,
 )
 
 

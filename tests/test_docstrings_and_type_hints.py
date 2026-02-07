@@ -38,46 +38,46 @@ def test_docstrings_and_type_hints():
     for mod_name in iter_modules():
         mod = importlib.import_module(mod_name)
         # Module docstring
-        assert mod.__doc__ and mod.__doc__.strip(), (
-            f"Module {mod_name} missing docstring"
-        )
+        assert (
+            mod.__doc__ and mod.__doc__.strip()
+        ), f"Module {mod_name} missing docstring"
         for name, obj in inspect.getmembers(mod):
             # Public classes
             if inspect.isclass(obj) and not name.startswith("_"):
-                assert obj.__doc__ and obj.__doc__.strip(), (
-                    f"Class {mod_name}.{name} missing docstring"
-                )
+                assert (
+                    obj.__doc__ and obj.__doc__.strip()
+                ), f"Class {mod_name}.{name} missing docstring"
                 # Methods of the class
                 for meth_name, meth in inspect.getmembers(obj):
                     if inspect.isfunction(meth) and not meth_name.startswith("_"):
-                        assert meth.__doc__ and meth.__doc__.strip(), (
-                            f"Method {mod_name}.{name}.{meth_name} missing docstring"
-                        )
+                        assert (
+                            meth.__doc__ and meth.__doc__.strip()
+                        ), f"Method {mod_name}.{name}.{meth_name} missing docstring"
                         hints = get_type_hints(meth)
                         # Return type must be present
-                        assert "return" in hints, (
-                            f"Method {mod_name}.{name}.{meth_name} missing return type hint"
-                        )
+                        assert (
+                            "return" in hints
+                        ), f"Method {mod_name}.{name}.{meth_name} missing return type hint"
                         sig = inspect.signature(meth)
                         for param_name, param in sig.parameters.items():
                             if param_name in ("self", "cls"):
                                 continue
-                            assert param_name in hints, (
-                                f"Parameter '{param_name}' of method {mod_name}.{name}.{meth_name} missing type hint"
-                            )
+                            assert (
+                                param_name in hints
+                            ), f"Parameter '{param_name}' of method {mod_name}.{name}.{meth_name} missing type hint"
             # Public functions (module level)
             elif inspect.isfunction(obj) and not name.startswith("_"):
-                assert obj.__doc__ and obj.__doc__.strip(), (
-                    f"Function {mod_name}.{name} missing docstring"
-                )
+                assert (
+                    obj.__doc__ and obj.__doc__.strip()
+                ), f"Function {mod_name}.{name} missing docstring"
                 hints = get_type_hints(obj)
-                assert "return" in hints, (
-                    f"Function {mod_name}.{name} missing return type hint"
-                )
+                assert (
+                    "return" in hints
+                ), f"Function {mod_name}.{name} missing return type hint"
                 sig = inspect.signature(obj)
                 for param_name, param in sig.parameters.items():
                     if param_name in ("self", "cls"):
                         continue
-                    assert param_name in hints, (
-                        f"Parameter '{param_name}' of function {mod_name}.{name} missing type hint"
-                    )
+                    assert (
+                        param_name in hints
+                    ), f"Parameter '{param_name}' of function {mod_name}.{name} missing type hint"

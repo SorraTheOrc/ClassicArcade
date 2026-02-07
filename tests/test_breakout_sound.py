@@ -1,6 +1,6 @@
 import pygame
-import audio
 
+import audio
 from games.breakout import BreakoutState
 from games.breakout.breakout import BALL_RADIUS, BALL_SPEED
 

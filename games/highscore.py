@@ -16,7 +16,7 @@ If the file does not exist or is malformed an empty list is returned.
 import json
 import os
 from datetime import datetime
-from typing import List, Dict
+from typing import Dict, List
 
 # Directory for high‑score files – placed next to this module's parent directory (project root).
 _HIGHSCORE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
