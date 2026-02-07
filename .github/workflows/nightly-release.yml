@@ -36,22 +36,22 @@ jobs:
           echo "Default branch detected: $default"
           echo "default_branch=$default" >> $GITHUB_OUTPUT
 
-      - name: Check for merges to default branch in last 24 hours
+      - name: Check for recent commits to default branch in last 24 hours
         id: merge_check
         run: |
           DEFAULT=${{ steps.defbranch.outputs.default_branch }}
-          echo "Checking merges to origin/$DEFAULT in the last 24 hours"
-          # List merge commits merged into the default branch in the last 24 hours
-          merges=$(git log origin/$DEFAULT --merges --since='24 hours ago' --pretty=format:'%h %ad %s' --date=iso)
+          echo "Checking commits to origin/$DEFAULT in the last 24 hours"
+          # List commits in the default branch in the last 24 hours
+          merges=$(git log origin/$DEFAULT --since='24 hours ago' --pretty=format:'%h %ad %s' --date=iso)
           if [ -z "$merges" ]; then
-            echo "No merges detected in the last 24 hours. Skipping build."
+            echo "No commits detected in the last 24 hours. Skipping build."
             echo "no_merges=true" >> $GITHUB_OUTPUT
             exit 0
           else
-            echo "Merges detected:";
-            echo "$merges";
+            echo "Commits detected:"
+            echo "$merges"
             echo "no_merges=false" >> $GITHUB_OUTPUT
-            # export merges as a multi-line output
+            # export commits as a multi-line output
             echo "merges<<EOF" >> $GITHUB_OUTPUT
             echo "$merges" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
