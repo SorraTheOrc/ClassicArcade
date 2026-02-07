@@ -118,7 +118,14 @@ jobs:
         run: |
           set -euo pipefail
           REPO=${GITHUB_REPOSITORY}
-          TAG=${TAG}
+          # Validate TAG is set and sanitize it
+          if [ -z "$TAG" ]; then
+            echo "ERROR: TAG is empty" >&2
+            exit 1
+          fi
+          # Remove any characters that are not alphanumeric, dot, dash, or underscore
+          TAG=$(echo "$TAG" | sed 's/[^a-zA-Z0-9._-]//g')
+          echo "Using sanitized TAG: $TAG"
           echo "Creating or locating release for tag: $TAG"
 
           # Prepare JSON payload using python to ensure safe escaping
