@@ -218,6 +218,7 @@ class BreakoutState(Game):
                     # destroyed: remove both lists' entries
                     self.bricks.pop(hit_index)
                     self.brick_hps.pop(hit_index)
+                    self.brick_initial_hps.pop(hit_index)
                     self.score += 1
                     # chance to drop a powerup
                     if random.random() < POWERUP_SPAWN_CHANCE:
@@ -251,9 +252,19 @@ class BreakoutState(Game):
         # Check win
         if not self.bricks:
             self.win = True
-        # Check lose: if main ball goes off bottom the game is over
+        # Check lose: game over only when all balls are lost
+        # Remove any extra balls that have fallen below the screen
+        self.extra_balls = [
+            (rect, vel) for rect, vel in self.extra_balls if rect.bottom < SCREEN_HEIGHT
+        ]
         if self.ball.bottom >= SCREEN_HEIGHT:
-            self.game_over = True
+            if self.extra_balls:
+                # Promote the first extra ball to become the main ball
+                new_rect, new_vel = self.extra_balls.pop(0)
+                self.ball = new_rect
+                self.ball_vel = new_vel
+            else:
+                self.game_over = True
 
     def draw(self, screen: pygame.Surface) -> None:
         """Render the breakout game elements and UI onto the screen."""
