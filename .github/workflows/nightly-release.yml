@@ -165,10 +165,9 @@ jobs:
             exit 1
           fi
 
-          # Normalize upload_url (remove templated params if present)
-          # upload_url from API may include {?name,label}
-          upload_url=$(echo "$upload_url" | sed 's/{.*}//')
-          echo "upload_url=$upload_url" >> $GITHUB_OUTPUT
+           # The upload_url includes templated parameters {?name,label} which are required by the upload-release-asset action.
+           # No modification needed.
+           echo "upload_url=$upload_url" >> $GITHUB_OUTPUT
           rm -f "$resp_file"
 
       - name: Upload release artifact (if created)
