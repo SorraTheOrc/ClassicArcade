@@ -7,19 +7,8 @@ from typing import Tuple
 
 import pygame
 
-from config import (
-    BLACK,
-    BLUE,
-    CYAN,
-    GRAY,
-    GREEN,
-    MAGENTA,
-    RED,
-    SCREEN_HEIGHT,
-    SCREEN_WIDTH,
-    WHITE,
-    YELLOW,
-)
+from config import (BLACK, BLUE, CYAN, GRAY, GREEN, MAGENTA, RED,
+                    SCREEN_HEIGHT, SCREEN_WIDTH, WHITE, YELLOW)
 
 
 def draw_text(

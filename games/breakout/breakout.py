@@ -16,20 +16,8 @@ import pygame
 
 import audio
 import config
-from config import (
-    BLACK,
-    BLUE,
-    CYAN,
-    GREEN,
-    KEY_LEFT,
-    KEY_RIGHT,
-    MAGENTA,
-    RED,
-    SCREEN_HEIGHT,
-    SCREEN_WIDTH,
-    WHITE,
-    YELLOW,
-)
+from config import (BLACK, BLUE, CYAN, GREEN, KEY_LEFT, KEY_RIGHT, MAGENTA,
+                    RED, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE, YELLOW)
 from games.game_base import Game
 from games.highscore import add_score
 from utils import draw_text
