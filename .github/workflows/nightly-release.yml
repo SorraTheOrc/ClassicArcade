@@ -10,6 +10,10 @@ jobs:
   nightly:
     name: Nightly release (midnight UTC)
     runs-on: ubuntu-latest
+    env:
+      # Mark this run as a production/release build so runtime code can disable
+      # worklog creation and other development-only behaviours.
+      PRODUCTION: "true"
     permissions:
       contents: write
       packages: write
