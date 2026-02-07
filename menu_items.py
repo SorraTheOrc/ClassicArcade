@@ -11,7 +11,6 @@ from engine import State
 from games.breakout import BreakoutState
 from games.pong import PongMultiplayerState, PongSinglePlayerState, PongState
 from games.settings import SettingsState
-
 # Import the state classes from each game module
 from games.snake import SnakeState
 from games.space_invaders import SpaceInvadersState

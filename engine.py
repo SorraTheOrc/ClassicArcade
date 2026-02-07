@@ -39,16 +39,8 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple, Type
 
 import config
-from config import (
-    BLACK,
-    GRAY,
-    KEY_DOWN,
-    KEY_UP,
-    SCREEN_HEIGHT,
-    SCREEN_WIDTH,
-    WHITE,
-    YELLOW,
-)
+from config import (BLACK, GRAY, KEY_DOWN, KEY_UP, SCREEN_HEIGHT, SCREEN_WIDTH,
+                    WHITE, YELLOW)
 from utils import draw_text
 
 

@@ -10,7 +10,6 @@ import importlib
 import pygame
 
 import audio
-
 # Import the modules under test.
 import config
 
