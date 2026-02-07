@@ -1,5 +1,7 @@
 # Classic Arcade Suite (Pygame)
 
+[![CI](https://github.com/SorraTheOrc/ClassicArcade/actions/workflows/ci.yml/badge.svg)](https://github.com/SorraTheOrc/ClassicArcade/actions/workflows/ci.yml) [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/SorraTheOrc/ClassicArcade/actions/workflows/ci.yml) [![PyPI version](https://img.shields.io/pypi/v/classic-arcade)](https://pypi.org/project/classic-arcade/)
+
 A collection of five classic arcade games implemented in Python using **Pygame**:
 
 - **Snake**
