@@ -9,6 +9,7 @@ import pygame
 import config
 import shutil
 import subprocess
+import sys
 
 from typing import Dict, List, Optional
 
@@ -34,6 +35,12 @@ def _create_missing_asset_work_item(
     """
     # Skip work‑log creation in production environments.
     if os.getenv("PRODUCTION", "").lower() in ("1", "true", "yes"):
+        return
+    # Skip creating work items while running tests (pytest) to avoid noisy
+    # worklog entries for test-only placeholder sounds. Detect pytest by the
+    # presence of the PYTEST_CURRENT_TEST env var or the pytest module in
+    # sys.modules.
+    if "PYTEST_CURRENT_TEST" in os.environ or "pytest" in sys.modules:
         return
 
     title = f"Missing sound asset: {name}"
