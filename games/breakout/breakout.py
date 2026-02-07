@@ -53,6 +53,8 @@ POWERUP_DURATION = 10.0
 PADDLE_EXPANSION = 50
 POWERUP_TYPES = ["expand_paddle", "multiball", "slow_ball"]
 POWERUP_SIZE = 18
+# Visual cue colour for cracked bricks
+CRACK_COLOR = (220, 220, 220)
 
 
 # Apply difficulty‑based speed settings for Breakout
@@ -113,6 +115,9 @@ class BreakoutState(Game):
         self.brick_hps: List[int] = [
             2 if col == MAGENTA else 1 for _, col in self.bricks
         ]
+        # Keep a copy of initial HPs so we can show a "cracked" indicator
+        # when a strong brick loses one hit (2 -> 1).
+        self.brick_initial_hps = list(self.brick_hps)
         self.score = 0
         self.game_over = False
         self.win = False
@@ -247,9 +252,25 @@ class BreakoutState(Game):
         pygame.draw.rect(screen, WHITE, self.paddle)
         # Draw ball
         pygame.draw.ellipse(screen, GREEN, self.ball)
-        # Draw bricks (support hp-aware bricks)
-        for rect, color in self.bricks:
+        # Draw bricks (support hp-aware bricks). We iterate by index so we can
+        # reference parallel hp arrays and render a "cracked" overlay for
+        # strong bricks that have been damaged once.
+        for idx, (rect, color) in enumerate(self.bricks):
             pygame.draw.rect(screen, color, rect)
+            # If this brick was originally strong (2 HP) and now has 1 HP,
+            # draw a simple crack overlay to indicate damage.
+            try:
+                initial = self.brick_initial_hps[idx]
+                current = self.brick_hps[idx]
+            except Exception:
+                initial = 1
+                current = 1
+            if initial == 2 and current == 1:
+                # draw two short diagonal lines across the brick
+                x1, y1 = rect.left + 4, rect.top + 4
+                x2, y2 = rect.right - 4, rect.bottom - 4
+                pygame.draw.line(screen, CRACK_COLOR, (x1, y1), (x2, y2), 2)
+                pygame.draw.line(screen, CRACK_COLOR, (x1, y2), (x2, y1), 2)
         # Draw score
         draw_text(
             screen, f"Score: {self.score}", FONT_SIZE, WHITE, 60, 20, center=False
