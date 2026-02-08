@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Local pre-commit hook: auto-format Python files with isort and black.
+# Install via: scripts/install-git-hooks.sh
+
+set -euo pipefail
+
+echo "Running local pre-commit: isort -> black"
+
+# Collect staged Python files
+FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E "\.(py)$" || true)
+if [ -z "$FILES" ]; then
+  echo "No staged Python files to check."
+  exit 0
+fi
+
+echo "$FILES" | xargs isort --profile black || true
+echo "$FILES" | xargs black || true
+
+# Add possibly reformatted files back to staging
+echo "$FILES" | xargs git add || true
+
+exit 0
