@@ -34,6 +34,9 @@ def _pygame_cleanup() -> None:
 
 
 atexit.register(_pygame_cleanup)
+import colorsys
+import hashlib
+import logging
 import os
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple, Type
@@ -50,6 +53,63 @@ from config import (
     YELLOW,
 )
 from utils import draw_text
+
+# Path to a shared default icon used when a game does not provide its own.
+# Expected location: <project_root>/assets/icons/default_game_icon.png (or .svg).
+_DEFAULT_ICON_PATH = None
+# Path to a custom Settings icon (optional).
+# Expected location: <project_root>/assets/icons/settings_icon.png (or .svg).
+_SETTINGS_ICON_PATH = None
+_default_icon_dir = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "assets", "icons")
+)
+_default_png = os.path.join(_default_icon_dir, "default_game_icon.png")
+_default_svg = os.path.join(_default_icon_dir, "default_game_icon.svg")
+if os.path.isfile(_default_png):
+    DEFAULT_ICON_PATH = _default_png
+elif os.path.isfile(_default_svg):
+    DEFAULT_ICON_PATH = _default_svg
+# Detect optional Settings icon.
+_settings_png = os.path.join(_default_icon_dir, "settings_icon.png")
+_settings_svg = os.path.join(_default_icon_dir, "settings_icon.svg")
+if os.path.isfile(_settings_png):
+    _SETTINGS_ICON_PATH = _settings_png
+elif os.path.isfile(_settings_svg):
+    _SETTINGS_ICON_PATH = _settings_svg
+
+
+def _hue_offset_from_name(name: str) -> float:
+    """Deterministically compute a hue offset in the range [0, 1) from a name.
+    Uses SHA‑256 to get a stable integer across runs.
+    """
+    digest = hashlib.sha256(name.encode("utf-8")).hexdigest()
+    # Use first 8 hex digits (32 bits) for the offset
+    int_val = int(digest[:8], 16)
+    return (int_val % 360) / 360.0
+
+
+def _apply_hue_shift(surface: pygame.Surface, name: str) -> pygame.Surface:
+    """Shift the hue of *surface* by a deterministic amount based on *name*.
+    Returns the same surface (modified in‑place) for convenience.
+    """
+    hue_offset = _hue_offset_from_name(name)
+    w, h = surface.get_size()
+    # Iterate over each pixel; skip fully transparent pixels.
+    for x in range(w):
+        for y in range(h):
+            r, g, b, a = surface.get_at((x, y))
+            if a == 0:
+                continue
+            # Convert RGB (0‑255) to HSV (0‑1)
+            h0, s0, v0 = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
+            # Apply hue offset and wrap around
+            h1 = (h0 + hue_offset) % 1.0
+            r1, g1, b1 = colorsys.hsv_to_rgb(h1, s0, v0)
+            surface.set_at((x, y), (int(r1 * 255), int(g1 * 255), int(b1 * 255), a))
+    return surface
+
+
+logger = logging.getLogger(__name__)
 
 
 class State(ABC):
@@ -164,9 +224,10 @@ class MenuState(State):
     instance of the corresponding ``state_class``.
     """
 
-    def __init__(self, menu_items: List[Tuple[str, Type[State]]]) -> None:
-        """Initialize the menu state with a list of (display_name, state_class) tuples.
+    def __init__(self, menu_items: List[Tuple[str, object, str | None]]) -> None:
+        """Initialize the menu state with a list of (display_name, launch_target) tuples.
 
+        A launch_target is either a State subclass (preferred) or a callable ``run`` function.
         Adds attributes for highlight animation.
         """
         super().__init__()
@@ -192,9 +253,20 @@ class MenuState(State):
             elif event.key == KEY_DOWN:
                 self.selected = (self.selected + 1) % len(self.menu_items)
             elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
-                # Transition to the selected game state
-                _, state_cls = self.menu_items[self.selected]
-                self.request_transition(state_cls())
+                # Transition to the selected game state or run callable
+                _, launch_target, _ = self.menu_items[self.selected]
+                if isinstance(launch_target, type) and issubclass(launch_target, State):
+                    self.request_transition(launch_target())
+                elif callable(launch_target):
+                    try:
+                        launch_target()
+                    except Exception:
+                        logger.exception("Failed to launch game %s", launch_target)
+                else:
+                    logger.warning(
+                        "Menu item %s has unrecognized launch target",
+                        self.menu_items[self.selected][0],
+                    )
             elif event.key == pygame.K_m:
                 # Allow toggling mute from the menu as well
                 try:
@@ -236,14 +308,14 @@ class MenuState(State):
 
         The selected menu item is highlighted with a pulsing rectangle outline.
         """
-        # Title
+        # Title - draw at the very top
         draw_text(
             screen,
             "Arcade Suite",
             self.title_font_size,
             WHITE,
             SCREEN_WIDTH // 2,
-            SCREEN_HEIGHT // 4,
+            30,  # small top margin
             center=True,
         )
         # Mute status indicator
@@ -258,42 +330,126 @@ class MenuState(State):
         draw_text(screen, text, self.title_font_size // 2, YELLOW, 30, 10, center=False)
         # Expose last rendered text for tests
         self._last_mute_text = text
-        # Menu items - dynamically compute layout to fit screen
+        # Menu items - display each game as a square box in a grid layout
         num_items = len(self.menu_items)
-        # Determine vertical margins and spacing
-        margin_top = SCREEN_HEIGHT // 3
-        available_height = SCREEN_HEIGHT - 2 * margin_top
-        # Ensure at least 1 item to avoid division by zero
-        item_spacing = max(30, available_height // max(num_items, 1))
+        if num_items == 0:
+            # Nothing to draw
+            return
+        # Define box size (square). 40 characters approximated as 200 pixels.
+        BOX_SIZE = 160  # pixel size of each square box
+        # Spacing between boxes (both horizontally and vertically)
+        H_SPACING = 20
+        V_SPACING = 20
+        # Determine how many columns fit horizontally
+        columns = max(1, SCREEN_WIDTH // (BOX_SIZE + H_SPACING))
+        # Compute horizontal offset to center the grid
+        total_grid_width = columns * (BOX_SIZE + H_SPACING) - H_SPACING
+        start_x = (SCREEN_WIDTH - total_grid_width) // 2
+        # Determine vertical start position (just below the title)
+        margin_top = self.title_font_size + 20  # space below title
         start_y = margin_top
         # Prepare font for menu items
         font = pygame.font.Font(None, self.item_font_size)
-        for idx, (name, _) in enumerate(self.menu_items):
-            # Render the text surface
+        for idx, (name, _, icon_path) in enumerate(self.menu_items):
+            # Determine column and row for this item
+            col = idx % columns
+            row = idx // columns
+            box_x = start_x + col * (BOX_SIZE + H_SPACING)
+            box_y = start_y + row * (BOX_SIZE + V_SPACING)
+            # Render the text surface first (to know its height)
             if name == "Settings":
                 base_color = GRAY
             else:
                 base_color = WHITE
             color = YELLOW if idx == self.selected else base_color
             text_surface = font.render(name, True, color)
-            text_rect = text_surface.get_rect()
-            # Compute vertical position for this item
-            text_rect.center = (SCREEN_WIDTH // 2, start_y + idx * item_spacing)
-            # If this is the selected item, draw a highlight rectangle
+
+            # Compute max icon size to fill the square box while preserving a margin for the game name text
+            max_icon_dim = max(
+                16, BOX_SIZE - text_surface.get_height() - 10
+            )  # 5px margin above and below
+
+            # Determine icon surface (scaled to fit within the computed size)
+            if icon_path:
+                try:
+                    icon_img = pygame.image.load(icon_path).convert_alpha()
+                    # Scale icon to fit within max_icon_dim (maintaining square shape)
+                    icon_surface = pygame.transform.smoothscale(
+                        icon_img, (max_icon_dim, max_icon_dim)
+                    )
+                    # No hue shift applied for game-specific icons
+                except Exception:
+                    icon_surface = None
+            else:
+                icon_surface = None
+            if icon_surface is None:
+                # Try to load shared default icon if available
+                if DEFAULT_ICON_PATH and name != "Settings":
+                    try:
+                        default_img = pygame.image.load(
+                            DEFAULT_ICON_PATH
+                        ).convert_alpha()
+                        icon_surface = pygame.transform.smoothscale(
+                            default_img, (max_icon_dim, max_icon_dim)
+                        )
+                        # Apply deterministic hue shift based on game name
+                        icon_surface = _apply_hue_shift(icon_surface, name)
+                    except Exception:
+                        icon_surface = None
+                # Try Settings-specific icon if available
+                # Try Settings-specific icon if available
+                if icon_surface is None and name == "Settings" and _SETTINGS_ICON_PATH:
+                    try:
+                        settings_img = pygame.image.load(
+                            _SETTINGS_ICON_PATH
+                        ).convert_alpha()
+                        icon_surface = pygame.transform.smoothscale(
+                            settings_img, (max_icon_dim, max_icon_dim)
+                        )
+                        # No hue shift applied for Settings icon
+                    except Exception:
+                        icon_surface = None
+                # Final fallback: gray placeholder
+                if icon_surface is None:
+                    icon_surface = pygame.Surface(
+                        (max_icon_dim, max_icon_dim), pygame.SRCALPHA
+                    )
+                    icon_surface.fill(GRAY)
+            # Compute positions inside the box
+            # Center icon horizontally at the top of the box with a small margin
+            icon_x = box_x + (BOX_SIZE - icon_surface.get_width()) // 2
+            icon_y = box_y + 5
+            # Position text below the icon with a small margin
+            text_x = box_x + (BOX_SIZE - text_surface.get_width()) // 2
+            text_y = icon_y + icon_surface.get_height() + 5
+            # If this is the selected item, draw a highlight rectangle around the whole box
             if idx == self.selected:
-                # Compute a rectangle slightly larger than the text
-                self.highlight_rect = text_rect.inflate(
-                    self.highlight_padding * 2, self.highlight_padding * 2
-                )
-                # Draw rectangle outline with current border width
+                self.highlight_rect = pygame.Rect(
+                    box_x, box_y, BOX_SIZE, BOX_SIZE
+                ).inflate(self.highlight_padding * 2, self.highlight_padding * 2)
                 pygame.draw.rect(
                     screen,
                     self.highlight_color,
                     self.highlight_rect,
                     width=self.highlight_border_width,
                 )
-            # Blit the text onto the screen
-            screen.blit(text_surface, text_rect)
+            # Draw icon and text
+            screen.blit(icon_surface, (icon_x, icon_y))
+            screen.blit(text_surface, (text_x, text_y))
+        # After drawing all boxes, check if grid extends beyond screen bottom
+        rows = (num_items + columns - 1) // columns
+        grid_bottom = start_y + rows * (BOX_SIZE + V_SPACING) - V_SPACING
+        if grid_bottom > SCREEN_HEIGHT - 10:
+            # Draw a small indicator at bottom center to show more items exist
+            draw_text(
+                screen,
+                "▼",
+                self.item_font_size // 2,
+                YELLOW,
+                SCREEN_WIDTH // 2,
+                SCREEN_HEIGHT - 10,
+                center=True,
+            )
 
 
 # Clean up imported decorator

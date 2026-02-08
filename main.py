@@ -40,7 +40,7 @@ def main() -> None:
     logger.info("Starting Arcade Suite")
     logger.debug("Screen size: %dx%d", SCREEN_WIDTH, SCREEN_HEIGHT)
     logger.debug("Available games:")
-    for name, _ in get_menu_items():
+    for name, _, _ in get_menu_items():
         logger.debug(" - %s", name)
 
     # Ensure pygame quits cleanly on unexpected exit

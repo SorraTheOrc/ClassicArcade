@@ -44,6 +44,10 @@ pip install .
 
 ## Running the Arcade Suite
 
+The arcade suite now features **dynamic game discovery**. On startup the launcher scans the `games/` package for available games. Any sub‑package that defines a concrete ``engine.State`` subclass or provides a callable ``run()`` function is automatically added to the menu. This means you can add new games simply by dropping a new module into the `games/` directory – no code changes are required. The launcher logs the names of all discovered games at INFO level.
+
+## Running the Arcade Suite
+
 You can run the suite using the main entry point:
 
 ```bash
@@ -82,6 +86,18 @@ Programmatic usage example (import the state for tests or embedding):
 from games.snake import SnakeState
 state = SnakeState()
 ```
+
+## Menu Icons
+
+Each game can provide a custom icon that appears in the main menu. Place an image named **`icon.png`** (or **`icon.svg`**) in the game's package directory (e.g., `games/snake/`, `games/pong/`). The menu automatically discovers these files during start‑up via the `discover_games` function. 
+
+You can also provide a custom icon for the Settings entry by placing **`settings_icon.png`** (or **`settings_icon.svg`**) in the `assets/icons/` directory. If present, this icon will be used for the Settings menu item, also receiving the deterministic hue shift.
+
+When drawing the menu, the icon is loaded with `pygame.image.load` and **scaled** to fill the square box (default 160 × 160 px) while leaving enough vertical space for the game name. The scaling is performed with `pygame.transform.smoothscale`, ensuring the image fits neatly regardless of its original dimensions. If no icon file is found, a gray placeholder square of the same size is shown.
+
+**Deterministic hue shift:** When an icon (or the shared default icon) is loaded, the menu applies a deterministic hue shift based on the game's display name. This ensures each game’s icon gets a unique, consistent color tint across runs, while still using the original artwork.
+
+The hue offset is computed from a SHA‑256 hash of the name, guaranteeing the same tint every time the menu is displayed.
 
 ## Project Structure
 
