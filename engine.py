@@ -228,7 +228,7 @@ class MenuState(State):
         """Initialize the menu state with a list of (display_name, launch_target) tuples.
 
         A launch_target is either a State subclass (preferred) or a callable ``run`` function.
-        Adds attributes for highlight animation.
+        Adds attributes for highlight animation and scrolling.
         """
         super().__init__()
         self.menu_items = menu_items
@@ -242,16 +242,23 @@ class MenuState(State):
         self.highlight_padding = 10  # padding around text for highlight rectangle
         self.highlight_color = GRAY
         self.highlight_rect: pygame.Rect | None = None
+        # Scrolling attributes
+        self.scroll_offset: float = 0.0  # vertical scroll offset in pixels
         # Last rendered mute text (for tests)
         self._last_mute_text: str | None = None
 
     def handle_event(self, event: pygame.event.Event) -> None:
-        """Handle user input events for menu navigation and selection."""
+        """Handle user input events for menu navigation and selection, including scrolling."""
+        # Compute layout parameters for potential scrolling adjustments
+        layout = self._layout_params()
         if event.type == pygame.KEYDOWN:
             if event.key == KEY_UP:
                 self.selected = (self.selected - 1) % len(self.menu_items)
+                # Ensure the selected item is visible after navigation
+                self._ensure_selected_visible(layout)
             elif event.key == KEY_DOWN:
                 self.selected = (self.selected + 1) % len(self.menu_items)
+                self._ensure_selected_visible(layout)
             elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
                 # Transition to the selected game state or run callable
                 _, launch_target, _ = self.menu_items[self.selected]
@@ -275,13 +282,75 @@ class MenuState(State):
                     audio.toggle_mute()
                 except Exception:
                     pass
-            elif event.key == pygame.K_s:
-                # Open settings UI
-                from games.settings import SettingsState
 
-                self.request_transition(SettingsState())
-                return
-            # ESC key is ignored in the menu
+    def _layout_params(self):
+        """Compute layout parameters for menu grid and scrolling.
+
+        The size of each square box and the spacing can be overridden via environment
+        variables ``MENU_BOX_SIZE``, ``MENU_H_SPACING`` and ``MENU_V_SPACING``.
+        """
+        # Default values – can be overridden with env vars for testing
+        BOX_SIZE = int(os.getenv("MENU_BOX_SIZE", "160"))
+        H_SPACING = int(os.getenv("MENU_H_SPACING", "20"))
+        V_SPACING = int(os.getenv("MENU_V_SPACING", "20"))
+        num_items = len(self.menu_items)
+        if num_items == 0:
+            # No items, return defaults
+            return {
+                "BOX_SIZE": BOX_SIZE,
+                "H_SPACING": H_SPACING,
+                "V_SPACING": V_SPACING,
+                "columns": 0,
+                "rows": 0,
+                "grid_height": 0,
+                "margin_top": self.title_font_size + 20,
+                "max_offset": 0,
+                "total_grid_width": 0,
+                "start_x": 0,
+            }
+        columns = max(1, SCREEN_WIDTH // (BOX_SIZE + H_SPACING))
+        rows = (num_items + columns - 1) // columns
+        grid_height = rows * (BOX_SIZE + V_SPACING) - V_SPACING
+        margin_top = self.title_font_size + 20
+        visible_height = SCREEN_HEIGHT - margin_top - 10
+        max_offset = max(0, grid_height - visible_height)
+        total_grid_width = columns * (BOX_SIZE + H_SPACING) - H_SPACING
+        start_x = (SCREEN_WIDTH - total_grid_width) // 2
+        return {
+            "BOX_SIZE": BOX_SIZE,
+            "H_SPACING": H_SPACING,
+            "V_SPACING": V_SPACING,
+            "columns": columns,
+            "rows": rows,
+            "grid_height": grid_height,
+            "margin_top": margin_top,
+            "max_offset": max_offset,
+            "total_grid_width": total_grid_width,
+            "start_x": start_x,
+        }
+
+    def _ensure_selected_visible(self, layout):
+        """Adjust scroll_offset to ensure the selected item is within visible bounds."""
+        columns = layout["columns"]
+        if columns == 0:
+            return
+        row = self.selected // columns
+        # Compute the y position of the selected box (top) before scroll offset
+        box_top = layout["margin_top"] + row * (
+            layout["BOX_SIZE"] + layout["V_SPACING"]
+        )
+        # Visible region top and bottom
+        visible_top = layout["margin_top"]
+        visible_bottom = SCREEN_HEIGHT - 10
+        # If the box is above the visible top, scroll up
+        if box_top < visible_top:
+            self.scroll_offset = max(0, self.scroll_offset - (visible_top - box_top))
+        # If the box is below the visible bottom, scroll down
+        elif box_top + layout["BOX_SIZE"] > visible_bottom:
+            self.scroll_offset = min(
+                layout["max_offset"],
+                self.scroll_offset + (box_top + layout["BOX_SIZE"] - visible_bottom),
+            )
 
     def update(self, dt: float) -> None:
         """Update menu state, handling highlight animation.
@@ -335,19 +404,15 @@ class MenuState(State):
         if num_items == 0:
             # Nothing to draw
             return
-        # Define box size (square). 40 characters approximated as 200 pixels.
-        BOX_SIZE = 160  # pixel size of each square box
-        # Spacing between boxes (both horizontally and vertically)
-        H_SPACING = 20
-        V_SPACING = 20
-        # Determine how many columns fit horizontally
-        columns = max(1, SCREEN_WIDTH // (BOX_SIZE + H_SPACING))
-        # Compute horizontal offset to center the grid
-        total_grid_width = columns * (BOX_SIZE + H_SPACING) - H_SPACING
-        start_x = (SCREEN_WIDTH - total_grid_width) // 2
-        # Determine vertical start position (just below the title)
-        margin_top = self.title_font_size + 20  # space below title
-        start_y = margin_top
+        # Compute layout parameters (box size, spacing, columns, etc.) – this also gives us the current scroll offset
+        layout = self._layout_params()
+        BOX_SIZE = layout["BOX_SIZE"]
+        H_SPACING = layout["H_SPACING"]
+        V_SPACING = layout["V_SPACING"]
+        columns = layout["columns"]
+        start_x = layout["start_x"]
+        # Apply vertical scroll offset (positive offset means the grid moves up)
+        start_y = layout["margin_top"] - self.scroll_offset
         # Prepare font for menu items
         font = pygame.font.Font(None, self.item_font_size)
         for idx, (name, _, icon_path) in enumerate(self.menu_items):
@@ -397,7 +462,6 @@ class MenuState(State):
                     except Exception:
                         icon_surface = None
                 # Try Settings-specific icon if available
-                # Try Settings-specific icon if available
                 if icon_surface is None and name == "Settings" and _SETTINGS_ICON_PATH:
                     try:
                         settings_img = pygame.image.load(
@@ -436,20 +500,19 @@ class MenuState(State):
             # Draw icon and text
             screen.blit(icon_surface, (icon_x, icon_y))
             screen.blit(text_surface, (text_x, text_y))
-        # After drawing all boxes, check if grid extends beyond screen bottom
-        rows = (num_items + columns - 1) // columns
-        grid_bottom = start_y + rows * (BOX_SIZE + V_SPACING) - V_SPACING
-        if grid_bottom > SCREEN_HEIGHT - 10:
-            # Draw a small indicator at bottom center to show more items exist
-            draw_text(
-                screen,
-                "▼",
-                self.item_font_size // 2,
-                YELLOW,
-                SCREEN_WIDTH // 2,
-                SCREEN_HEIGHT - 10,
-                center=True,
-            )
+        # After drawing all boxes, draw a scroll indicator if any vertical overflow exists
+        if layout["max_offset"] > 0:
+            # Draw a larger, more visible scroll indicator (a filled triangle)
+            tri_height = max(self.title_font_size // 2, self.item_font_size) * 2
+            tri_half = tri_height // 2
+            tri_center_x = SCREEN_WIDTH // 2
+            tri_top_y = SCREEN_HEIGHT - 20
+            points = [
+                (tri_center_x - tri_half, tri_top_y),
+                (tri_center_x + tri_half, tri_top_y),
+                (tri_center_x, tri_top_y + tri_height),
+            ]
+            pygame.draw.polygon(screen, YELLOW, points)
 
 
 # Clean up imported decorator
