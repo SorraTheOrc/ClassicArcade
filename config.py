@@ -3,11 +3,13 @@
 Centralises screen dimensions, default FPS, colour definitions, and key bindings.
 """
 
+# Screen dimensions – can be overridden via environment variables
+import os
+
 import pygame
 
-# Screen dimensions
-SCREEN_WIDTH = 640
-SCREEN_HEIGHT = 480
+SCREEN_WIDTH = int(os.getenv("SCREEN_WIDTH", 640))
+SCREEN_HEIGHT = int(os.getenv("SCREEN_HEIGHT", 480))
 
 # Default FPS for the engine
 FPS = 60
