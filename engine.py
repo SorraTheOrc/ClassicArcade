@@ -34,6 +34,7 @@ def _pygame_cleanup() -> None:
 
 
 atexit.register(_pygame_cleanup)
+import logging
 import os
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple, Type
@@ -50,6 +51,8 @@ from config import (
     YELLOW,
 )
 from utils import draw_text
+
+logger = logging.getLogger(__name__)
 
 
 class State(ABC):
@@ -164,9 +167,10 @@ class MenuState(State):
     instance of the corresponding ``state_class``.
     """
 
-    def __init__(self, menu_items: List[Tuple[str, Type[State]]]) -> None:
-        """Initialize the menu state with a list of (display_name, state_class) tuples.
+    def __init__(self, menu_items: List[Tuple[str, object]]) -> None:
+        """Initialize the menu state with a list of (display_name, launch_target) tuples.
 
+        A launch_target is either a State subclass (preferred) or a callable ``run`` function.
         Adds attributes for highlight animation.
         """
         super().__init__()
@@ -192,9 +196,20 @@ class MenuState(State):
             elif event.key == KEY_DOWN:
                 self.selected = (self.selected + 1) % len(self.menu_items)
             elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
-                # Transition to the selected game state
-                _, state_cls = self.menu_items[self.selected]
-                self.request_transition(state_cls())
+                # Transition to the selected game state or run callable
+                _, launch_target = self.menu_items[self.selected]
+                if isinstance(launch_target, type) and issubclass(launch_target, State):
+                    self.request_transition(launch_target())
+                elif callable(launch_target):
+                    try:
+                        launch_target()
+                    except Exception:
+                        logger.exception("Failed to launch game %s", launch_target)
+                else:
+                    logger.warning(
+                        "Menu item %s has unrecognized launch target",
+                        self.menu_items[self.selected][0],
+                    )
             elif event.key == pygame.K_m:
                 # Allow toggling mute from the menu as well
                 try:

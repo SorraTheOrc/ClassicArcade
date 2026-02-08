@@ -9,7 +9,7 @@ import importlib
 import inspect
 import logging
 import pkgutil
-from typing import List, Tuple, Type
+from typing import Callable, List, Tuple, Type, Union
 
 from engine import State
 
@@ -36,16 +36,19 @@ def _friendly_name_from_module(module_name: str, cls_name: str | None = None) ->
     return module_name.replace("_", " ").title()
 
 
-def discover_games() -> List[Tuple[str, Type[State]]]:
+def discover_games() -> List[Tuple[str, object]]:
     """Dynamically discover game modules in the `games` package.
 
-    Scans `games` for submodules, imports each one and looks for classes that are
-    subclasses of ``engine.State``. Modules that do not define a concrete State
-    subclass are ignored.
+    Scans `games` for submodules, imports each one and looks for either:
+    - a concrete subclass of ``engine.State`` (preferred)
+    - or a callable ``run`` function (fallback).
 
-    Returns a list of ``(display_name, state_class)`` tuples.
+    Packages that define neither are ignored.
+
+    Returns a list of ``(display_name, launch_target)`` tuples where
+    ``launch_target`` is either a ``State`` subclass or a callable ``run``.
     """
-    items: List[Tuple[str, Type[State]]] = []
+    items: List[Tuple[str, object]] = []
     try:
         import games
 
@@ -113,7 +116,17 @@ def discover_games() -> List[Tuple[str, Type[State]]]:
                 break
 
         if state_cls is None:
-            # No State subclass found; ignore this module
+            # No State subclass found; look for a callable run function in any candidate module
+            run_callable = None
+            for mod in candidates:
+                if hasattr(mod, "run") and callable(getattr(mod, "run")):
+                    run_callable = getattr(mod, "run")
+                    break
+            if run_callable is None:
+                # Neither State nor run found; ignore this module
+                continue
+            display_name = _friendly_name_from_module(name, None)
+            items.append((display_name, run_callable))
             continue
 
         display_name = _friendly_name_from_module(
@@ -126,7 +139,7 @@ def discover_games() -> List[Tuple[str, Type[State]]]:
     return items
 
 
-def get_menu_items() -> List[Tuple[str, Type[State]]]:
+def get_menu_items() -> List[Tuple[str, object]]:
     """Return menu items as ``(name, state_class)`` tuples.
 
     The menu is populated by scanning the ``games`` package at runtime so new
@@ -134,6 +147,12 @@ def get_menu_items() -> List[Tuple[str, Type[State]]]:
     appended as the last (non-game) option.
     """
     items = discover_games()
+
+    # Log discovered game names (INFO level)
+    if items:
+        logger.info("Discovered games: %s", ", ".join(name for name, _ in items))
+    else:
+        logger.info("No games discovered")
 
     # Always ensure Settings is present as the last menu item.
     try:
