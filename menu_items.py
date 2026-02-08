@@ -8,6 +8,7 @@ state when the user selects an entry.
 import importlib
 import inspect
 import logging
+import os
 import pkgutil
 from typing import Callable, List, Tuple, Type, Union
 
@@ -36,7 +37,7 @@ def _friendly_name_from_module(module_name: str, cls_name: str | None = None) ->
     return module_name.replace("_", " ").title()
 
 
-def discover_games() -> List[Tuple[str, object]]:
+def discover_games() -> List[Tuple[str, object, str | None]]:
     """Dynamically discover game modules in the `games` package.
 
     Scans `games` for submodules, imports each one and looks for either:
@@ -48,7 +49,7 @@ def discover_games() -> List[Tuple[str, object]]:
     Returns a list of ``(display_name, launch_target)`` tuples where
     ``launch_target`` is either a ``State`` subclass or a callable ``run``.
     """
-    items: List[Tuple[str, object]] = []
+    items: List[Tuple[str, object, str | None]] = []
     try:
         import games
 
@@ -126,20 +127,52 @@ def discover_games() -> List[Tuple[str, object]]:
                 # Neither State nor run found; ignore this module
                 continue
             display_name = _friendly_name_from_module(name, None)
-            items.append((display_name, run_callable))
+            # Determine icon path for the module
+            import os
+
+            icon_path = None
+            if hasattr(module, "__path__"):
+                package_dir = module.__path__[0]
+            else:
+                package_dir = os.path.dirname(getattr(module, "__file__", ""))
+            png_path = os.path.join(package_dir, "icon.png")
+            svg_path = os.path.join(package_dir, "icon.svg")
+            # If an icon file exists we store its path; the menu will later load and
+            # automatically scale it to fit the square box. If no icon is found the
+            # menu uses a gray placeholder.
+            if os.path.isfile(png_path):
+                icon_path = png_path
+            elif os.path.isfile(svg_path):
+                icon_path = svg_path
+            items.append((display_name, run_callable, icon_path))
             continue
 
         display_name = _friendly_name_from_module(
             name, getattr(state_cls, "__name__", None)
         )
-        items.append((display_name, state_cls))
+        # Determine icon path for the module
+        import os
+
+        icon_path = None
+        if hasattr(module, "__path__"):
+            package_dir = module.__path__[0]
+        else:
+            package_dir = os.path.dirname(getattr(module, "__file__", ""))
+        png_path = os.path.join(package_dir, "icon.png")
+        svg_path = os.path.join(package_dir, "icon.svg")
+        # Locate optional icon for the game; the menu will load and scale it.
+        if os.path.isfile(png_path):
+            icon_path = png_path
+        elif os.path.isfile(svg_path):
+            icon_path = svg_path
+        items.append((display_name, state_cls, icon_path))
 
     # Sort alphabetically by display name
     items.sort(key=lambda t: t[0].lower())
     return items
 
 
-def get_menu_items() -> List[Tuple[str, object]]:
+def get_menu_items() -> List[Tuple[str, object, str | None]]:
     """Return menu items as ``(name, state_class)`` tuples.
 
     The menu is populated by scanning the ``games`` package at runtime so new
@@ -150,7 +183,7 @@ def get_menu_items() -> List[Tuple[str, object]]:
 
     # Log discovered game names (INFO level)
     if items:
-        logger.info("Discovered games: %s", ", ".join(name for name, _ in items))
+        logger.info("Discovered games: %s", ", ".join(name for name, _, _ in items))
     else:
         logger.info("No games discovered")
 
@@ -158,7 +191,7 @@ def get_menu_items() -> List[Tuple[str, object]]:
     try:
         settings_mod = importlib.import_module("games.settings")
         SettingsState = getattr(settings_mod, "SettingsState")
-        items.append(("Settings", SettingsState))
+        items.append(("Settings", SettingsState, None))
     except Exception:
         logger.debug(
             "SettingsState not available; skipping Settings menu entry", exc_info=True
