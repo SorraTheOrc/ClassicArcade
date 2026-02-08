@@ -13,26 +13,26 @@ import pygame
 
 logger = logging.getLogger(__name__)
 import logging
-import random
 import math
+import random
 from datetime import datetime
 
 import audio
 import config
 from config import (
     BLACK,
+    BLUE,
+    CYAN,
     GREEN,
     KEY_DOWN,
     KEY_LEFT,
     KEY_RIGHT,
     KEY_UP,
+    MAGENTA,
     RED,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
     WHITE,
-    BLUE,
-    CYAN,
-    MAGENTA,
     YELLOW,
 )
 from engine import Engine

@@ -3,14 +3,15 @@ import os
 os.environ["HEADLESS"] = "1"
 os.environ["SDL_VIDEODRIVER"] = "dummy"
 
-import pygame
 import random
+
+import pygame
 
 pygame.init()
 pygame.font.init()
 
+from config import SCREEN_HEIGHT, SCREEN_WIDTH
 from games.snake import SnakeState
-from config import SCREEN_WIDTH, SCREEN_HEIGHT
 
 
 def test_powerup_spawn_and_collect():
