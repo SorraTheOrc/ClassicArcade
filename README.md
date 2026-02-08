@@ -87,6 +87,36 @@ from games.snake import SnakeState
 state = SnakeState()
 ```
 
+## Scrollable Menu (new)
+
+The main menu now supports scrolling when the list of discovered games exceeds the vertical space of the window. A **yellow triangle** appears near the bottom of the screen to indicate that more items are available below the visible area.
+
+### How scrolling works
+- The menu builds a grid of square *boxes* (default **160 × 160 px**). The size and spacing can be overridden with the environment variables:
+  - `MENU_BOX_SIZE` – side length of each square box (default `160`).
+  - `MENU_H_SPACING` – horizontal gap between boxes (default `20`).
+  - `MENU_V_SPACING` – vertical gap between boxes (default `20`).
+- When the highlighted entry moves off‑screen (using the **Up/Down** arrow keys), the grid automatically scrolls so the selected item stays fully visible.
+- The scroll offset is clamped to the range `[0, max_offset]` where `max_offset` is the total height of the grid minus the visible height.
+- The visual indicator is a filled yellow triangle (twice the size of the previous arrow) drawn at the bottom‑center of the window.
+
+### Customising the layout
+You can experiment with larger icons or tighter spacing without changing source code. For example:
+
+```bash
+export MENU_BOX_SIZE=200      # make each box 200 px square
+export MENU_H_SPACING=30      # increase horizontal gap
+export MENU_V_SPACING=30      # increase vertical gap
+python main.py                # run the suite with the new layout
+```
+
+The menu will automatically recalculate the grid layout based on these values.
+
+### Debug logging
+When you run the suite with `--verbose`, the engine now logs the computed layout parameters (box size, spacing, columns, rows, max_offset, etc.). This helps verify that the scroll calculations are correct.
+
+---
+
 ## Menu Icons
 
 Each game can provide a custom icon that appears in the main menu. Place an image named **`icon.png`** (or **`icon.svg`**) in the game's package directory (e.g., `games/snake/`, `games/pong/`). The menu automatically discovers these files during start‑up via the `discover_games` function. 
