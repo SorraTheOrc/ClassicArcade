@@ -238,7 +238,8 @@ class MenuState(State):
         self.item_font_size = 32
         # Highlight animation attributes
         self.highlight_anim_phase = 0.0  # animation phase accumulator
-        self.highlight_border_width = 2  # initial border width (pixels)
+        # animation is decoupled from selection; draw() computes border width per-frame
+        self.highlight_border_width = 2  # fallback initial border width (pixels)
         self.highlight_padding = 10  # padding around text for highlight rectangle
         self.highlight_color = GRAY
         self.highlight_rect: pygame.Rect | None = None
@@ -253,6 +254,14 @@ class MenuState(State):
         # via environment for different platforms or preferences.
         self._repeat_initial = float(os.getenv("MENU_KEY_REPEAT_INITIAL", "0.0"))
         self._repeat_interval = float(os.getenv("MENU_KEY_REPEAT_INTERVAL", "0.06"))
+        # Debounce repeated keydown events (seconds)
+        self._debounce = float(os.getenv("MENU_KEY_DEBOUNCE", "0.04"))
+        self._last_keydown_time: float | None = None
+        self._last_keydown_key: int | None = None
+        # Time origin for decoupled highlight animation
+        import time
+
+        self._highlight_start = time.time()
         # Last rendered mute text (for tests)
         self._last_mute_text: str | None = None
         # Last launch message shown to the user (transient)
@@ -265,7 +274,24 @@ class MenuState(State):
         # Compute layout parameters for potential scrolling adjustments
         layout = self._layout_params()
         if event.type == pygame.KEYDOWN:
+            # Debounce duplicate rapid KEYDOWN events for the same key
+            try:
+                import time
+
+                now = time.time()
+                if (
+                    self._last_keydown_time is not None
+                    and self._last_keydown_key == event.key
+                    and (now - self._last_keydown_time) < self._debounce
+                ):
+                    return
+                self._last_keydown_time = now
+                self._last_keydown_key = event.key
+            except Exception:
+                pass
+
             if event.key == KEY_UP:
+                # Move one item up (linear order) so Settings (appended last) is selectable
                 self.selected = (self.selected - 1) % len(self.menu_items)
                 # Start hold tracking for smooth instant repeats
                 try:
@@ -276,11 +302,10 @@ class MenuState(State):
                     self._last_repeat_time = None
                 except Exception:
                     self._held_key = None
-                # Reset animation phase so the highlight updates immediately
-                self.highlight_anim_phase = 0.0
                 # Ensure the selected item is visible after navigation
                 self._ensure_selected_visible(layout)
             elif event.key == KEY_DOWN:
+                # Move one item down (linear order)
                 self.selected = (self.selected + 1) % len(self.menu_items)
                 try:
                     import time
@@ -290,8 +315,6 @@ class MenuState(State):
                     self._last_repeat_time = None
                 except Exception:
                     self._held_key = None
-                # Reset animation phase so the highlight updates immediately
-                self.highlight_anim_phase = 0.0
                 self._ensure_selected_visible(layout)
             elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
                 # Transition to the selected game state or run callable
@@ -418,23 +441,10 @@ class MenuState(State):
             )
 
     def update(self, dt: float) -> None:
-        """Update menu state, handling highlight animation.
+        """Update menu state.
 
-        The highlight border width pulses over time for a visual effect.
+        Note: highlight visuals are computed in draw() and are decoupled from update().
         """
-        # Update animation phase
-        self.highlight_anim_phase += dt
-        # Compute a pulsing border width between 2 and 6 pixels
-        # Using a sine wave for smooth animation
-        import math
-
-        phase = math.sin(self.highlight_anim_phase * 2 * math.pi)  # -1 to 1
-        # Map phase to range [2, 6]
-        self.highlight_border_width = int(2 + (phase + 1) / 2 * 4)
-        # Ensure minimum width of 2
-        if self.highlight_border_width < 2:
-            self.highlight_border_width = 2
-        # No other time‑dependent logic
         # Handle held key auto-repeat for instantaneous selection movement
         try:
             if self._held_key is not None:
@@ -448,7 +458,7 @@ class MenuState(State):
                         self._hold_start_time
                         and (now - self._hold_start_time) >= self._repeat_initial
                     ):
-                        # Do the first repeated move
+                        # Do the first repeated move (linear order)
                         if self._held_key == KEY_UP:
                             self.selected = (self.selected - 1) % len(self.menu_items)
                         else:
@@ -585,6 +595,19 @@ class MenuState(State):
             text_y = icon_y + icon_surface.get_height() + 5
             # If this is the selected item, draw a highlight rectangle around the whole box
             if idx == self.selected:
+                # Compute pulsing border width using time-based animation (decoupled)
+                try:
+                    import math
+                    import time
+
+                    elapsed = time.time() - self._highlight_start
+                    phase = math.sin(elapsed * 2 * math.pi)  # -1 to 1
+                    border_w = int(2 + (phase + 1) / 2 * 4)
+                    if border_w < 2:
+                        border_w = 2
+                except Exception:
+                    border_w = self.highlight_border_width
+
                 self.highlight_rect = pygame.Rect(
                     box_x, box_y, BOX_SIZE, BOX_SIZE
                 ).inflate(self.highlight_padding * 2, self.highlight_padding * 2)
@@ -592,7 +615,7 @@ class MenuState(State):
                     screen,
                     self.highlight_color,
                     self.highlight_rect,
-                    width=self.highlight_border_width,
+                    width=border_w,
                 )
             # Draw icon and text
             screen.blit(icon_surface, (icon_x, icon_y))
