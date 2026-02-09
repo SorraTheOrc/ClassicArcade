@@ -244,6 +244,13 @@ class MenuState(State):
         self.highlight_rect: pygame.Rect | None = None
         # Scrolling attributes
         self.scroll_offset: float = 0.0  # vertical scroll offset in pixels
+        # Input repeat handling for instantaneous navigation when holding keys
+        self._held_key: int | None = None
+        self._hold_start_time: float | None = None
+        self._last_repeat_time: float | None = None
+        # Initial delay before auto-repeat (seconds) and repeat interval (seconds)
+        self._repeat_initial = float(os.getenv("MENU_KEY_REPEAT_INITIAL", "0.20"))
+        self._repeat_interval = float(os.getenv("MENU_KEY_REPEAT_INTERVAL", "0.06"))
         # Last rendered mute text (for tests)
         self._last_mute_text: str | None = None
         # Last launch message shown to the user (transient)
@@ -258,10 +265,27 @@ class MenuState(State):
         if event.type == pygame.KEYDOWN:
             if event.key == KEY_UP:
                 self.selected = (self.selected - 1) % len(self.menu_items)
+                # Start hold tracking for smooth instant repeats
+                try:
+                    import time
+
+                    self._held_key = KEY_UP
+                    self._hold_start_time = time.time()
+                    self._last_repeat_time = None
+                except Exception:
+                    self._held_key = None
                 # Ensure the selected item is visible after navigation
                 self._ensure_selected_visible(layout)
             elif event.key == KEY_DOWN:
                 self.selected = (self.selected + 1) % len(self.menu_items)
+                try:
+                    import time
+
+                    self._held_key = KEY_DOWN
+                    self._hold_start_time = time.time()
+                    self._last_repeat_time = None
+                except Exception:
+                    self._held_key = None
                 self._ensure_selected_visible(layout)
             elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
                 # Transition to the selected game state or run callable
@@ -311,6 +335,12 @@ class MenuState(State):
                     audio.toggle_mute()
                 except Exception:
                     pass
+        elif event.type == pygame.KEYUP:
+            # Stop any auto-repeat behaviour when the key is released
+            if event.key in (KEY_UP, KEY_DOWN) and self._held_key == event.key:
+                self._held_key = None
+                self._hold_start_time = None
+                self._last_repeat_time = None
 
     def _layout_params(self):
         """Compute layout parameters for menu grid and scrolling.
@@ -399,7 +429,39 @@ class MenuState(State):
         if self.highlight_border_width < 2:
             self.highlight_border_width = 2
         # No other time‑dependent logic
-        pass
+        # Handle held key auto-repeat for instantaneous selection movement
+        try:
+            if self._held_key is not None:
+                import time
+
+                now = time.time()
+                # If last_repeat_time is None, we have only applied the initial keydown move.
+                if self._last_repeat_time is None:
+                    # Wait for initial delay before starting repeated moves
+                    if (
+                        self._hold_start_time
+                        and (now - self._hold_start_time) >= self._repeat_initial
+                    ):
+                        # Do the first repeated move
+                        if self._held_key == KEY_UP:
+                            self.selected = (self.selected - 1) % len(self.menu_items)
+                        else:
+                            self.selected = (self.selected + 1) % len(self.menu_items)
+                        self._last_repeat_time = now
+                        # Ensure visibility
+                        self._ensure_selected_visible(self._layout_params())
+                else:
+                    # Subsequent repeats at interval
+                    if (now - self._last_repeat_time) >= self._repeat_interval:
+                        if self._held_key == KEY_UP:
+                            self.selected = (self.selected - 1) % len(self.menu_items)
+                        else:
+                            self.selected = (self.selected + 1) % len(self.menu_items)
+                        self._last_repeat_time = now
+                        self._ensure_selected_visible(self._layout_params())
+        except Exception:
+            # Protect update loop from any input handling errors
+            pass
 
     def draw(self, screen: pygame.Surface) -> None:
         """Render the menu title and list of menu items onto the screen.
