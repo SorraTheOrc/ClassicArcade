@@ -25,6 +25,23 @@ import config
 # Parent work item ID for audio-related tasks (the "Add sound and music with mute toggle" task)
 _AUDIO_PARENT_WORK_ITEM_ID = "G1-0ML5DRK5F02XA14R"
 
+# Current music track being played (to avoid repeats and for cleanup)
+_CURRENT_MUSIC_TRACK: Optional[str] = None
+
+
+# Custom event for when music ends
+MUSIC_END_EVENT = pygame.USEREVENT + 1
+
+
+def _setup_music_end_event() -> None:
+    """Set up the music end event listener to trigger new random music when track finishes."""
+    try:
+        if not pygame.mixer.get_init():
+            return
+        pygame.mixer.music.set_endevent(MUSIC_END_EVENT)
+    except Exception:
+        pass
+
 
 def _create_missing_asset_work_item(
     name: str, sound_type: Optional[str] = None
@@ -90,6 +107,12 @@ def _sound_path(name: str) -> str:
     return os.path.join(base_dir, "assets", "sounds", name)
 
 
+def _music_dir() -> str:
+    """Return the absolute path to the music assets directory."""
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    return os.path.join(base_dir, "assets", "music")
+
+
 def _sound_path_type(sound_type: str, name: str) -> str:
     """Return the absolute path for a sound file under a game‑specific sub‑folder.
 
@@ -122,6 +145,7 @@ def init() -> None:
     """
     try:
         pygame.mixer.init()
+        _setup_music_end_event()
     except pygame.error:
         return
 
@@ -153,9 +177,12 @@ def init() -> None:
         return
 
     try:
-        pygame.mixer.music.load(music_path)
-        pygame.mixer.music.set_volume(0 if config.MUTE else 1)
-        pygame.mixer.music.play(-1)
+        # Don't play music if random music feature is enabled
+        # The menu state will play random music when it becomes active
+        if not config.ENABLE_MUSIC:
+            pygame.mixer.music.load(music_path)
+            pygame.mixer.music.set_volume(0 if config.MUTE else 1)
+            pygame.mixer.music.play(-1)
         # Pre‑load generic short‑effect sounds used across multiple games.
         # preload_effects(["eat.wav", "crash.wav"])  # Removed generic preload; snake sounds are loaded via type‑specific path
         # Pre‑load Pong‑specific short‑effect sounds removed – lazy loading via play_effect will handle them.
@@ -207,7 +234,110 @@ def toggle_mute() -> None:
             pass
 
 
-__all__ = ["init", "toggle_mute", "play_effect", "preload_effects"]
+# ---------------------------------------------------------------------------
+# Random music playback
+# ---------------------------------------------------------------------------
+
+
+def get_music_files() -> List[str]:
+    """Return a list of music file paths from the music directory.
+
+    Only files with supported audio extensions (mp3, wav, ogg) that don't contain
+    "sound-effect" in their name are included (to exclude sound effects).
+    """
+    music_dir = _music_dir()
+    if not os.path.isdir(music_dir):
+        return []
+    supported_extensions = (".mp3", ".wav", ".ogg")
+    files = []
+    try:
+        for filename in os.listdir(music_dir):
+            if filename.lower().endswith(supported_extensions):
+                # Filter out sound effect files by filename pattern
+                if "sound-effect" not in filename.lower():
+                    files.append(os.path.join(music_dir, filename))
+    except Exception:
+        pass
+    return files
+
+
+def play_random_music(context: str = "menu") -> None:
+    """Play a random music file from the music directory.
+
+    The function respects the global ``config.MUTE`` and ``config.ENABLE_MUSIC`` flags.
+    Only one music track may be playing at any time - starting a new track stops
+    the previous track cleanly.
+
+    Args:
+        context: The context where music is being played. Currently supports
+                 "menu" and "game". Used for future extensibility.
+    """
+    if not pygame.mixer.get_init():
+        return
+    if config.MUTE or not config.ENABLE_MUSIC:
+        return
+    try:
+        music_files = get_music_files()
+        if not music_files:
+            return
+        global _CURRENT_MUSIC_TRACK
+        previous_track = _CURRENT_MUSIC_TRACK
+        available_files = [f for f in music_files if f != previous_track]
+        if not available_files:
+            available_files = music_files
+        import random
+
+        music_path = random.choice(available_files)
+        _CURRENT_MUSIC_TRACK = music_path
+        try:
+            pygame.mixer.music.load(music_path)
+            pygame.mixer.music.set_volume(1.0 if not config.MUTE else 0.0)
+            # Play once without looping - when track ends, MUSIC_END_EVENT triggers new random track
+            pygame.mixer.music.play()
+        except Exception:
+            pass
+    except Exception:
+        pass
+
+
+def stop_music() -> None:
+    """Stop the currently playing music track.
+
+    This function respects the global ``config.MUTE`` flag.
+    """
+    if not pygame.mixer.get_init():
+        return
+    try:
+        pygame.mixer.music.stop()
+    except Exception:
+        pass
+
+
+__all__ = [
+    "init",
+    "toggle_mute",
+    "play_effect",
+    "preload_effects",
+    "play_random_music",
+    "stop_music",
+    "fade_out_music",
+    "on_music_end",
+    "get_music_files",
+]
+
+
+def fade_out_music(duration_ms: int = 1000) -> None:
+    """Fade out the currently playing music over the specified duration.
+
+    Args:
+        duration_ms: Duration of the fade-out in milliseconds.
+    """
+    if not pygame.mixer.get_init():
+        return
+    try:
+        pygame.mixer.music.fadeout(duration_ms)
+    except Exception:
+        pass
 
 
 # ---------------------------------------------------------------------------
@@ -215,6 +345,21 @@ __all__ = ["init", "toggle_mute", "play_effect", "preload_effects"]
 # ---------------------------------------------------------------------------
 
 _SOUND_CACHE: Dict[str, "pygame.mixer.Sound"] = {}
+
+
+def on_music_end() -> None:
+    """Called when the current music track finishes playing.
+
+    Plays a new random music track to keep the audio going.
+    """
+    if not pygame.mixer.get_init():
+        return
+    try:
+        if config.MUTE or not config.ENABLE_MUSIC:
+            return
+        play_random_music(context="menu")
+    except Exception:
+        pass
 
 
 def ensure_sound(filename: str, placeholder_name: str = "placeholder.wav") -> bool:
