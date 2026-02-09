@@ -299,7 +299,14 @@ class MenuState(State):
 
                     self._held_key = KEY_UP
                     self._hold_start_time = time.time()
-                    self._last_repeat_time = None
+                    # Prevent an immediate repeat move in update() by priming last_repeat_time.
+                    # If an explicit initial delay is configured, allow update() to wait by
+                    # setting last_repeat_time to None; otherwise prime to now so repeats start
+                    # after the interval.
+                    if self._repeat_initial and self._repeat_initial > 0.0:
+                        self._last_repeat_time = None
+                    else:
+                        self._last_repeat_time = time.time()
                 except Exception:
                     self._held_key = None
                 # Ensure the selected item is visible after navigation
@@ -312,7 +319,10 @@ class MenuState(State):
 
                     self._held_key = KEY_DOWN
                     self._hold_start_time = time.time()
-                    self._last_repeat_time = None
+                    if self._repeat_initial and self._repeat_initial > 0.0:
+                        self._last_repeat_time = None
+                    else:
+                        self._last_repeat_time = time.time()
                 except Exception:
                     self._held_key = None
                 self._ensure_selected_visible(layout)
