@@ -249,7 +249,9 @@ class MenuState(State):
         self._hold_start_time: float | None = None
         self._last_repeat_time: float | None = None
         # Initial delay before auto-repeat (seconds) and repeat interval (seconds)
-        self._repeat_initial = float(os.getenv("MENU_KEY_REPEAT_INITIAL", "0.20"))
+        # Default to no initial delay so a held key immediately repeats; can be tuned
+        # via environment for different platforms or preferences.
+        self._repeat_initial = float(os.getenv("MENU_KEY_REPEAT_INITIAL", "0.0"))
         self._repeat_interval = float(os.getenv("MENU_KEY_REPEAT_INTERVAL", "0.06"))
         # Last rendered mute text (for tests)
         self._last_mute_text: str | None = None
@@ -274,6 +276,8 @@ class MenuState(State):
                     self._last_repeat_time = None
                 except Exception:
                     self._held_key = None
+                # Reset animation phase so the highlight updates immediately
+                self.highlight_anim_phase = 0.0
                 # Ensure the selected item is visible after navigation
                 self._ensure_selected_visible(layout)
             elif event.key == KEY_DOWN:
@@ -286,6 +290,8 @@ class MenuState(State):
                     self._last_repeat_time = None
                 except Exception:
                     self._held_key = None
+                # Reset animation phase so the highlight updates immediately
+                self.highlight_anim_phase = 0.0
                 self._ensure_selected_visible(layout)
             elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
                 # Transition to the selected game state or run callable
