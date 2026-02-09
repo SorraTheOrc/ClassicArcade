@@ -41,13 +41,14 @@ def discover_games() -> List[Tuple[str, object, str | None]]:
     """Dynamically discover game modules in the `games` package.
 
     Scans `games` for submodules, imports each one and looks for either:
-    - a concrete subclass of ``engine.State`` (preferred)
-    - or a callable ``run`` function (fallback).
+    - a callable ``run`` function (preferred for launching)
+    - or a concrete subclass of ``engine.State`` (fallback, but will be disabled if ``run`` is missing).
 
-    Packages that define neither are ignored.
+    Packages that define neither are still added as disabled entries.
 
-    Returns a list of ``(display_name, launch_target)`` tuples where
-    ``launch_target`` is either a ``State`` subclass or a callable ``run``.
+    Returns a list of ``(display_name, launch_target, icon_path)`` tuples where
+    ``launch_target`` is a callable ``run`` function if available, otherwise ``None``
+    to indicate a disabled entry.
     """
     items: List[Tuple[str, object, str | None]] = []
     try:
@@ -95,16 +96,21 @@ def discover_games() -> List[Tuple[str, object, str | None]]:
                             exc_info=True,
                         )
             except Exception:
-                # Some packages may not expose __path__ or be importable in this way
                 logger.debug(
                     "Unable to iterate submodules of %s", full_name, exc_info=True
                 )
 
-        # Find classes defined in any candidate module that subclass engine.State
+        # Determine if a callable run function exists in any candidate module
+        run_callable = None
+        for mod in candidates:
+            if hasattr(mod, "run") and callable(getattr(mod, "run")):
+                run_callable = getattr(mod, "run")
+                break
+
+        # Determine friendly display name (prefer State subclass name if present)
         state_cls = None
         for mod in candidates:
             for _, obj in inspect.getmembers(mod, inspect.isclass):
-                # Prefer classes defined in the inspected module
                 if obj.__module__ != mod.__name__:
                     continue
                 try:
@@ -116,40 +122,10 @@ def discover_games() -> List[Tuple[str, object, str | None]]:
             if state_cls:
                 break
 
-        if state_cls is None:
-            # No State subclass found; look for a callable run function in any candidate module
-            run_callable = None
-            for mod in candidates:
-                if hasattr(mod, "run") and callable(getattr(mod, "run")):
-                    run_callable = getattr(mod, "run")
-                    break
-            if run_callable is None:
-                # Neither State nor run found; ignore this module
-                continue
-            display_name = _friendly_name_from_module(name, None)
-            # Determine icon path for the module
-            import os
-
-            icon_path = None
-            if hasattr(module, "__path__"):
-                package_dir = module.__path__[0]
-            else:
-                package_dir = os.path.dirname(getattr(module, "__file__", ""))
-            png_path = os.path.join(package_dir, "icon.png")
-            svg_path = os.path.join(package_dir, "icon.svg")
-            # If an icon file exists we store its path; the menu will later load and
-            # automatically scale it to fit the square box. If no icon is found the
-            # menu uses a gray placeholder.
-            if os.path.isfile(png_path):
-                icon_path = png_path
-            elif os.path.isfile(svg_path):
-                icon_path = svg_path
-            items.append((display_name, run_callable, icon_path))
-            continue
-
         display_name = _friendly_name_from_module(
-            name, getattr(state_cls, "__name__", None)
+            name, getattr(state_cls, "__name__", None) if state_cls else None
         )
+
         # Determine icon path for the module
         import os
 
@@ -160,12 +136,20 @@ def discover_games() -> List[Tuple[str, object, str | None]]:
             package_dir = os.path.dirname(getattr(module, "__file__", ""))
         png_path = os.path.join(package_dir, "icon.png")
         svg_path = os.path.join(package_dir, "icon.svg")
-        # Locate optional icon for the game; the menu will load and scale it.
         if os.path.isfile(png_path):
             icon_path = png_path
         elif os.path.isfile(svg_path):
             icon_path = svg_path
-        items.append((display_name, state_cls, icon_path))
+
+        # Use the run callable as launch target if available; otherwise entry is disabled
+        launch_target = run_callable if run_callable is not None else None
+        # If no run() was found, warn so maintainers know this entry will be disabled
+        if run_callable is None:
+            logger.warning(
+                "Game package %s does not define a callable run(); menu entry will be disabled",
+                full_name,
+            )
+        items.append((display_name, launch_target, icon_path))
 
     # Sort alphabetically by display name
     items.sort(key=lambda t: t[0].lower())

@@ -238,42 +238,134 @@ class MenuState(State):
         self.item_font_size = 32
         # Highlight animation attributes
         self.highlight_anim_phase = 0.0  # animation phase accumulator
-        self.highlight_border_width = 2  # initial border width (pixels)
+        # animation is decoupled from selection; draw() computes border width per-frame
+        self.highlight_border_width = 2  # fallback initial border width (pixels)
         self.highlight_padding = 10  # padding around text for highlight rectangle
         self.highlight_color = GRAY
         self.highlight_rect: pygame.Rect | None = None
         # Scrolling attributes
         self.scroll_offset: float = 0.0  # vertical scroll offset in pixels
+        # Input repeat handling for instantaneous navigation when holding keys
+        self._held_key: int | None = None
+        self._hold_start_time: float | None = None
+        self._last_repeat_time: float | None = None
+        # Initial delay before auto-repeat (seconds) and repeat interval (seconds)
+        # Default to no initial delay so a held key immediately repeats; can be tuned
+        # via environment for different platforms or preferences.
+        self._repeat_initial = float(os.getenv("MENU_KEY_REPEAT_INITIAL", "0.0"))
+        self._repeat_interval = float(os.getenv("MENU_KEY_REPEAT_INTERVAL", "0.06"))
+        # Debounce repeated keydown events (seconds)
+        self._debounce = float(os.getenv("MENU_KEY_DEBOUNCE", "0.04"))
+        self._last_keydown_time: float | None = None
+        self._last_keydown_key: int | None = None
+        # Time origin for decoupled highlight animation
+        import time
+
+        self._highlight_start = time.time()
         # Last rendered mute text (for tests)
         self._last_mute_text: str | None = None
+        # Last launch message shown to the user (transient)
+        self._last_launch_message: str | None = None
+        self._last_launch_time: float | None = None
+        self._launch_message_duration = 3.0  # seconds
 
     def handle_event(self, event: pygame.event.Event) -> None:
         """Handle user input events for menu navigation and selection, including scrolling."""
         # Compute layout parameters for potential scrolling adjustments
         layout = self._layout_params()
         if event.type == pygame.KEYDOWN:
+            # Debounce duplicate rapid KEYDOWN events for the same key
+            try:
+                import time
+
+                now = time.time()
+                if (
+                    self._last_keydown_time is not None
+                    and self._last_keydown_key == event.key
+                    and (now - self._last_keydown_time) < self._debounce
+                ):
+                    return
+                self._last_keydown_time = now
+                self._last_keydown_key = event.key
+            except Exception:
+                pass
+
             if event.key == KEY_UP:
+                # Move one item up (linear order) so Settings (appended last) is selectable
                 self.selected = (self.selected - 1) % len(self.menu_items)
+                # Start hold tracking for smooth instant repeats
+                try:
+                    import time
+
+                    self._held_key = KEY_UP
+                    self._hold_start_time = time.time()
+                    # Prevent an immediate repeat move in update() by priming last_repeat_time.
+                    # If an explicit initial delay is configured, allow update() to wait by
+                    # setting last_repeat_time to None; otherwise prime to now so repeats start
+                    # after the interval.
+                    if self._repeat_initial and self._repeat_initial > 0.0:
+                        self._last_repeat_time = None
+                    else:
+                        self._last_repeat_time = time.time()
+                except Exception:
+                    self._held_key = None
                 # Ensure the selected item is visible after navigation
                 self._ensure_selected_visible(layout)
             elif event.key == KEY_DOWN:
+                # Move one item down (linear order)
                 self.selected = (self.selected + 1) % len(self.menu_items)
+                try:
+                    import time
+
+                    self._held_key = KEY_DOWN
+                    self._hold_start_time = time.time()
+                    if self._repeat_initial and self._repeat_initial > 0.0:
+                        self._last_repeat_time = None
+                    else:
+                        self._last_repeat_time = time.time()
+                except Exception:
+                    self._held_key = None
                 self._ensure_selected_visible(layout)
             elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
                 # Transition to the selected game state or run callable
                 _, launch_target, _ = self.menu_items[self.selected]
+                name = self.menu_items[self.selected][0]
                 if isinstance(launch_target, type) and issubclass(launch_target, State):
-                    self.request_transition(launch_target())
+                    try:
+                        self.request_transition(launch_target())
+                        logger.info("Launched game %s (state) successfully", name)
+                        import time
+
+                        self._last_launch_message = f"Launched {name}"
+                        self._last_launch_time = time.time()
+                    except Exception:
+                        logger.exception("Failed to launch game state %s", name)
+                        import time
+
+                        self._last_launch_message = f"Failed to launch {name}"
+                        self._last_launch_time = time.time()
                 elif callable(launch_target):
                     try:
+                        logger.info("Attempting to launch game %s (callable)", name)
                         launch_target()
+                        logger.info("Launched game %s (callable) successfully", name)
+                        import time
+
+                        self._last_launch_message = f"Launched {name}"
+                        self._last_launch_time = time.time()
                     except Exception:
-                        logger.exception("Failed to launch game %s", launch_target)
+                        logger.exception("Failed to launch game %s", name)
+                        import time
+
+                        self._last_launch_message = f"Failed to launch {name}"
+                        self._last_launch_time = time.time()
                 else:
-                    logger.warning(
-                        "Menu item %s has unrecognized launch target",
-                        self.menu_items[self.selected][0],
-                    )
+                    # Disabled or unrecognized target – do not attempt to launch
+                    logger.warning("Attempted to launch disabled menu item: %s", name)
+                    import time
+
+                    self._last_launch_message = f"{name} cannot be launched"
+                    self._last_launch_time = time.time()
             elif event.key == pygame.K_m:
                 # Allow toggling mute from the menu as well
                 try:
@@ -282,6 +374,12 @@ class MenuState(State):
                     audio.toggle_mute()
                 except Exception:
                     pass
+        elif event.type == pygame.KEYUP:
+            # Stop any auto-repeat behaviour when the key is released
+            if event.key in (KEY_UP, KEY_DOWN) and self._held_key == event.key:
+                self._held_key = None
+                self._hold_start_time = None
+                self._last_repeat_time = None
 
     def _layout_params(self):
         """Compute layout parameters for menu grid and scrolling.
@@ -353,24 +451,55 @@ class MenuState(State):
             )
 
     def update(self, dt: float) -> None:
-        """Update menu state, handling highlight animation.
+        """Update menu state.
 
-        The highlight border width pulses over time for a visual effect.
+        Note: highlight visuals are computed in draw() and are decoupled from update().
         """
-        # Update animation phase
-        self.highlight_anim_phase += dt
-        # Compute a pulsing border width between 2 and 6 pixels
-        # Using a sine wave for smooth animation
-        import math
+        # Advance the legacy highlight animation phase (kept for tests/compat)
+        try:
+            import math
 
-        phase = math.sin(self.highlight_anim_phase * 2 * math.pi)  # -1 to 1
-        # Map phase to range [2, 6]
-        self.highlight_border_width = int(2 + (phase + 1) / 2 * 4)
-        # Ensure minimum width of 2
-        if self.highlight_border_width < 2:
-            self.highlight_border_width = 2
-        # No other time‑dependent logic
-        pass
+            self.highlight_anim_phase += dt
+            phase = math.sin(self.highlight_anim_phase * 2 * math.pi)
+            self.highlight_border_width = int(2 + (phase + 1) / 2 * 4)
+            if self.highlight_border_width < 2:
+                self.highlight_border_width = 2
+        except Exception:
+            pass
+
+        # Handle held key auto-repeat for instantaneous selection movement
+        try:
+            if self._held_key is not None:
+                import time
+
+                now = time.time()
+                # If last_repeat_time is None, we have only applied the initial keydown move.
+                if self._last_repeat_time is None:
+                    # Wait for initial delay before starting repeated moves
+                    if (
+                        self._hold_start_time
+                        and (now - self._hold_start_time) >= self._repeat_initial
+                    ):
+                        # Do the first repeated move (linear order)
+                        if self._held_key == KEY_UP:
+                            self.selected = (self.selected - 1) % len(self.menu_items)
+                        else:
+                            self.selected = (self.selected + 1) % len(self.menu_items)
+                        self._last_repeat_time = now
+                        # Ensure visibility
+                        self._ensure_selected_visible(self._layout_params())
+                else:
+                    # Subsequent repeats at interval
+                    if (now - self._last_repeat_time) >= self._repeat_interval:
+                        if self._held_key == KEY_UP:
+                            self.selected = (self.selected - 1) % len(self.menu_items)
+                        else:
+                            self.selected = (self.selected + 1) % len(self.menu_items)
+                        self._last_repeat_time = now
+                        self._ensure_selected_visible(self._layout_params())
+        except Exception:
+            # Protect update loop from any input handling errors
+            pass
 
     def draw(self, screen: pygame.Surface) -> None:
         """Render the menu title and list of menu items onto the screen.
@@ -488,6 +617,19 @@ class MenuState(State):
             text_y = icon_y + icon_surface.get_height() + 5
             # If this is the selected item, draw a highlight rectangle around the whole box
             if idx == self.selected:
+                # Compute pulsing border width using time-based animation (decoupled)
+                try:
+                    import math
+                    import time
+
+                    elapsed = time.time() - self._highlight_start
+                    phase = math.sin(elapsed * 2 * math.pi)  # -1 to 1
+                    border_w = int(2 + (phase + 1) / 2 * 4)
+                    if border_w < 2:
+                        border_w = 2
+                except Exception:
+                    border_w = self.highlight_border_width
+
                 self.highlight_rect = pygame.Rect(
                     box_x, box_y, BOX_SIZE, BOX_SIZE
                 ).inflate(self.highlight_padding * 2, self.highlight_padding * 2)
@@ -495,7 +637,7 @@ class MenuState(State):
                     screen,
                     self.highlight_color,
                     self.highlight_rect,
-                    width=self.highlight_border_width,
+                    width=border_w,
                 )
             # Draw icon and text
             screen.blit(icon_surface, (icon_x, icon_y))
@@ -513,6 +655,24 @@ class MenuState(State):
                 (tri_center_x, tri_top_y + tri_height),
             ]
             pygame.draw.polygon(screen, YELLOW, points)
+        # Draw transient launch message (if set and not expired)
+        try:
+            import time
+
+            if self._last_launch_message and self._last_launch_time:
+                if time.time() - self._last_launch_time < self._launch_message_duration:
+                    draw_text(
+                        screen,
+                        self._last_launch_message,
+                        20,
+                        YELLOW,
+                        SCREEN_WIDTH // 2,
+                        SCREEN_HEIGHT - 40,
+                        center=True,
+                    )
+        except Exception:
+            # Drawing a transient message should not interfere with normal rendering
+            pass
 
 
 # Clean up imported decorator
