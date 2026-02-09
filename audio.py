@@ -207,6 +207,9 @@ def toggle_mute() -> None:
             pass
 
 
+__all__ = ["init", "toggle_mute", "play_effect", "preload_effects"]
+
+
 # ---------------------------------------------------------------------------
 # Sound‑effect helper infrastructure
 # ---------------------------------------------------------------------------

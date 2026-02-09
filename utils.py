@@ -52,3 +52,6 @@ def draw_text(
     else:
         text_rect.topleft = (x, y)
     surface.blit(text_surface, text_rect)
+
+
+__all__ = ["draw_text"]

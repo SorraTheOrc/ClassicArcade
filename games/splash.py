@@ -71,3 +71,6 @@ class SplashState(State):
         text_surface = self._text_surface.copy()
         text_surface.set_alpha(self.alpha)
         screen.blit(text_surface, self._text_rect)
+
+
+__all__ = ["SplashState"]

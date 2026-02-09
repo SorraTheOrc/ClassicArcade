@@ -182,3 +182,6 @@ def get_menu_items() -> List[Tuple[str, object, str | None]]:
         )
 
     return items
+
+
+__all__ = ["get_menu_items", "discover_games"]

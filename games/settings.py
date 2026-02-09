@@ -188,3 +188,6 @@ class SettingsState(Game):
         if self.paused:
             self.draw_pause_overlay(screen)
         self.draw_mute_overlay(screen)
+
+
+__all__ = ["SettingsState"]
