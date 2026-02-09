@@ -445,6 +445,18 @@ class MenuState(State):
 
         Note: highlight visuals are computed in draw() and are decoupled from update().
         """
+        # Advance the legacy highlight animation phase (kept for tests/compat)
+        try:
+            import math
+
+            self.highlight_anim_phase += dt
+            phase = math.sin(self.highlight_anim_phase * 2 * math.pi)
+            self.highlight_border_width = int(2 + (phase + 1) / 2 * 4)
+            if self.highlight_border_width < 2:
+                self.highlight_border_width = 2
+        except Exception:
+            pass
+
         # Handle held key auto-repeat for instantaneous selection movement
         try:
             if self._held_key is not None:
