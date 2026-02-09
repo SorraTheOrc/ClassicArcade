@@ -246,6 +246,10 @@ class MenuState(State):
         self.scroll_offset: float = 0.0  # vertical scroll offset in pixels
         # Last rendered mute text (for tests)
         self._last_mute_text: str | None = None
+        # Last launch message shown to the user (transient)
+        self._last_launch_message: str | None = None
+        self._last_launch_time: float | None = None
+        self._launch_message_duration = 3.0  # seconds
 
     def handle_event(self, event: pygame.event.Event) -> None:
         """Handle user input events for menu navigation and selection, including scrolling."""
@@ -262,18 +266,43 @@ class MenuState(State):
             elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
                 # Transition to the selected game state or run callable
                 _, launch_target, _ = self.menu_items[self.selected]
+                name = self.menu_items[self.selected][0]
                 if isinstance(launch_target, type) and issubclass(launch_target, State):
-                    self.request_transition(launch_target())
+                    try:
+                        self.request_transition(launch_target())
+                        logger.info("Launched game %s (state) successfully", name)
+                        import time
+
+                        self._last_launch_message = f"Launched {name}"
+                        self._last_launch_time = time.time()
+                    except Exception:
+                        logger.exception("Failed to launch game state %s", name)
+                        import time
+
+                        self._last_launch_message = f"Failed to launch {name}"
+                        self._last_launch_time = time.time()
                 elif callable(launch_target):
                     try:
+                        logger.info("Attempting to launch game %s (callable)", name)
                         launch_target()
+                        logger.info("Launched game %s (callable) successfully", name)
+                        import time
+
+                        self._last_launch_message = f"Launched {name}"
+                        self._last_launch_time = time.time()
                     except Exception:
-                        logger.exception("Failed to launch game %s", launch_target)
+                        logger.exception("Failed to launch game %s", name)
+                        import time
+
+                        self._last_launch_message = f"Failed to launch {name}"
+                        self._last_launch_time = time.time()
                 else:
-                    logger.warning(
-                        "Menu item %s has unrecognized launch target",
-                        self.menu_items[self.selected][0],
-                    )
+                    # Disabled or unrecognized target – do not attempt to launch
+                    logger.warning("Attempted to launch disabled menu item: %s", name)
+                    import time
+
+                    self._last_launch_message = f"{name} cannot be launched"
+                    self._last_launch_time = time.time()
             elif event.key == pygame.K_m:
                 # Allow toggling mute from the menu as well
                 try:
@@ -513,6 +542,24 @@ class MenuState(State):
                 (tri_center_x, tri_top_y + tri_height),
             ]
             pygame.draw.polygon(screen, YELLOW, points)
+        # Draw transient launch message (if set and not expired)
+        try:
+            import time
+
+            if self._last_launch_message and self._last_launch_time:
+                if time.time() - self._last_launch_time < self._launch_message_duration:
+                    draw_text(
+                        screen,
+                        self._last_launch_message,
+                        20,
+                        YELLOW,
+                        SCREEN_WIDTH // 2,
+                        SCREEN_HEIGHT - 40,
+                        center=True,
+                    )
+        except Exception:
+            # Drawing a transient message should not interfere with normal rendering
+            pass
 
 
 # Clean up imported decorator
