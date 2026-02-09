@@ -41,6 +41,16 @@ class Game(State):
         self.paused = False
         self.next_state = None
 
+    def on_exit(self) -> None:
+        """Called when the game state is no longer active.
+
+        Fades out music over 1 second for smooth transition.
+        """
+        try:
+            audio.fade_out_music(duration_ms=1000)
+        except Exception:
+            pass
+
     def handle_event(self, event: pygame.event.Event) -> None:
         """Handle common key events for all games.
 

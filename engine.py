@@ -27,6 +27,12 @@ import atexit
 
 import pygame
 
+try:
+    import audio
+except Exception:
+    # Audio is optional
+    audio = None
+
 
 def _pygame_cleanup() -> None:
     """Clean up Pygame resources on interpreter exit."""
@@ -143,6 +149,14 @@ class State(ABC):
         """Clear any pending state transition."""
         self.next_state = None
 
+    def on_enter(self) -> None:
+        """Called when this state becomes active."""
+        pass
+
+    def on_exit(self) -> None:
+        """Called when this state is no longer active."""
+        pass
+
 
 class Engine:
     """Main engine class for running the game loop."""
@@ -167,9 +181,8 @@ class Engine:
         pygame.init()
         # Initialise audio system (mixer + background music) if available.
         try:
-            import audio
-
-            audio.init()
+            if audio is not None:
+                audio.init()
         except Exception:
             # Audio initialisation should not prevent the engine from running.
             pass
@@ -198,6 +211,13 @@ class Engine:
                 if event.type == pygame.QUIT:
                     self.running = False
                     break
+                # Handle music end event - play new random track
+                if audio is not None and hasattr(audio, "MUSIC_END_EVENT"):
+                    if event.type == audio.MUSIC_END_EVENT:
+                        try:
+                            audio.on_music_end()
+                        except Exception:
+                            pass
                 self.state.handle_event(event)
             # Update and draw current state
             self.state.update(dt)
@@ -207,7 +227,12 @@ class Engine:
             pygame.display.flip()
             # Handle state transition if requested
             if self.state.next_state is not None:
-                self.state = self.state.next_state
+                new_state = self.state.next_state
+                if hasattr(self.state, "on_exit"):
+                    self.state.on_exit()
+                self.state = new_state
+                if hasattr(self.state, "on_enter"):
+                    self.state.on_enter()
         pygame.quit()
 
 
@@ -268,6 +293,8 @@ class MenuState(State):
         self._last_launch_message: str | None = None
         self._last_launch_time: float | None = None
         self._launch_message_duration = 3.0  # seconds
+        # Flag to track if we\'ve already played music on entry
+        self._music_played_on_entry: bool = False
 
     def handle_event(self, event: pygame.event.Event) -> None:
         """Handle user input events for menu navigation and selection, including scrolling."""
@@ -449,6 +476,20 @@ class MenuState(State):
                 layout["max_offset"],
                 self.scroll_offset + (box_top + layout["BOX_SIZE"] - visible_bottom),
             )
+
+    def on_enter(self) -> None:
+        """Called when the menu state becomes active.
+
+        Plays random music if not already played on this entry.
+        """
+        try:
+            if not self._music_played_on_entry:
+                import audio
+
+                audio.play_random_music(context="menu")
+                self._music_played_on_entry = True
+        except Exception:
+            pass
 
     def update(self, dt: float) -> None:
         """Update menu state.

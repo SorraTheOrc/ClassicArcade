@@ -41,6 +41,10 @@ GRAY = COLORS["GRAY"]
 # Global mute flag for audio playback. Defaults to False (audio enabled).
 MUTE = False
 
+# Music configuration
+ENABLE_MUSIC = True
+MUSIC_PLAY_NEW_TRACK_ON_GAME_START = True
+
 # Difficulty levels
 DIFFICULTY_EASY = "easy"
 DIFFICULTY_MEDIUM = "medium"
@@ -136,6 +140,12 @@ def _load_settings() -> None:
                     # Load mute flag
                     global MUTE
                     MUTE = bool(data.get("mute", False))
+                    # Load music settings if present
+                    global ENABLE_MUSIC, MUSIC_PLAY_NEW_TRACK_ON_GAME_START
+                    ENABLE_MUSIC = bool(data.get("enable_music", True))
+                    MUSIC_PLAY_NEW_TRACK_ON_GAME_START = bool(
+                        data.get("music_play_new_track_on_game_start", True)
+                    )
                     # Load per‑game difficulty settings if present
                     for key in [
                         "snake_difficulty",
@@ -171,11 +181,11 @@ def _load_settings() -> None:
 
 
 def save_settings() -> None:
-    """Save current settings (currently only ``MUTE``) to ``settings.json``."""
-    # Persist using lowercase "mute" key (preferred). The loader still
-    # accepts the legacy uppercase "MUTE" for backward compatibility.
+    """Save current settings to ``settings.json``."""
     data = {
         "mute": MUTE,
+        "enable_music": ENABLE_MUSIC,
+        "music_play_new_track_on_game_start": MUSIC_PLAY_NEW_TRACK_ON_GAME_START,
         "snake_difficulty": SNAKE_DIFFICULTY,
         "pong_difficulty": PONG_DIFFICULTY,
         "breakout_difficulty": BREAKOUT_DIFFICULTY,
@@ -218,6 +228,8 @@ __all__ = [
     "MAGENTA",
     "GRAY",
     "MUTE",
+    "ENABLE_MUSIC",
+    "MUSIC_PLAY_NEW_TRACK_ON_GAME_START",
     "DIFFICULTY_EASY",
     "DIFFICULTY_MEDIUM",
     "DIFFICULTY_HARD",
