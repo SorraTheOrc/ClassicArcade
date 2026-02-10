@@ -8,9 +8,11 @@ Controls:
 """
 
 import logging
-from typing import List
+from typing import List, Tuple
 
 import pygame
+
+from engine import State
 
 logger = logging.getLogger(__name__)
 import logging
@@ -24,6 +26,7 @@ from config import (
     BLACK,
     BLUE,
     CYAN,
+    FONT_SIZE_LARGE,
     FONT_SIZE_MEDIUM,
     FONT_SIZE_SMALL,
     GREEN,
@@ -635,3 +638,376 @@ class SnakeState(Game):
 
 
 # Run function removed; use package-level run()
+
+
+class Snake2PlayerState(Game):
+    """Two-player Snake game with split-screen.
+
+    Player 1 uses arrow keys, Player 2 uses WASD keys.
+    Each player has their own grid on half the screen.
+    """
+
+    def __init__(self) -> None:
+        """Initialize 2-player Snake game state."""
+        super().__init__()
+        self.snake_speed = get_snake_speed()
+        logger.info(
+            f"2-Player Snake game started: difficulty={config.SNAKE_DIFFICULTY}, speed={self.snake_speed}"
+        )
+
+        # Player 1 (left side, arrow keys)
+        self.snake1 = [(SCREEN_WIDTH // 4, SCREEN_HEIGHT // 2)]
+        self.direction1 = (0, 0)
+        self.score1 = 0
+        self.game_over1 = False
+        self.food1 = (
+            random.randrange(0, SCREEN_WIDTH // 2 // BLOCK_SIZE) * BLOCK_SIZE,
+            random.randrange(0, SCREEN_HEIGHT // BLOCK_SIZE) * BLOCK_SIZE,
+        )
+
+        # Player 2 (right side, WASD keys)
+        self.snake2 = [(SCREEN_WIDTH * 3 // 4, SCREEN_HEIGHT // 2)]
+        self.direction2 = (0, 0)
+        self.score2 = 0
+        self.game_over2 = False
+        self.food2 = (
+            random.randrange(SCREEN_WIDTH // 2, SCREEN_WIDTH // BLOCK_SIZE)
+            * BLOCK_SIZE,
+            random.randrange(0, SCREEN_HEIGHT // BLOCK_SIZE) * BLOCK_SIZE,
+        )
+
+        self.font_size = 24
+        self.highscore_recorded = False
+        self.highscores = []
+
+    def handle_event(self, event: pygame.event.Event) -> None:
+        """Handle key events for 2-player Snake.
+
+        Player 1 (left): Arrow keys
+        Player 2 (right): WASD keys
+        """
+        if event.type == pygame.KEYDOWN:
+            if not self.game_over1:
+                # Player 1 controls (arrow keys)
+                if event.key == KEY_UP:
+                    if self.direction1 != (0, BLOCK_SIZE):
+                        self.direction1 = (0, -BLOCK_SIZE)
+                elif event.key == KEY_DOWN:
+                    if self.direction1 != (0, -BLOCK_SIZE):
+                        self.direction1 = (0, BLOCK_SIZE)
+                elif event.key == KEY_LEFT:
+                    if self.direction1 != (BLOCK_SIZE, 0):
+                        self.direction1 = (-BLOCK_SIZE, 0)
+                elif event.key == KEY_RIGHT:
+                    if self.direction1 != (-BLOCK_SIZE, 0):
+                        self.direction1 = (BLOCK_SIZE, 0)
+
+            if not self.game_over2:
+                # Player 2 controls (WASD)
+                if event.key == pygame.K_w:
+                    if self.direction2 != (0, BLOCK_SIZE):
+                        self.direction2 = (0, -BLOCK_SIZE)
+                elif event.key == pygame.K_s:
+                    if self.direction2 != (0, -BLOCK_SIZE):
+                        self.direction2 = (0, BLOCK_SIZE)
+                elif event.key == pygame.K_a:
+                    if self.direction2 != (BLOCK_SIZE, 0):
+                        self.direction2 = (-BLOCK_SIZE, 0)
+                elif event.key == pygame.K_d:
+                    if self.direction2 != (-BLOCK_SIZE, 0):
+                        self.direction2 = (BLOCK_SIZE, 0)
+
+        # Delegate remaining keys (ESC, P, R) to base class
+        super().handle_event(event)
+
+    def update(self, dt: float) -> None:
+        """Update the 2-player Snake game state."""
+        if self.game_over1 and self.game_over2:
+            return
+
+        # Update both snakes
+        self._update_snake(
+            self.snake1, self.direction1, self.food1, self.score1, self.game_over1, 1
+        )
+        self._update_snake(
+            self.snake2, self.direction2, self.food2, self.score2, self.game_over2, 2
+        )
+
+        # Check if both players are game over
+        if self.game_over1 and self.game_over2:
+            self.game_over = True
+
+    def _update_snake(
+        self,
+        snake: List[Tuple[int, int]],
+        direction: Tuple[int, int],
+        food: Tuple[int, int],
+        score: int,
+        game_over: bool,
+        player_num: int,
+    ) -> None:
+        """Update a single snake's position and check collisions."""
+        if game_over or self.paused:
+            return
+
+        if direction == (0, 0):
+            return
+
+        new_head = (snake[0][0] + direction[0], snake[0][1] + direction[1])
+
+        # Determine bounds based on player
+        if player_num == 1:
+            max_x = SCREEN_WIDTH // 2
+        else:
+            min_x = SCREEN_WIDTH // 2
+            max_x = SCREEN_WIDTH
+
+        # Check wall collision
+        if player_num == 1:
+            if (
+                new_head[0] < 0
+                or new_head[0] >= SCREEN_WIDTH // 2
+                or new_head[1] < 0
+                or new_head[1] >= SCREEN_HEIGHT
+            ):
+                self.game_over1 = True
+                logger.info(f"Player 1 game over (wall collision). Score: {score}")
+                return
+        else:
+            if (
+                new_head[0] < SCREEN_WIDTH // 2
+                or new_head[0] >= SCREEN_WIDTH
+                or new_head[1] < 0
+                or new_head[1] >= SCREEN_HEIGHT
+            ):
+                self.game_over2 = True
+                logger.info(f"Player 2 game over (wall collision). Score: {score}")
+                return
+
+        # Check self collision
+        if new_head in snake[1:]:
+            if player_num == 1:
+                self.game_over1 = True
+                logger.info(f"Player 1 game over (self collision). Score: {score}")
+            else:
+                self.game_over2 = True
+                logger.info(f"Player 2 game over (self collision). Score: {score}")
+            return
+
+        # Check collision with other player's snake
+        other_snake = self.snake2 if player_num == 1 else self.snake1
+        if new_head in other_snake:
+            if player_num == 1:
+                self.game_over1 = True
+                logger.info(
+                    f"Player 1 game over (collision with Player 2). Score: {score}"
+                )
+            else:
+                self.game_over2 = True
+                logger.info(
+                    f"Player 2 game over (collision with Player 1). Score: {score}"
+                )
+            return
+
+        # Move snake
+        snake.insert(0, new_head)
+
+        # Food collision
+        if new_head == food:
+            if player_num == 1:
+                self.score1 += 1
+                # Place new food in player 1's half
+                while True:
+                    self.food1 = (
+                        random.randrange(0, SCREEN_WIDTH // 2 // BLOCK_SIZE)
+                        * BLOCK_SIZE,
+                        random.randrange(0, SCREEN_HEIGHT // BLOCK_SIZE) * BLOCK_SIZE,
+                    )
+                    if self.food1 not in self.snake1 and self.food1 not in self.snake2:
+                        break
+            else:
+                self.score2 += 1
+                # Place new food in player 2's half
+                while True:
+                    self.food2 = (
+                        random.randrange(SCREEN_WIDTH // 2, SCREEN_WIDTH // BLOCK_SIZE)
+                        * BLOCK_SIZE,
+                        random.randrange(0, SCREEN_HEIGHT // BLOCK_SIZE) * BLOCK_SIZE,
+                    )
+                    if self.food2 not in self.snake2 and self.food2 not in self.snake1:
+                        break
+        else:
+            snake.pop()
+
+    def draw(self, screen: pygame.Surface) -> None:
+        """Render the 2-player Snake game with split screen."""
+        # Draw center divider line
+        pygame.draw.line(
+            screen, WHITE, (SCREEN_WIDTH // 2, 0), (SCREEN_WIDTH // 2, SCREEN_HEIGHT), 2
+        )
+
+        # Draw Player 1 (left side)
+        screen.fill(BLACK, (0, 0, SCREEN_WIDTH // 2, SCREEN_HEIGHT))
+        pygame.draw.rect(screen, GREEN, (*self.snake1[0], BLOCK_SIZE, BLOCK_SIZE))
+        for segment in self.snake1[1:]:
+            pygame.draw.rect(screen, (0, 200, 0), (*segment, BLOCK_SIZE, BLOCK_SIZE))
+        pygame.draw.rect(screen, RED, (*self.food1, BLOCK_SIZE, BLOCK_SIZE))
+        draw_text(
+            screen,
+            f"P1 Score: {self.score1}",
+            FONT_SIZE_MEDIUM,
+            GREEN,
+            SCREEN_WIDTH // 4,
+            20,
+            center=True,
+        )
+
+        # Draw Player 2 (right side)
+        screen.fill(BLACK, (SCREEN_WIDTH // 2, 0, SCREEN_WIDTH // 2, SCREEN_HEIGHT))
+        pygame.draw.rect(screen, BLUE, (*self.snake2[0], BLOCK_SIZE, BLOCK_SIZE))
+        for segment in self.snake2[1:]:
+            pygame.draw.rect(screen, (0, 0, 200), (*segment, BLOCK_SIZE, BLOCK_SIZE))
+        pygame.draw.rect(screen, MAGENTA, (*self.food2, BLOCK_SIZE, BLOCK_SIZE))
+        draw_text(
+            screen,
+            f"P2 Score: {self.score2}",
+            FONT_SIZE_MEDIUM,
+            BLUE,
+            SCREEN_WIDTH * 3 // 4,
+            20,
+            center=True,
+        )
+
+        # Draw game over screen
+        if self.game_over1 and self.game_over2:
+            if not getattr(self, "highscore_recorded", False):
+                self.highscores = add_score("snake", max(self.score1, self.score2))
+                self.highscore_recorded = True
+
+            winner = (
+                "Player 1"
+                if self.score1 > self.score2
+                else ("Player 2" if self.score2 > self.score1 else "Tie")
+            )
+            draw_text(
+                screen,
+                f"{winner} wins!",
+                FONT_SIZE_LARGE,
+                YELLOW,
+                SCREEN_WIDTH // 2,
+                SCREEN_HEIGHT // 2 - 50,
+                center=True,
+            )
+            draw_text(
+                screen,
+                f"P1: {self.score1}  -  P2: {self.score2}",
+                FONT_SIZE_MEDIUM,
+                WHITE,
+                SCREEN_WIDTH // 2,
+                SCREEN_HEIGHT // 2,
+                center=True,
+            )
+            draw_text(
+                screen,
+                "Press R to restart or ESC to menu",
+                FONT_SIZE_MEDIUM,
+                CYAN,
+                SCREEN_WIDTH // 2,
+                SCREEN_HEIGHT - 50,
+                center=True,
+            )
+        elif self.paused:
+            self.draw_pause_overlay(screen)
+
+    @classmethod
+    def get_controls(cls) -> List[str]:
+        """Return control instructions for 2-player Snake.
+
+        Returns:
+            List of control description strings.
+        """
+        return [
+            "Player 1: Arrow keys to move",
+            "Player 2: WASD keys to move",
+            "R: Restart after game over",
+            "ESC: Return to main menu",
+        ]
+
+
+class SnakeModeSelectState(State):
+    """Mode selection screen for Snake game.
+
+    Allows the player to choose between single-player and 2-player modes.
+    """
+
+    def __init__(self) -> None:
+        """Initialize the mode selection screen."""
+        super().__init__()
+        self.options = ["Single Player", "2 Player (Split Screen)"]
+        self.selected = 0
+        self.title_font_size = 48
+        self.item_font_size = 32
+
+    def handle_event(self, event: pygame.event.Event) -> None:
+        """Handle key events for mode selection."""
+        if event.type == pygame.KEYDOWN:
+            if event.key == KEY_UP:
+                self.selected = (self.selected - 1) % len(self.options)
+            elif event.key == KEY_DOWN:
+                self.selected = (self.selected + 1) % len(self.options)
+            elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                if self.selected == 0:
+                    from games.snake import SnakeState
+
+                    self.request_transition(SnakeState())
+                elif self.selected == 1:
+                    from games.snake import Snake2PlayerState
+
+                    self.request_transition(Snake2PlayerState())
+            elif event.key == pygame.K_ESCAPE:
+                from engine import MenuState
+
+                self.request_transition(MenuState([]))
+
+    def update(self, dt: float) -> None:
+        """Update mode selection state."""
+        pass
+
+    def draw(self, screen: pygame.Surface) -> None:
+        """Render mode selection screen."""
+        screen.fill(BLACK)
+
+        # Draw title
+        draw_text(
+            screen,
+            "Select Snake Mode",
+            self.title_font_size,
+            WHITE,
+            SCREEN_WIDTH // 2,
+            SCREEN_HEIGHT // 3,
+            center=True,
+        )
+
+        # Draw options
+        for i, option in enumerate(self.options):
+            if i == self.selected:
+                text_color = GREEN
+            else:
+                text_color = WHITE
+
+            draw_text(
+                screen,
+                option,
+                self.item_font_size,
+                text_color,
+                SCREEN_WIDTH // 2,
+                SCREEN_HEIGHT // 2 + i * 50,
+                center=True,
+            )
+
+
+def run() -> None:
+    """Run Snake using the shared run helper."""
+    from games.run_helper import run_game
+
+    run_game(SnakeModeSelectState)

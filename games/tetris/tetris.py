@@ -22,6 +22,7 @@ from config import (
     BLACK,
     BLUE,
     CYAN,
+    FONT_SIZE_LARGE,
     FONT_SIZE_MEDIUM,
     FONT_SIZE_SMALL,
     GRAY,
@@ -37,6 +38,7 @@ from config import (
     WHITE,
     YELLOW,
 )
+from engine import State
 from games.game_base import Game
 from games.highscore import add_score
 from utils import draw_text
@@ -391,8 +393,438 @@ def run() -> None:
     """Run Tetris using the shared run helper."""
     from games.run_helper import run_game
 
-    run_game(TetrisState)
+    run_game(TetrisModeSelectState)
 
 
-if __name__ == "__main__":
-    run()
+class Tetris2PlayerState(Game):
+    """Two-player Tetris game where each player competes on separate grids side-by-side.
+
+    Player 1 uses arrow keys on the left grid.
+    Player 2 uses WASD keys on the right grid.
+    """
+
+    def __init__(self) -> None:
+        """Initialize 2-player Tetris game state."""
+        super().__init__()
+        _apply_tetris_speed_settings()
+        logger.info(
+            f"2-Player Tetris game started: difficulty={config.TETRIS_DIFFICULTY}, fall_speed={FALL_SPEED}, fast_fall_speed={FAST_FALL_SPEED}"
+        )
+
+        # Player 1 (left side)
+        self.grid1: List[List[object | None]] = [
+            [None for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)
+        ]
+        self.current_shape_name1 = random.choice(list(self.SHAPES.keys()))
+        self.current_shape1 = self.SHAPES[self.current_shape_name1]
+        self.current_color1 = self.SHAPE_COLORS[self.current_shape_name1]
+        self.shape_x1 = GRID_WIDTH // 2 - 2
+        self.shape_y1 = 0
+        self.shape_coords1 = self.current_shape1
+        self.fall_timer1 = 0.0
+        self.fall_interval1 = FALL_SPEED
+        self.game_over1 = False
+        self.highscore_recorded1 = False
+        self.score1 = 0
+        self.level1 = 1
+        self.lines_cleared_total1 = 0
+
+        # Player 2 (right side)
+        self.grid2: List[List[object | None]] = [
+            [None for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)
+        ]
+        self.current_shape_name2 = random.choice(list(self.SHAPES.keys()))
+        self.current_shape2 = self.SHAPES[self.current_shape_name2]
+        self.current_color2 = self.SHAPE_COLORS[self.current_shape_name2]
+        self.shape_x2 = GRID_WIDTH // 2 - 2
+        self.shape_y2 = 0
+        self.shape_coords2 = self.current_shape2
+        self.fall_timer2 = 0.0
+        self.fall_interval2 = FALL_SPEED
+        self.game_over2 = False
+        self.highscore_recorded2 = False
+        self.score2 = 0
+        self.level2 = 1
+        self.lines_cleared_total2 = 0
+
+        self.countdown_active = False
+        self.countdown_remaining = 0.0
+
+    def handle_event(self, event: pygame.event.Event) -> None:
+        """Handle user input for piece movement and rotation for both players."""
+        super().handle_event(event)
+        if event.type == pygame.KEYDOWN:
+            # Player 1 controls (arrow keys)
+            if not self.game_over1:
+                if event.key == KEY_LEFT:
+                    if self.valid_position(
+                        self.grid1, self.shape_coords1, self.shape_x1 - 1, self.shape_y1
+                    ):
+                        self.shape_x1 -= 1
+                elif event.key == KEY_RIGHT:
+                    if self.valid_position(
+                        self.grid1, self.shape_coords1, self.shape_x1 + 1, self.shape_y1
+                    ):
+                        self.shape_x1 += 1
+                elif event.key == KEY_DOWN:
+                    self.fall_interval1 = FAST_FALL_SPEED
+                elif event.key == KEY_UP:
+                    new_coords = self.rotate(self.shape_coords1)
+                    if self.valid_position(
+                        self.grid1, new_coords, self.shape_x1, self.shape_y1
+                    ):
+                        self.shape_coords1 = new_coords
+                        audio.play_effect("tetris", "rotate.wav")
+
+            # Player 2 controls (WASD)
+            if not self.game_over2:
+                if event.key == pygame.K_a:
+                    if self.valid_position(
+                        self.grid2, self.shape_coords2, self.shape_x2 - 1, self.shape_y2
+                    ):
+                        self.shape_x2 -= 1
+                elif event.key == pygame.K_d:
+                    if self.valid_position(
+                        self.grid2, self.shape_coords2, self.shape_x2 + 1, self.shape_y2
+                    ):
+                        self.shape_x2 += 1
+                elif event.key == pygame.K_s:
+                    self.fall_interval2 = FAST_FALL_SPEED
+                elif event.key == pygame.K_w:
+                    new_coords = self.rotate(self.shape_coords2)
+                    if self.valid_position(
+                        self.grid2, new_coords, self.shape_x2, self.shape_y2
+                    ):
+                        self.shape_coords2 = new_coords
+                        audio.play_effect("tetris", "rotate.wav")
+
+    def update(self, dt: float) -> None:
+        """Update the 2-player Tetris game state."""
+        if self.countdown_active:
+            self.countdown_remaining -= dt
+            if self.countdown_remaining <= 0:
+                self.countdown_active = False
+            return
+
+        # Update both players
+        self._update_player(
+            dt,
+            self.grid1,
+            self.shape_coords1,
+            self.shape_x1,
+            self.shape_y1,
+            self.current_shape_name1,
+            self.current_shape1,
+            self.current_color1,
+            self.fall_timer1,
+            self.fall_interval1,
+            self.score1,
+            self.level1,
+            self.lines_cleared_total1,
+            self.game_over1,
+            1,
+        )
+        self._update_player(
+            dt,
+            self.grid2,
+            self.shape_coords2,
+            self.shape_x2,
+            self.shape_y2,
+            self.current_shape_name2,
+            self.current_shape2,
+            self.current_color2,
+            self.fall_timer2,
+            self.fall_interval2,
+            self.score2,
+            self.level2,
+            self.lines_cleared_total2,
+            self.game_over2,
+            2,
+        )
+
+    def _update_player(
+        self,
+        dt: float,
+        grid,
+        shape_coords,
+        shape_x,
+        shape_y,
+        shape_name,
+        shape,
+        color,
+        fall_timer,
+        fall_interval,
+        score,
+        level,
+        lines_total,
+        game_over,
+        player_num,
+    ) -> None:
+        """Update a single player's Tetris state."""
+        if game_over or self.paused:
+            return
+
+        keys = pygame.key.get_pressed()
+        try:
+            down_is_pressed = bool(
+                keys[KEY_DOWN] if player_num == 1 else keys[pygame.K_s]
+            )
+        except Exception:
+            down_is_pressed = False
+
+        if not down_is_pressed:
+            fall_interval = FALL_SPEED if player_num == 1 else FALL_SPEED
+
+        fall_timer += dt * 1000
+        if fall_timer >= fall_interval:
+            fall_timer = 0.0
+            if self.valid_position(grid, shape_coords, shape_x, shape_y + 1):
+                shape_y += 1
+            else:
+                self.lock_piece(grid, shape_coords, shape_x, shape_y, color)
+                audio.play_effect("tetris", "place.wav")
+
+                lines = self.clear_lines(grid)
+                if lines:
+                    lines_total += lines
+                    score += (lines**2) * 100
+                    for _ in range(lines):
+                        audio.play_effect("tetris", "line_clear.wav")
+                    if lines_total // 5 > (level - 1):
+                        level += 1
+                        fall_interval = max(50, FALL_SPEED - (level - 1) * 50)
+                        self.countdown_active = True
+                        self.countdown_remaining = 3.0
+
+                shape_name = random.choice(list(self.SHAPES.keys()))
+                shape = self.SHAPES[shape_name]
+                color = self.SHAPE_COLORS[shape_name]
+                shape_coords = shape
+                shape_x = GRID_WIDTH // 2 - 2
+                shape_y = 0
+
+                if not self.valid_position(grid, shape_coords, shape_x, shape_y):
+                    game_over = True
+
+    def draw(self, screen: pygame.Surface) -> None:
+        """Render the 2-player Tetris game with split screen."""
+        # Draw center divider
+        pygame.draw.line(
+            screen, WHITE, (SCREEN_WIDTH // 2, 0), (SCREEN_WIDTH // 2, SCREEN_HEIGHT), 2
+        )
+
+        # Draw Player 1 (left)
+        self._draw_player(
+            screen,
+            self.grid1,
+            self.shape_coords1,
+            self.shape_x1,
+            self.shape_y1,
+            self.current_color1,
+            self.score1,
+            1,
+            0,
+            SCREEN_WIDTH // 2,
+        )
+
+        # Draw Player 2 (right)
+        self._draw_player(
+            screen,
+            self.grid2,
+            self.shape_coords2,
+            self.shape_x2,
+            self.shape_y2,
+            self.current_color2,
+            self.score2,
+            2,
+            SCREEN_WIDTH // 2,
+            SCREEN_WIDTH,
+        )
+
+        # Game over display
+        if self.game_over1 and self.game_over2:
+            if not getattr(self, "highscore_recorded", False):
+                self.highscores = add_score("tetris", max(self.score1, self.score2))
+                self.highscore_recorded = True
+
+            winner = (
+                "Player 1"
+                if self.score1 > self.score2
+                else ("Player 2" if self.score2 > self.score1 else "Tie")
+            )
+            draw_text(
+                screen,
+                f"{winner} wins!",
+                FONT_SIZE_LARGE,
+                YELLOW,
+                SCREEN_WIDTH // 2,
+                SCREEN_HEIGHT // 2 - 50,
+                center=True,
+            )
+            draw_text(
+                screen,
+                f"P1: {self.score1}  -  P2: {self.score2}",
+                FONT_SIZE_MEDIUM,
+                WHITE,
+                SCREEN_WIDTH // 2,
+                SCREEN_HEIGHT // 2,
+                center=True,
+            )
+            draw_text(
+                screen,
+                "Press R to restart or ESC to menu",
+                FONT_SIZE_MEDIUM,
+                CYAN,
+                SCREEN_WIDTH // 2,
+                SCREEN_HEIGHT - 50,
+                center=True,
+            )
+        elif self.paused:
+            self.draw_pause_overlay(screen)
+
+    def _draw_player(
+        self,
+        screen,
+        grid,
+        shape_coords,
+        shape_x,
+        shape_y,
+        color,
+        score,
+        player_num,
+        x_start,
+        x_end,
+    ) -> None:
+        """Draw a single player's Tetris grid."""
+        # Calculate grid position for this player
+        grid_x_offset = x_start + (SCREEN_WIDTH // 2 - GRID_WIDTH * CELL_SIZE) // 2
+        grid_y_offset = (SCREEN_HEIGHT - GRID_HEIGHT * CELL_SIZE) // 2
+
+        # Draw grid background
+        screen.fill(BLACK, (x_start, 0, x_end - x_start, SCREEN_HEIGHT))
+        pygame.draw.rect(screen, GRAY, (x_start, 0, x_end - x_start, SCREEN_HEIGHT), 1)
+
+        # Draw grid cells
+        for y in range(GRID_HEIGHT):
+            for x in range(GRID_WIDTH):
+                cell_color = grid[y][x]
+                if cell_color:
+                    rect = pygame.Rect(
+                        grid_x_offset + x * CELL_SIZE,
+                        grid_y_offset + y * CELL_SIZE,
+                        CELL_SIZE,
+                        CELL_SIZE,
+                    )
+                    pygame.draw.rect(
+                        screen, _cast(Tuple[int, int, int], cell_color), rect
+                    )
+
+        # Draw current falling piece
+        for x_offset, y_offset in shape_coords:
+            gx = shape_x + x_offset
+            gy = shape_y + y_offset
+            if 0 <= gx < GRID_WIDTH and 0 <= gy < GRID_HEIGHT:
+                rect = pygame.Rect(
+                    grid_x_offset + gx * CELL_SIZE,
+                    grid_y_offset + gy * CELL_SIZE,
+                    CELL_SIZE,
+                    CELL_SIZE,
+                )
+                pygame.draw.rect(screen, color, rect)
+
+        # Draw score
+        draw_text(
+            screen,
+            f"P{player_num}: {score}",
+            FONT_SIZE_MEDIUM,
+            WHITE,
+            x_start + (x_end - x_start) // 2,
+            20,
+            center=True,
+        )
+
+    @classmethod
+    def get_controls(cls) -> List[str]:
+        """Return control instructions for 2-player Tetris.
+
+        Returns:
+            List of control description strings.
+        """
+        return [
+            "Player 1: Arrow keys to move/rotate",
+            "Player 2: WASD keys to move/rotate",
+            "R: Restart after game over",
+            "ESC: Return to main menu",
+        ]
+
+
+class TetrisModeSelectState(State):
+    """Mode selection screen for Tetris game.
+
+    Allows the player to choose between single-player and 2-player modes.
+    """
+
+    def __init__(self) -> None:
+        """Initialize the mode selection screen."""
+        super().__init__()
+        self.options = ["Single Player", "2 Player (Versus)"]
+        self.selected = 0
+        self.title_font_size = 48
+        self.item_font_size = 32
+
+    def handle_event(self, event: pygame.event.Event) -> None:
+        """Handle key events for mode selection."""
+        if event.type == pygame.KEYDOWN:
+            if event.key == KEY_UP:
+                self.selected = (self.selected - 1) % len(self.options)
+            elif event.key == KEY_DOWN:
+                self.selected = (self.selected + 1) % len(self.options)
+            elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                if self.selected == 0:
+                    from games.tetris import TetrisState
+
+                    self.request_transition(TetrisState())
+                elif self.selected == 1:
+                    from games.tetris import Tetris2PlayerState
+
+                    self.request_transition(Tetris2PlayerState())
+            elif event.key == pygame.K_ESCAPE:
+                from engine import MenuState
+
+                self.request_transition(MenuState([]))
+
+    def update(self, dt: float) -> None:
+        """Update mode selection state."""
+        pass
+
+    def draw(self, screen: pygame.Surface) -> None:
+        """Render mode selection screen."""
+        screen.fill(BLACK)
+
+        # Draw title
+        draw_text(
+            screen,
+            "Select Tetris Mode",
+            self.title_font_size,
+            WHITE,
+            SCREEN_WIDTH // 2,
+            SCREEN_HEIGHT // 3,
+            center=True,
+        )
+
+        # Draw options
+        for i, option in enumerate(self.options):
+            if i == self.selected:
+                text_color = GREEN
+            else:
+                text_color = WHITE
+
+            draw_text(
+                screen,
+                option,
+                self.item_font_size,
+                text_color,
+                SCREEN_WIDTH // 2,
+                SCREEN_HEIGHT // 2 + i * 50,
+                center=True,
+            )
