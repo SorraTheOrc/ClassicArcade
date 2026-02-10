@@ -10,7 +10,7 @@ Controls:
 
 import logging
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 import pygame
 
@@ -277,11 +277,38 @@ class PongSinglePlayerState(PongState):
 
     MULTIPLAYER = False
 
+    @classmethod
+    def get_controls(cls) -> List[str]:
+        """Return control instructions for Pong single-player.
+
+        Returns:
+            List of control description strings.
+        """
+        return [
+            "W/S or Up/Down: Move paddle",
+            "R: Restart after game over",
+            "ESC: Return to main menu",
+        ]
+
 
 class PongMultiplayerState(PongState):
     """Two-player Pong where both paddles are human-controlled."""
 
     MULTIPLAYER = True
+
+    @classmethod
+    def get_controls(cls) -> List[str]:
+        """Return control instructions for Pong multiplayer.
+
+        Returns:
+            List of control description strings.
+        """
+        return [
+            "W/S: Left paddle (Player 1)",
+            "Up/Down: Right paddle (Player 2)",
+            "R: Restart after game over",
+            "ESC: Return to main menu",
+        ]
 
 
 def run() -> None:

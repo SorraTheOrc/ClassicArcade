@@ -58,7 +58,7 @@ from config import (
     WHITE,
     YELLOW,
 )
-from utils import draw_text
+from utils import draw_text, wrap_text
 
 # Path to a shared default icon used when a game does not provide its own.
 # Expected location: <project_root>/assets/icons/default_game_icon.png (or .svg).
@@ -719,4 +719,257 @@ class MenuState(State):
 # Clean up imported decorator
 del abstractmethod
 
-__all__ = ["State", "Engine", "MenuState"]
+
+class HelpState(State):
+    """Help/controls screen for the arcade suite.
+
+    Displays controls for all available games. The help screen is built dynamically
+    by parsing the Controls section from each game's module docstring.
+    """
+
+    def __init__(self) -> None:
+        """Initialize the help screen with title and item font sizes."""
+        super().__init__()
+        self.title_font_size = 48
+        self.item_font_size = 24
+        self.section_font_size = 32
+        self.margin_top = 80
+        self.line_spacing = 30
+        self.section_spacing = 40
+        self.scroll_offset = 0
+        self.scroll_speed = 40
+
+    def handle_event(self, event: pygame.event.Event) -> None:
+        """Process key events for the help screen.
+
+        Supports:
+        - ``K_h`` or ``K_ESCAPE`` – return to the main menu.
+        - ``K_UP`` / ``K_DOWN`` – scroll content.
+        """
+        if event.type == pygame.KEYDOWN:
+            if event.key in (pygame.K_h, pygame.K_ESCAPE):
+                from menu_items import get_menu_items
+
+                self.request_transition(MenuState(get_menu_items()))
+                return
+            elif event.key == pygame.K_UP:
+                self.scroll_offset = max(0, self.scroll_offset - self.scroll_speed)
+            elif event.key == pygame.K_DOWN:
+                controls = self._get_all_controls()
+                total_height = self._calculate_content_height(controls)
+                max_offset = max(0, total_height - (SCREEN_HEIGHT - 110))
+                self.scroll_offset = min(
+                    max_offset, self.scroll_offset + self.scroll_speed
+                )
+
+    def update(self, dt: float) -> None:
+        """Update the help screen (no time-dependent logic)."""
+        pass
+
+    def _calculate_content_height(self, controls: list) -> int:
+        """Calculate total height of all content."""
+        y = self.margin_top
+        for game_name, control_lines in controls:
+            y += self.section_spacing
+            for line in control_lines:
+                wrapped_lines = wrap_text(
+                    pygame.font.Font(None, self.item_font_size), line, SCREEN_WIDTH - 60
+                )
+                y += len(wrapped_lines) * self.item_font_size + self.line_spacing
+            y += 10
+        return y
+
+    def draw(self, screen: pygame.Surface) -> None:
+        """Render the help screen with controls for all games.
+
+        Draws the title, then iterates through all discovered games and displays
+        their controls using the draw_text helper with text wrapping.
+        """
+        screen.fill(BLACK)
+
+        # Title
+        draw_text(
+            screen,
+            "Controls",
+            self.title_font_size,
+            WHITE,
+            SCREEN_WIDTH // 2,
+            30,
+            center=True,
+        )
+
+        # Get controls from all games
+        controls = self._get_all_controls()
+
+        # Draw controls for each game
+        y = self.margin_top - self.scroll_offset
+        for game_name, control_lines in controls:
+            # Game name as section header
+            draw_text(
+                screen,
+                game_name,
+                self.section_font_size,
+                YELLOW,
+                SCREEN_WIDTH // 2,
+                y,
+                center=True,
+            )
+            y += self.section_spacing
+
+            # Control lines with wrapping
+            for line in control_lines:
+                wrapped_lines = wrap_text(
+                    pygame.font.Font(None, self.item_font_size), line, SCREEN_WIDTH - 60
+                )
+                for surface, _ in wrapped_lines:
+                    surface.set_colorkey((0, 0, 0))
+                    text_rect = surface.get_rect()
+                    text_rect.center = (SCREEN_WIDTH // 2, y)
+                    screen.blit(surface, text_rect)
+                    y += self.item_font_size
+                y += self.line_spacing
+
+            # Add some spacing between sections
+            y += 10
+
+        # Footer instruction
+        draw_text(
+            screen,
+            "Press H or ESC to return to menu",
+            self.item_font_size - 4,
+            GRAY,
+            SCREEN_WIDTH // 2,
+            SCREEN_HEIGHT - 30,
+            center=True,
+        )
+
+        # Scroll indicator if content overflows
+        total_height = self._calculate_content_height(controls)
+        max_offset = max(0, total_height - (SCREEN_HEIGHT - 110))
+        if max_offset > 0:
+            # Draw scroll indicator
+            tri_height = 15
+            tri_half = tri_height // 2
+            tri_center_x = SCREEN_WIDTH // 2
+            tri_top_y = SCREEN_HEIGHT - 40
+            points = [
+                (tri_center_x - tri_half, tri_top_y),
+                (tri_center_x + tri_half, tri_top_y),
+                (tri_center_x, tri_top_y + tri_height),
+            ]
+            pygame.draw.polygon(screen, YELLOW, points)
+
+    def _get_all_controls(self) -> List[Tuple[str, List[str]]]:
+        """Collect controls from all discovered games.
+
+        Returns a list of (game_name, control_lines) tuples where control_lines
+        is a list of strings describing the controls for that game.
+        """
+        from menu_items import discover_games
+
+        items = discover_games()
+        controls: List[Tuple[str, List[str]]] = []
+
+        for name, launch_target, _ in items:
+            # Get controls from the launch target
+            game_controls = self._get_game_controls(name, launch_target)
+            if game_controls:
+                controls.append((name, game_controls))
+
+        # Sort by game name
+        controls.sort(key=lambda x: x[0].lower())
+        return controls
+
+    def _get_game_controls(
+        self, game_name: str, launch_target: object | None
+    ) -> List[str] | None:
+        """Extract controls for a single game.
+
+        Looks for a "Controls:" section in the module docstring.
+
+        Returns a list of control lines or None if no controls found.
+        """
+        if not launch_target or not hasattr(launch_target, "__module__"):
+            return None
+
+        try:
+            # Import the module
+            module_name = launch_target.__module__
+            module = __import__(module_name)
+
+            # Check module docstring for Controls
+            doc = getattr(module, "__doc__", None)
+            if doc:
+                controls = self._parse_controls_from_doc(doc)
+                if controls:
+                    return controls
+
+            # If controls not found, try common submodule patterns
+            # For packages like games.breakout, try games.breakout.breakout
+            try:
+                import importlib
+
+                # Try submodule with same name as package
+                submodule_name = f"{module_name}.{module_name.split('.')[-1]}"
+                submodule = importlib.import_module(submodule_name)
+                doc = getattr(submodule, "__doc__", None)
+                if doc:
+                    controls = self._parse_controls_from_doc(doc)
+                    if controls:
+                        return controls
+            except Exception:
+                pass
+
+            # Try games.game_name.game_name pattern
+            try:
+                import importlib
+
+                game_base = module_name.split(".")[-1]
+                submodule_name = f"games.{game_base}.{game_base}"
+                submodule = importlib.import_module(submodule_name)
+                doc = getattr(submodule, "__doc__", None)
+                if doc:
+                    controls = self._parse_controls_from_doc(doc)
+                    if controls:
+                        return controls
+            except Exception:
+                pass
+
+        except Exception:
+            pass
+
+        return None
+
+    def _parse_controls_from_doc(self, doc: str | None) -> List[str] | None:
+        """Parse controls from a docstring.
+
+        Looks for a "Controls:" section and extracts the control descriptions.
+
+        Returns a list of control lines or None if no controls found.
+        """
+        if not doc:
+            return None
+
+        lines = doc.split("\n")
+        # Find Controls section
+        in_controls = False
+        control_lines: List[str] = []
+        for line in lines:
+            stripped = line.strip()
+            if stripped.startswith("Controls:"):
+                in_controls = True
+                continue
+            if in_controls:
+                # Check if this line is indented (part of controls section)
+                if line and not line.startswith(" ") and not line.startswith("\t"):
+                    # End of controls section (non-indented line)
+                    break
+                if stripped:  # Non-empty line
+                    control_lines.append(stripped)
+        if control_lines:
+            return control_lines
+
+        return None
+
+
+__all__ = ["State", "Engine", "MenuState", "HelpState"]

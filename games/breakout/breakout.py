@@ -374,6 +374,19 @@ class BreakoutState(Game):
         # Draw mute overlay (Muted or Sound On)
         self.draw_mute_overlay(screen)
 
+    @classmethod
+    def get_controls(cls) -> List[str]:
+        """Return control instructions for Breakout.
+
+        Returns:
+            List of control description strings.
+        """
+        return [
+            "Left/Right: Move paddle",
+            "R: Restart after game over",
+            "ESC: Return to main menu",
+        ]
+
 
 def create_bricks() -> List[Tuple[pygame.Rect, Tuple[int, int, int]]]:
     """Create and return a list of brick (rect, color) tuples.

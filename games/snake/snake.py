@@ -8,6 +8,7 @@ Controls:
 """
 
 import logging
+from typing import List
 
 import pygame
 
@@ -596,6 +597,19 @@ class SnakeState(Game):
             elif pu.get("type") == "life":
                 color = YELLOW
             pygame.draw.rect(screen, color, (*pu.get("pos"), BLOCK_SIZE, BLOCK_SIZE))
+
+    @classmethod
+    def get_controls(cls) -> List[str]:
+        """Return control instructions for Snake.
+
+        Returns:
+            List of control description strings.
+        """
+        return [
+            "Arrow keys: Change direction",
+            "R: Restart after game over",
+            "ESC: Return to main menu",
+        ]
 
 
 # Run function removed; use package-level run()
