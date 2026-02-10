@@ -641,10 +641,10 @@ class SnakeState(Game):
 
 
 class Snake2PlayerState(Game):
-    """Two-player Snake game with split-screen.
+    """Two-player Snake game on a shared screen (competitive).
 
     Player 1 uses arrow keys, Player 2 uses WASD keys.
-    Each player has their own grid on half the screen.
+    Both players compete on the same grid - first to collide loses.
     """
 
     def __init__(self) -> None:
@@ -655,24 +655,22 @@ class Snake2PlayerState(Game):
             f"2-Player Snake game started: difficulty={config.SNAKE_DIFFICULTY}, speed={self.snake_speed}"
         )
 
-        # Player 1 (left side, arrow keys)
+        # Shared grid - both players on the same screen
+        # Player 1 (arrow keys) - starts on left side
         self.snake1 = [(SCREEN_WIDTH // 4, SCREEN_HEIGHT // 2)]
         self.direction1 = (0, 0)
         self.score1 = 0
         self.game_over1 = False
-        self.food1 = (
-            random.randrange(0, SCREEN_WIDTH // 2 // BLOCK_SIZE) * BLOCK_SIZE,
-            random.randrange(0, SCREEN_HEIGHT // BLOCK_SIZE) * BLOCK_SIZE,
-        )
 
-        # Player 2 (right side, WASD keys)
+        # Player 2 (WASD keys) - starts on right side
         self.snake2 = [(SCREEN_WIDTH * 3 // 4, SCREEN_HEIGHT // 2)]
         self.direction2 = (0, 0)
         self.score2 = 0
         self.game_over2 = False
-        self.food2 = (
-            random.randrange(SCREEN_WIDTH // 2, SCREEN_WIDTH // BLOCK_SIZE)
-            * BLOCK_SIZE,
+
+        # Single shared food
+        self.food = (
+            random.randrange(0, SCREEN_WIDTH // BLOCK_SIZE) * BLOCK_SIZE,
             random.randrange(0, SCREEN_HEIGHT // BLOCK_SIZE) * BLOCK_SIZE,
         )
 
@@ -683,59 +681,45 @@ class Snake2PlayerState(Game):
     def handle_event(self, event: pygame.event.Event) -> None:
         """Handle key events for 2-player Snake.
 
-        Player 1 (left): Arrow keys
-        Player 2 (right): WASD keys
+        Player 1: Arrow keys
+        Player 2: WASD keys
         """
         if event.type == pygame.KEYDOWN:
             if not self.game_over1:
                 # Player 1 controls (arrow keys)
-                if event.key == KEY_UP:
-                    if self.direction1 != (0, BLOCK_SIZE):
-                        self.direction1 = (0, -BLOCK_SIZE)
-                elif event.key == KEY_DOWN:
-                    if self.direction1 != (0, -BLOCK_SIZE):
-                        self.direction1 = (0, BLOCK_SIZE)
-                elif event.key == KEY_LEFT:
-                    if self.direction1 != (BLOCK_SIZE, 0):
-                        self.direction1 = (-BLOCK_SIZE, 0)
-                elif event.key == KEY_RIGHT:
-                    if self.direction1 != (-BLOCK_SIZE, 0):
-                        self.direction1 = (BLOCK_SIZE, 0)
+                if event.key == KEY_UP and self.direction1 != (0, BLOCK_SIZE):
+                    self.direction1 = (0, -BLOCK_SIZE)
+                elif event.key == KEY_DOWN and self.direction1 != (0, -BLOCK_SIZE):
+                    self.direction1 = (0, BLOCK_SIZE)
+                elif event.key == KEY_LEFT and self.direction1 != (BLOCK_SIZE, 0):
+                    self.direction1 = (-BLOCK_SIZE, 0)
+                elif event.key == KEY_RIGHT and self.direction1 != (-BLOCK_SIZE, 0):
+                    self.direction1 = (BLOCK_SIZE, 0)
 
             if not self.game_over2:
                 # Player 2 controls (WASD)
-                if event.key == pygame.K_w:
-                    if self.direction2 != (0, BLOCK_SIZE):
-                        self.direction2 = (0, -BLOCK_SIZE)
-                elif event.key == pygame.K_s:
-                    if self.direction2 != (0, -BLOCK_SIZE):
-                        self.direction2 = (0, BLOCK_SIZE)
-                elif event.key == pygame.K_a:
-                    if self.direction2 != (BLOCK_SIZE, 0):
-                        self.direction2 = (-BLOCK_SIZE, 0)
-                elif event.key == pygame.K_d:
-                    if self.direction2 != (-BLOCK_SIZE, 0):
-                        self.direction2 = (BLOCK_SIZE, 0)
+                if event.key == pygame.K_w and self.direction2 != (0, BLOCK_SIZE):
+                    self.direction2 = (0, -BLOCK_SIZE)
+                elif event.key == pygame.K_s and self.direction2 != (0, -BLOCK_SIZE):
+                    self.direction2 = (0, BLOCK_SIZE)
+                elif event.key == pygame.K_a and self.direction2 != (BLOCK_SIZE, 0):
+                    self.direction2 = (-BLOCK_SIZE, 0)
+                elif event.key == pygame.K_d and self.direction2 != (-BLOCK_SIZE, 0):
+                    self.direction2 = (BLOCK_SIZE, 0)
 
         # Delegate remaining keys (ESC, P, R) to base class
         super().handle_event(event)
 
     def update(self, dt: float) -> None:
         """Update the 2-player Snake game state."""
-        if self.game_over1 and self.game_over2:
+        if self.paused:
             return
 
         # Update both snakes
-        self._update_snake(
-            self.snake1, self.direction1, self.food1, self.score1, self.game_over1, 1
-        )
-        self._update_snake(
-            self.snake2, self.direction2, self.food2, self.score2, self.game_over2, 2
-        )
-
-        # Check if both players are game over
-        if self.game_over1 and self.game_over2:
-            self.game_over = True
+        if not self.game_over1:
+            self._update_snake(self.snake1, self.direction1, self.food, self.score1, 1)
+        if not self.game_over2:
+            self._update_snake(self.snake2, self.direction2, self.food, self.score2, 2)
 
     def _update_snake(
         self,
@@ -743,46 +727,28 @@ class Snake2PlayerState(Game):
         direction: Tuple[int, int],
         food: Tuple[int, int],
         score: int,
-        game_over: bool,
         player_num: int,
     ) -> None:
         """Update a single snake's position and check collisions."""
-        if game_over or self.paused:
-            return
-
         if direction == (0, 0):
             return
 
         new_head = (snake[0][0] + direction[0], snake[0][1] + direction[1])
 
-        # Determine bounds based on player
-        if player_num == 1:
-            max_x = SCREEN_WIDTH // 2
-        else:
-            min_x = SCREEN_WIDTH // 2
-            max_x = SCREEN_WIDTH
-
         # Check wall collision
-        if player_num == 1:
-            if (
-                new_head[0] < 0
-                or new_head[0] >= SCREEN_WIDTH // 2
-                or new_head[1] < 0
-                or new_head[1] >= SCREEN_HEIGHT
-            ):
+        if (
+            new_head[0] < 0
+            or new_head[0] >= SCREEN_WIDTH
+            or new_head[1] < 0
+            or new_head[1] >= SCREEN_HEIGHT
+        ):
+            if player_num == 1:
                 self.game_over1 = True
                 logger.info(f"Player 1 game over (wall collision). Score: {score}")
-                return
-        else:
-            if (
-                new_head[0] < SCREEN_WIDTH // 2
-                or new_head[0] >= SCREEN_WIDTH
-                or new_head[1] < 0
-                or new_head[1] >= SCREEN_HEIGHT
-            ):
+            else:
                 self.game_over2 = True
                 logger.info(f"Player 2 game over (wall collision). Score: {score}")
-                return
+            return
 
         # Check self collision
         if new_head in snake[1:]:
@@ -816,66 +782,55 @@ class Snake2PlayerState(Game):
         if new_head == food:
             if player_num == 1:
                 self.score1 += 1
-                # Place new food in player 1's half
-                while True:
-                    self.food1 = (
-                        random.randrange(0, SCREEN_WIDTH // 2 // BLOCK_SIZE)
-                        * BLOCK_SIZE,
-                        random.randrange(0, SCREEN_HEIGHT // BLOCK_SIZE) * BLOCK_SIZE,
-                    )
-                    if self.food1 not in self.snake1 and self.food1 not in self.snake2:
-                        break
             else:
                 self.score2 += 1
-                # Place new food in player 2's half
-                while True:
-                    self.food2 = (
-                        random.randrange(SCREEN_WIDTH // 2, SCREEN_WIDTH // BLOCK_SIZE)
-                        * BLOCK_SIZE,
-                        random.randrange(0, SCREEN_HEIGHT // BLOCK_SIZE) * BLOCK_SIZE,
-                    )
-                    if self.food2 not in self.snake2 and self.food2 not in self.snake1:
-                        break
+
+            # Place new food not on either snake
+            while True:
+                self.food = (
+                    random.randrange(0, SCREEN_WIDTH // BLOCK_SIZE) * BLOCK_SIZE,
+                    random.randrange(0, SCREEN_HEIGHT // BLOCK_SIZE) * BLOCK_SIZE,
+                )
+                if self.food not in self.snake1 and self.food not in self.snake2:
+                    break
         else:
             snake.pop()
 
     def draw(self, screen: pygame.Surface) -> None:
-        """Render the 2-player Snake game with split screen."""
-        # Draw center divider line
-        pygame.draw.line(
-            screen, WHITE, (SCREEN_WIDTH // 2, 0), (SCREEN_WIDTH // 2, SCREEN_HEIGHT), 2
-        )
+        """Render the 2-player Snake game on shared screen."""
+        screen.fill(BLACK)
 
-        # Draw Player 1 (left side)
-        screen.fill(BLACK, (0, 0, SCREEN_WIDTH // 2, SCREEN_HEIGHT))
-        pygame.draw.rect(screen, GREEN, (*self.snake1[0], BLOCK_SIZE, BLOCK_SIZE))
-        for segment in self.snake1[1:]:
-            pygame.draw.rect(screen, (0, 200, 0), (*segment, BLOCK_SIZE, BLOCK_SIZE))
-        pygame.draw.rect(screen, RED, (*self.food1, BLOCK_SIZE, BLOCK_SIZE))
+        # Draw Player 1's snake (green)
+        for i, segment in enumerate(self.snake1):
+            color = GREEN if i == 0 else (0, 200, 0)
+            pygame.draw.rect(screen, color, (*segment, BLOCK_SIZE, BLOCK_SIZE))
+
+        # Draw Player 2's snake (blue)
+        for i, segment in enumerate(self.snake2):
+            color = BLUE if i == 0 else (0, 0, 200)
+            pygame.draw.rect(screen, color, (*segment, BLOCK_SIZE, BLOCK_SIZE))
+
+        # Draw shared food
+        pygame.draw.rect(screen, RED, (*self.food, BLOCK_SIZE, BLOCK_SIZE))
+
+        # Draw scores
         draw_text(
             screen,
-            f"P1 Score: {self.score1}",
+            f"P1: {self.score1}",
             FONT_SIZE_MEDIUM,
             GREEN,
-            SCREEN_WIDTH // 4,
+            30,
             20,
-            center=True,
+            center=False,
         )
-
-        # Draw Player 2 (right side)
-        screen.fill(BLACK, (SCREEN_WIDTH // 2, 0, SCREEN_WIDTH // 2, SCREEN_HEIGHT))
-        pygame.draw.rect(screen, BLUE, (*self.snake2[0], BLOCK_SIZE, BLOCK_SIZE))
-        for segment in self.snake2[1:]:
-            pygame.draw.rect(screen, (0, 0, 200), (*segment, BLOCK_SIZE, BLOCK_SIZE))
-        pygame.draw.rect(screen, MAGENTA, (*self.food2, BLOCK_SIZE, BLOCK_SIZE))
         draw_text(
             screen,
-            f"P2 Score: {self.score2}",
+            f"P2: {self.score2}",
             FONT_SIZE_MEDIUM,
             BLUE,
-            SCREEN_WIDTH * 3 // 4,
+            SCREEN_WIDTH - 80,
             20,
-            center=True,
+            center=False,
         )
 
         # Draw game over screen
@@ -916,7 +871,28 @@ class Snake2PlayerState(Game):
                 SCREEN_HEIGHT - 50,
                 center=True,
             )
-        elif self.paused:
+        elif self.game_over1:
+            draw_text(
+                screen,
+                "Player 2 wins!",
+                FONT_SIZE_LARGE,
+                BLUE,
+                SCREEN_WIDTH // 2,
+                SCREEN_HEIGHT // 2,
+                center=True,
+            )
+        elif self.game_over2:
+            draw_text(
+                screen,
+                "Player 1 wins!",
+                FONT_SIZE_LARGE,
+                GREEN,
+                SCREEN_WIDTH // 2,
+                SCREEN_HEIGHT // 2,
+                center=True,
+            )
+
+        if self.paused:
             self.draw_pause_overlay(screen)
 
     @classmethod
