@@ -643,7 +643,7 @@ class SnakeState(Game):
 class Snake2PlayerState(Game):
     """Two-player Snake game on a shared screen (competitive).
 
-    Player 1 uses arrow keys, Player 2 uses WASD keys.
+    Player 1 uses WASD keys, Player 2 uses arrow keys.
     Both players compete on the same grid - first to collide loses.
     """
 
@@ -681,30 +681,30 @@ class Snake2PlayerState(Game):
     def handle_event(self, event: pygame.event.Event) -> None:
         """Handle key events for 2-player Snake.
 
-        Player 1: Arrow keys
-        Player 2: WASD keys
+        Player 1: WASD keys
+        Player 2: Arrow keys
         """
         if event.type == pygame.KEYDOWN:
             if not self.game_over1:
-                # Player 1 controls (arrow keys)
-                if event.key == KEY_UP and self.direction1 != (0, BLOCK_SIZE):
+                # Player 1 controls (WASD)
+                if event.key == pygame.K_w and self.direction1 != (0, BLOCK_SIZE):
                     self.direction1 = (0, -BLOCK_SIZE)
-                elif event.key == KEY_DOWN and self.direction1 != (0, -BLOCK_SIZE):
+                elif event.key == pygame.K_s and self.direction1 != (0, -BLOCK_SIZE):
                     self.direction1 = (0, BLOCK_SIZE)
-                elif event.key == KEY_LEFT and self.direction1 != (BLOCK_SIZE, 0):
+                elif event.key == pygame.K_a and self.direction1 != (BLOCK_SIZE, 0):
                     self.direction1 = (-BLOCK_SIZE, 0)
-                elif event.key == KEY_RIGHT and self.direction1 != (-BLOCK_SIZE, 0):
+                elif event.key == pygame.K_d and self.direction1 != (-BLOCK_SIZE, 0):
                     self.direction1 = (BLOCK_SIZE, 0)
 
             if not self.game_over2:
-                # Player 2 controls (WASD)
-                if event.key == pygame.K_w and self.direction2 != (0, BLOCK_SIZE):
+                # Player 2 controls (arrow keys)
+                if event.key == KEY_UP and self.direction2 != (0, BLOCK_SIZE):
                     self.direction2 = (0, -BLOCK_SIZE)
-                elif event.key == pygame.K_s and self.direction2 != (0, -BLOCK_SIZE):
+                elif event.key == KEY_DOWN and self.direction2 != (0, -BLOCK_SIZE):
                     self.direction2 = (0, BLOCK_SIZE)
-                elif event.key == pygame.K_a and self.direction2 != (BLOCK_SIZE, 0):
+                elif event.key == KEY_LEFT and self.direction2 != (BLOCK_SIZE, 0):
                     self.direction2 = (-BLOCK_SIZE, 0)
-                elif event.key == pygame.K_d and self.direction2 != (-BLOCK_SIZE, 0):
+                elif event.key == KEY_RIGHT and self.direction2 != (-BLOCK_SIZE, 0):
                     self.direction2 = (BLOCK_SIZE, 0)
 
         # Delegate remaining keys (ESC, P, R) to base class
@@ -878,7 +878,16 @@ class Snake2PlayerState(Game):
                 FONT_SIZE_LARGE,
                 BLUE,
                 SCREEN_WIDTH // 2,
-                SCREEN_HEIGHT // 2,
+                SCREEN_HEIGHT // 2 - 25,
+                center=True,
+            )
+            draw_text(
+                screen,
+                "Press R to restart or ESC to menu",
+                FONT_SIZE_MEDIUM,
+                CYAN,
+                SCREEN_WIDTH // 2,
+                SCREEN_HEIGHT // 2 + 25,
                 center=True,
             )
         elif self.game_over2:
@@ -888,7 +897,16 @@ class Snake2PlayerState(Game):
                 FONT_SIZE_LARGE,
                 GREEN,
                 SCREEN_WIDTH // 2,
-                SCREEN_HEIGHT // 2,
+                SCREEN_HEIGHT // 2 - 25,
+                center=True,
+            )
+            draw_text(
+                screen,
+                "Press R to restart or ESC to menu",
+                FONT_SIZE_MEDIUM,
+                CYAN,
+                SCREEN_WIDTH // 2,
+                SCREEN_HEIGHT // 2 + 25,
                 center=True,
             )
 
@@ -903,8 +921,8 @@ class Snake2PlayerState(Game):
             List of control description strings.
         """
         return [
-            "Player 1: Arrow keys to move",
-            "Player 2: WASD keys to move",
+            "Player 1: WASD keys to move",
+            "Player 2: Arrow keys to move",
             "R: Restart after game over",
             "ESC: Return to main menu",
         ]
@@ -919,7 +937,7 @@ class SnakeModeSelectState(State):
     def __init__(self) -> None:
         """Initialize the mode selection screen."""
         super().__init__()
-        self.options = ["Single Player", "2 Player (Split Screen)"]
+        self.options = ["Single Player", "2 Player (Competitive)"]
         self.selected = 0
         self.title_font_size = 48
         self.item_font_size = 32
