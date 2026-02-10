@@ -140,6 +140,13 @@ class TetrisState(Game):
         """Update the game state: handle falling piece, line clears, level progression, and game over checks."""
         if self.game_over or self.paused:
             return
+        # Handle countdown
+        if self.countdown_active:
+            self.countdown_remaining -= dt
+            if self.countdown_remaining <= 0:
+                # Start new level (keep current state but with increased speed)
+                self.countdown_active = False
+            return
         # Reset fall speed after handling key press (if not holding down).
         # Some test environments may provide an unexpected return from
         # `pygame.key.get_pressed()` (e.g. an empty sequence), so guard
@@ -187,6 +194,9 @@ class TetrisState(Game):
                     if self.lines_cleared_total // 5 > (self.level - 1):
                         self.level += 1
                         self.fall_interval = max(50, FALL_SPEED - (self.level - 1) * 50)
+                        # Start level transition countdown
+                        self.countdown_active = True
+                        self.countdown_remaining = 3.0
                 # Spawn new piece
                 self.current_shape_name = random.choice(list(self.SHAPES.keys()))
                 self.current_shape = self.SHAPES[self.current_shape_name]

@@ -136,7 +136,14 @@ class SpaceInvadersState(Game):
 
     def update(self, dt: float) -> None:
         """Update the game state, handling player movement, shooting, alien behavior, and collisions."""
-        if self.game_over or self.win or self.paused:
+        if self.game_over or self.paused:
+            return
+        # Handle countdown
+        if self.countdown_active:
+            self.countdown_remaining -= dt
+            if self.countdown_remaining <= 0:
+                # Start new level
+                self.__init__()
             return
         keys = pygame.key.get_pressed()
 
@@ -246,6 +253,10 @@ class SpaceInvadersState(Game):
         # Check win
         if not self.aliens:
             self.win = True
+        # Handle level transition countdown
+        if self.win and not self.countdown_active:
+            self.countdown_active = True
+            self.countdown_remaining = 3.0
         # Check lose
         for rect, _ in self.aliens:
             if rect.bottom >= self.player.top:
@@ -326,10 +337,12 @@ class SpaceInvadersState(Game):
                 instr_y,
                 center=True,
             )
-        if self.win:
+        if self.countdown_active:
+            self.draw_countdown(screen)
+        elif self.win:
             draw_text(
                 screen,
-                "You Win! Press R to restart or ESC to menu",
+                "You Win! Starting next level...",
                 FONT_SIZE,
                 GREEN,
                 SCREEN_WIDTH // 2,

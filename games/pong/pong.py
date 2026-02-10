@@ -123,7 +123,14 @@ class PongState(Game):
         Handles paddle movement, AI or multiplayer control for the right paddle, ball movement,
         collisions, scoring, and win condition.
         """
-        if self.game_over or self.paused:
+        if self.paused:
+            return
+        # Handle countdown
+        if self.countdown_active:
+            self.countdown_remaining -= dt
+            if self.countdown_remaining <= 0:
+                # Start new level
+                self.__init__()
             return
         keys = pygame.key.get_pressed()
         # Player paddle (left) movement: W/A always control left paddle; in single-player mode, also allow UP/DOWN
@@ -233,6 +240,10 @@ class PongState(Game):
         elif self.right_score >= MAX_SCORE:
             self.game_over = True
             self.winner = "AI"
+        # Handle level transition countdown
+        if self.game_over and not self.countdown_active:
+            self.countdown_active = True
+            self.countdown_remaining = 3.0
 
     def draw(self, screen: pygame.Surface) -> None:
         """Render Pong UI."""

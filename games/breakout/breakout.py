@@ -169,7 +169,14 @@ class BreakoutState(Game):
 
     def update(self, dt: float) -> None:
         """Update the game state: handle paddle movement, ball physics, collisions, scoring, and win/lose conditions."""
-        if self.game_over or self.win or self.paused:
+        if self.game_over or self.paused:
+            return
+        # Handle countdown
+        if self.countdown_active:
+            self.countdown_remaining -= dt
+            if self.countdown_remaining <= 0:
+                # Start new level
+                self.__init__()
             return
         keys = pygame.key.get_pressed()
         # Paddle movement
@@ -256,6 +263,10 @@ class BreakoutState(Game):
         # Check win
         if not self.bricks:
             self.win = True
+        # Handle level transition countdown
+        if self.win and not self.countdown_active:
+            self.countdown_active = True
+            self.countdown_remaining = 3.0
         # Check lose: game over only when all balls are lost
         # Remove any extra balls that have fallen below the screen
         self.extra_balls = [
@@ -366,10 +377,12 @@ class BreakoutState(Game):
                 instr_y,
                 center=True,
             )
-        if self.win:
+        if self.countdown_active:
+            self.draw_countdown(screen)
+        elif self.win:
             draw_text(
                 screen,
-                "You Win! Press R to restart or ESC to menu",
+                "You Win! Starting next level...",
                 FONT_SIZE_MEDIUM,
                 YELLOW,
                 SCREEN_WIDTH // 2,

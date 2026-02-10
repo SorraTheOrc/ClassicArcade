@@ -42,6 +42,8 @@ class Game(State):
         self.clock = pygame.time.Clock()
         self.paused = False
         self.next_state = None
+        self.countdown_active = False
+        self.countdown_remaining = 0.0
 
     def on_exit(self) -> None:
         """Called when the game state is no longer active.
@@ -136,6 +138,20 @@ class Game(State):
         draw_text(screen, text, FONT_SIZE_SMALL, YELLOW, 30, 10, center=False)
         # Expose last drawn mute label for tests that prefer state introspection
         return text
+
+    def draw_countdown(self, screen: pygame.Surface) -> None:
+        """Draw a large countdown overlay in the center of the screen.
+
+        Shows the remaining time in seconds if countdown is active.
+        """
+        if self.countdown_active:
+            font = pygame.font.Font(None, 144)
+            text = f"{int(self.countdown_remaining) + 1}"
+            text_surface = font.render(text, True, WHITE)
+            text_rect = text_surface.get_rect(
+                center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+            )
+            screen.blit(text_surface, text_rect)
 
     @_abstractmethod
     def update(self, dt: float) -> None:
