@@ -55,6 +55,8 @@ from config import (
     FONT_SIZE_SMALL,
     GRAY,
     KEY_DOWN,
+    KEY_LEFT,
+    KEY_RIGHT,
     KEY_UP,
     MARGIN_LEFT,
     SCREEN_HEIGHT,
@@ -322,8 +324,15 @@ class MenuState(State):
                 pass
 
             if event.key == KEY_UP:
-                # Move one item up (linear order) so Settings (appended last) is selectable
-                self.selected = (self.selected - 1) % len(self.menu_items)
+                # Move one item up in the grid
+                layout = self._layout_params()
+                columns = layout["columns"]
+                if columns > 0:
+                    self.selected = self.selected - columns
+                    if self.selected < 0:
+                        self.selected = self.selected % len(self.menu_items)
+                else:
+                    self.selected = (self.selected - 1) % len(self.menu_items)
                 # Start hold tracking for smooth instant repeats
                 try:
                     import time
@@ -343,12 +352,75 @@ class MenuState(State):
                 # Ensure the selected item is visible after navigation
                 self._ensure_selected_visible(layout)
             elif event.key == KEY_DOWN:
-                # Move one item down (linear order)
-                self.selected = (self.selected + 1) % len(self.menu_items)
+                # Move one item down in the grid
+                layout = self._layout_params()
+                columns = layout["columns"]
+                if columns > 0:
+                    self.selected = (self.selected + columns) % len(self.menu_items)
+                else:
+                    self.selected = (self.selected + 1) % len(self.menu_items)
                 try:
                     import time
 
                     self._held_key = KEY_DOWN
+                    self._hold_start_time = time.time()
+                    if self._repeat_initial and self._repeat_initial > 0.0:
+                        self._last_repeat_time = None
+                    else:
+                        self._last_repeat_time = time.time()
+                except Exception:
+                    self._held_key = None
+                self._ensure_selected_visible(layout)
+            elif event.key == KEY_LEFT:
+                # Move one item left in the grid
+                layout = self._layout_params()
+                columns = layout["columns"]
+                if columns > 0:
+                    row = self.selected // columns
+                    self.selected = self.selected - 1
+                    if self.selected < row * columns:
+                        # Wrapped to previous row, go to end of that row
+                        prev_row = row - 1
+                        if prev_row >= 0:
+                            self.selected = min(
+                                self.selected, (prev_row + 1) * columns - 1
+                            )
+                        else:
+                            # At top row, wrap to end
+                            self.selected = len(self.menu_items) - 1
+                else:
+                    self.selected = (self.selected - 1) % len(self.menu_items)
+                try:
+                    import time
+
+                    self._held_key = KEY_LEFT
+                    self._hold_start_time = time.time()
+                    if self._repeat_initial and self._repeat_initial > 0.0:
+                        self._last_repeat_time = None
+                    else:
+                        self._last_repeat_time = time.time()
+                except Exception:
+                    self._held_key = None
+                self._ensure_selected_visible(layout)
+            elif event.key == KEY_RIGHT:
+                # Move one item right in the grid
+                layout = self._layout_params()
+                columns = layout["columns"]
+                if columns > 0:
+                    row = self.selected // columns
+                    self.selected = self.selected + 1
+                    if self.selected >= len(self.menu_items):
+                        self.selected = 0
+                    elif self.selected > (row + 1) * columns - 1:
+                        self.selected = (row + 1) * columns
+                        if self.selected >= len(self.menu_items):
+                            self.selected = 0
+                else:
+                    self.selected = (self.selected + 1) % len(self.menu_items)
+                try:
+                    import time
+
+                    self._held_key = KEY_RIGHT
                     self._hold_start_time = time.time()
                     if self._repeat_initial and self._repeat_initial > 0.0:
                         self._last_repeat_time = None
@@ -407,7 +479,10 @@ class MenuState(State):
                     pass
         elif event.type == pygame.KEYUP:
             # Stop any auto-repeat behaviour when the key is released
-            if event.key in (KEY_UP, KEY_DOWN) and self._held_key == event.key:
+            if (
+                event.key in (KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT)
+                and self._held_key == event.key
+            ):
                 self._held_key = None
                 self._hold_start_time = None
                 self._last_repeat_time = None
@@ -525,23 +600,115 @@ class MenuState(State):
                         self._hold_start_time
                         and (now - self._hold_start_time) >= self._repeat_initial
                     ):
-                        # Do the first repeated move (linear order)
+                        # Do the first repeated move based on the held key
+                        layout = self._layout_params()
+                        columns = layout["columns"]
                         if self._held_key == KEY_UP:
-                            self.selected = (self.selected - 1) % len(self.menu_items)
-                        else:
-                            self.selected = (self.selected + 1) % len(self.menu_items)
+                            if columns > 0:
+                                self.selected = self.selected - columns
+                                if self.selected < 0:
+                                    self.selected = self.selected % len(self.menu_items)
+                            else:
+                                self.selected = (self.selected - 1) % len(
+                                    self.menu_items
+                                )
+                        elif self._held_key == KEY_DOWN:
+                            if columns > 0:
+                                self.selected = (self.selected + columns) % len(
+                                    self.menu_items
+                                )
+                            else:
+                                self.selected = (self.selected + 1) % len(
+                                    self.menu_items
+                                )
+                        elif self._held_key == KEY_LEFT:
+                            if columns > 0:
+                                row = self.selected // columns
+                                self.selected = self.selected - 1
+                                if self.selected < row * columns:
+                                    prev_row = row - 1
+                                    if prev_row >= 0:
+                                        self.selected = min(
+                                            self.selected, (prev_row + 1) * columns - 1
+                                        )
+                                    else:
+                                        self.selected = len(self.menu_items) - 1
+                            else:
+                                self.selected = (self.selected - 1) % len(
+                                    self.menu_items
+                                )
+                        elif self._held_key == KEY_RIGHT:
+                            if columns > 0:
+                                row = self.selected // columns
+                                self.selected = (self.selected + 1) % len(
+                                    self.menu_items
+                                )
+                                if self.selected > (row + 1) * columns - 1:
+                                    self.selected = (row + 1) * columns
+                                    if self.selected >= len(self.menu_items):
+                                        self.selected = row * columns
+                            else:
+                                self.selected = (self.selected + 1) % len(
+                                    self.menu_items
+                                )
                         self._last_repeat_time = now
                         # Ensure visibility
-                        self._ensure_selected_visible(self._layout_params())
+                        self._ensure_selected_visible(layout)
                 else:
                     # Subsequent repeats at interval
                     if (now - self._last_repeat_time) >= self._repeat_interval:
+                        layout = self._layout_params()
+                        columns = layout["columns"]
                         if self._held_key == KEY_UP:
-                            self.selected = (self.selected - 1) % len(self.menu_items)
-                        else:
-                            self.selected = (self.selected + 1) % len(self.menu_items)
+                            if columns > 0:
+                                self.selected = self.selected - columns
+                                if self.selected < 0:
+                                    self.selected = self.selected % len(self.menu_items)
+                            else:
+                                self.selected = (self.selected - 1) % len(
+                                    self.menu_items
+                                )
+                        elif self._held_key == KEY_DOWN:
+                            if columns > 0:
+                                self.selected = (self.selected + columns) % len(
+                                    self.menu_items
+                                )
+                            else:
+                                self.selected = (self.selected + 1) % len(
+                                    self.menu_items
+                                )
+                        elif self._held_key == KEY_LEFT:
+                            if columns > 0:
+                                row = self.selected // columns
+                                self.selected = self.selected - 1
+                                if self.selected < row * columns:
+                                    prev_row = row - 1
+                                    if prev_row >= 0:
+                                        self.selected = min(
+                                            self.selected, (prev_row + 1) * columns - 1
+                                        )
+                                    else:
+                                        self.selected = len(self.menu_items) - 1
+                            else:
+                                self.selected = (self.selected - 1) % len(
+                                    self.menu_items
+                                )
+                        elif self._held_key == KEY_RIGHT:
+                            if columns > 0:
+                                row = self.selected // columns
+                                self.selected = (self.selected + 1) % len(
+                                    self.menu_items
+                                )
+                                if self.selected > (row + 1) * columns - 1:
+                                    self.selected = (row + 1) * columns
+                                    if self.selected >= len(self.menu_items):
+                                        self.selected = row * columns
+                            else:
+                                self.selected = (self.selected + 1) % len(
+                                    self.menu_items
+                                )
                         self._last_repeat_time = now
-                        self._ensure_selected_visible(self._layout_params())
+                        self._ensure_selected_visible(layout)
         except Exception:
             # Protect update loop from any input handling errors
             pass
