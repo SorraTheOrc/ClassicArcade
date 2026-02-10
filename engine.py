@@ -377,11 +377,17 @@ class MenuState(State):
                 columns = layout["columns"]
                 if columns > 0:
                     row = self.selected // columns
-                    col = self.selected % columns
-                    # Only move left if not at start of row
-                    if col > 0:
-                        self.selected = self.selected - 1
-                    # else: stay at current position (at start of row)
+                    self.selected = self.selected - 1
+                    if self.selected < row * columns:
+                        # Wrapped to previous row, go to end of that row
+                        prev_row = row - 1
+                        if prev_row >= 0:
+                            self.selected = min(
+                                self.selected, (prev_row + 1) * columns - 1
+                            )
+                        else:
+                            # At top row, wrap to end
+                            self.selected = len(self.menu_items) - 1
                 else:
                     self.selected = (self.selected - 1) % len(self.menu_items)
                 try:
@@ -402,14 +408,13 @@ class MenuState(State):
                 columns = layout["columns"]
                 if columns > 0:
                     row = self.selected // columns
-                    col = self.selected % columns
-                    last_col_in_row = min(
-                        (row + 1) * columns - 1, len(self.menu_items) - 1
-                    )
-                    # Only move right if not at end of row
-                    if col < (last_col_in_row - row * columns):
-                        self.selected = self.selected + 1
-                    # else: stay at current position (at end of row)
+                    self.selected = self.selected + 1
+                    if self.selected >= len(self.menu_items):
+                        self.selected = 0
+                    elif self.selected > (row + 1) * columns - 1:
+                        self.selected = (row + 1) * columns
+                        if self.selected >= len(self.menu_items):
+                            self.selected = 0
                 else:
                     self.selected = (self.selected + 1) % len(self.menu_items)
                 try:
@@ -474,7 +479,10 @@ class MenuState(State):
                     pass
         elif event.type == pygame.KEYUP:
             # Stop any auto-repeat behaviour when the key is released
-            if event.key in (KEY_UP, KEY_DOWN) and self._held_key == event.key:
+            if (
+                event.key in (KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT)
+                and self._held_key == event.key
+            ):
                 self._held_key = None
                 self._hold_start_time = None
                 self._last_repeat_time = None
@@ -616,11 +624,15 @@ class MenuState(State):
                         elif self._held_key == KEY_LEFT:
                             if columns > 0:
                                 row = self.selected // columns
-                                col = self.selected % columns
-                                # Only move left if not at start of row
-                                if col > 0:
-                                    self.selected = self.selected - 1
-                                # else: stay at current position (at start of row)
+                                self.selected = self.selected - 1
+                                if self.selected < row * columns:
+                                    prev_row = row - 1
+                                    if prev_row >= 0:
+                                        self.selected = min(
+                                            self.selected, (prev_row + 1) * columns - 1
+                                        )
+                                    else:
+                                        self.selected = len(self.menu_items) - 1
                             else:
                                 self.selected = (self.selected - 1) % len(
                                     self.menu_items
@@ -628,14 +640,13 @@ class MenuState(State):
                         elif self._held_key == KEY_RIGHT:
                             if columns > 0:
                                 row = self.selected // columns
-                                col = self.selected % columns
-                                last_col_in_row = min(
-                                    (row + 1) * columns - 1, len(self.menu_items) - 1
+                                self.selected = (self.selected + 1) % len(
+                                    self.menu_items
                                 )
-                                # Only move right if not at end of row
-                                if col < (last_col_in_row - row * columns):
-                                    self.selected = self.selected + 1
-                                # else: stay at current position (at end of row)
+                                if self.selected > (row + 1) * columns - 1:
+                                    self.selected = (row + 1) * columns
+                                    if self.selected >= len(self.menu_items):
+                                        self.selected = row * columns
                             else:
                                 self.selected = (self.selected + 1) % len(
                                     self.menu_items
