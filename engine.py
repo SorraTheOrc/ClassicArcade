@@ -379,7 +379,15 @@ class MenuState(State):
                     row = self.selected // columns
                     self.selected = self.selected - 1
                     if self.selected < row * columns:
-                        self.selected = (self.selected + columns) % len(self.menu_items)
+                        # Wrapped to previous row, go to end of that row
+                        prev_row = row - 1
+                        if prev_row >= 0:
+                            self.selected = min(
+                                self.selected, (prev_row + 1) * columns - 1
+                            )
+                        else:
+                            # At top row, wrap to end
+                            self.selected = len(self.menu_items) - 1
                 else:
                     self.selected = (self.selected - 1) % len(self.menu_items)
                 try:
@@ -402,7 +410,10 @@ class MenuState(State):
                     row = self.selected // columns
                     self.selected = (self.selected + 1) % len(self.menu_items)
                     if self.selected > (row + 1) * columns - 1:
-                        self.selected = self.selected % columns
+                        # Wrapped to next row, go to start of current row
+                        self.selected = (row + 1) * columns
+                        if self.selected >= len(self.menu_items):
+                            self.selected = row * columns
                 else:
                     self.selected = (self.selected + 1) % len(self.menu_items)
                 try:
@@ -611,9 +622,13 @@ class MenuState(State):
                                 row = self.selected // columns
                                 self.selected = self.selected - 1
                                 if self.selected < row * columns:
-                                    self.selected = (self.selected + columns) % len(
-                                        self.menu_items
-                                    )
+                                    prev_row = row - 1
+                                    if prev_row >= 0:
+                                        self.selected = min(
+                                            self.selected, (prev_row + 1) * columns - 1
+                                        )
+                                    else:
+                                        self.selected = len(self.menu_items) - 1
                             else:
                                 self.selected = (self.selected - 1) % len(
                                     self.menu_items
@@ -625,7 +640,9 @@ class MenuState(State):
                                     self.menu_items
                                 )
                                 if self.selected > (row + 1) * columns - 1:
-                                    self.selected = self.selected % columns
+                                    self.selected = (row + 1) * columns
+                                    if self.selected >= len(self.menu_items):
+                                        self.selected = row * columns
                             else:
                                 self.selected = (self.selected + 1) % len(
                                     self.menu_items
@@ -661,9 +678,13 @@ class MenuState(State):
                                 row = self.selected // columns
                                 self.selected = self.selected - 1
                                 if self.selected < row * columns:
-                                    self.selected = (self.selected + columns) % len(
-                                        self.menu_items
-                                    )
+                                    prev_row = row - 1
+                                    if prev_row >= 0:
+                                        self.selected = min(
+                                            self.selected, (prev_row + 1) * columns - 1
+                                        )
+                                    else:
+                                        self.selected = len(self.menu_items) - 1
                             else:
                                 self.selected = (self.selected - 1) % len(
                                     self.menu_items
@@ -675,7 +696,9 @@ class MenuState(State):
                                     self.menu_items
                                 )
                                 if self.selected > (row + 1) * columns - 1:
-                                    self.selected = self.selected % columns
+                                    self.selected = (row + 1) * columns
+                                    if self.selected >= len(self.menu_items):
+                                        self.selected = row * columns
                             else:
                                 self.selected = (self.selected + 1) % len(
                                     self.menu_items
