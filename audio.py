@@ -144,6 +144,25 @@ def init() -> None:
     while loading or playing are ignored – the game will continue without audio.
     """
     try:
+        # Configure audio buffer for low latency
+        # Use smaller buffer size to reduce audio delay (default is typically 256 or 512)
+        # Setting a smaller buffer size reduces latency but may cause crackling on slow systems
+        audio_driver = os.getenv("PYGAME_AUDIO_DRIVER", "")
+        if audio_driver:
+            os.environ["SDL_AUDIODRIVER"] = audio_driver
+
+        # Set SDL audio buffer size via environment variable (must be set before init)
+        # Values: 128 (very low latency), 256 (low), 512 (normal), 1024+ (high latency but stable)
+        if "SDL_AUDIO_BUFFER_SIZE" not in os.environ:
+            os.environ["SDL_AUDIO_BUFFER_SIZE"] = "256"  # Very low latency
+
+        # Try to use a smaller buffer size for lower latency
+        # Format: 16-bit signed, stereo (2 channels), 44100 Hz sample rate
+        try:
+            pygame.mixer.pre_init(44100, -16, 2, 256)
+        except Exception:
+            pass
+
         pygame.mixer.init()
         _setup_music_end_event()
     except pygame.error:
@@ -465,6 +484,10 @@ def play_effect(
     2. ``play_effect("pong", "wall.wav")`` – the first argument is the game type
        (sub‑folder) and the second is the filename.
     """
+    import time
+
+    start_time = time.perf_counter()
+
     if filename is None:
         filename = sound_type
         sound_type = None
@@ -492,10 +515,16 @@ def play_effect(
             return
     try:
         if filename not in _SOUND_CACHE:
+            load_start = time.perf_counter()
             _SOUND_CACHE[filename] = pygame.mixer.Sound(path)
+            load_time = (time.perf_counter() - load_start) * 1000
+            print(f"[{time.time():.6f}] audio.load({filename}): {load_time:.2f}ms")
         sound = _SOUND_CACHE[filename]
         try:
+            play_start = time.perf_counter()
             sound.play()
+            play_time = (time.perf_counter() - play_start) * 1000
+            print(f"[{time.time():.6f}] audio.play({filename}): {play_time:.2f}ms")
         except Exception:
             try:
                 getattr(sound, "play")()
@@ -503,3 +532,9 @@ def play_effect(
                 pass
     except Exception:
         return
+
+    # Timing debug output
+    elapsed_ms = (time.perf_counter() - start_time) * 1000
+    print(
+        f"[{time.time():.6f}] audio.play_effect({sound_type}, {filename}): {elapsed_ms:.2f}ms"
+    )
