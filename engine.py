@@ -727,10 +727,15 @@ class HelpState(State):
     by parsing the Controls section from each game's module docstring.
     """
 
-    def __init__(self) -> None:
-        """Initialize the help screen with title and item font sizes."""
+    def __init__(self, game_class: Optional[Type[State]] = None) -> None:
+        """Initialize the help screen with title and item font sizes.
+
+        Args:
+            game_class: Optional game class to show help for. If None, shows help for all games.
+        """
         super().__init__()
         self.title_font_size = 48
+        self.game_class = game_class
         self.item_font_size = 24
         self.section_font_size = 32
         self.margin_top = 80
@@ -743,14 +748,25 @@ class HelpState(State):
         """Process key events for the help screen.
 
         Supports:
-        - ``K_h`` or ``K_ESCAPE`` – return to the main menu.
+        - ``K_h`` or ``K_ESCAPE`` – return to the main menu (if game_class not set) or game (if set).
         - ``K_UP`` / ``K_DOWN`` – scroll content.
         """
         if event.type == pygame.KEYDOWN:
             if event.key in (pygame.K_h, pygame.K_ESCAPE):
-                from menu_items import get_menu_items
+                if self.game_class:
+                    # Return to the game that opened help
+                    if hasattr(self, "_parent_game") and self._parent_game:
+                        game_instance = self._parent_game
+                        game_instance.paused = False  # Resume the game
+                        game_instance.next_state = None  # Clear any pending transition
+                        self.request_transition(game_instance)
+                    else:
+                        # Fallback: create a new instance
+                        self.request_transition(self.game_class())
+                else:
+                    from menu_items import get_menu_items
 
-                self.request_transition(MenuState(get_menu_items()))
+                    self.request_transition(MenuState(get_menu_items()))
                 return
             elif event.key == pygame.K_UP:
                 self.scroll_offset = max(0, self.scroll_offset - self.scroll_speed)
@@ -833,9 +849,13 @@ class HelpState(State):
             y += 10
 
         # Footer instruction
+        if self.game_class:
+            footer_text = "Press H or ESC to return to game"
+        else:
+            footer_text = "Press H or ESC to return to menu"
         draw_text(
             screen,
-            "Press H or ESC to return to menu",
+            footer_text,
             self.item_font_size - 4,
             GRAY,
             SCREEN_WIDTH // 2,
@@ -860,11 +880,19 @@ class HelpState(State):
             pygame.draw.polygon(screen, YELLOW, points)
 
     def _get_all_controls(self) -> List[Tuple[str, List[str]]]:
-        """Collect controls from all discovered games.
+        """Collect controls from all discovered games, or from a specific game if game_class is set.
 
         Returns a list of (game_name, control_lines) tuples where control_lines
         is a list of strings describing the controls for that game.
         """
+        if self.game_class:
+            # Get controls for the specific game
+            game_name = self.game_class.__name__.replace("State", "")
+            game_controls = self._get_game_controls_for_class(self.game_class)
+            if game_controls:
+                return [(game_name, game_controls)]
+            return []
+
         from menu_items import discover_games
 
         items = discover_games()
@@ -879,6 +907,43 @@ class HelpState(State):
         # Sort by game name
         controls.sort(key=lambda x: x[0].lower())
         return controls
+
+    def _get_game_controls_for_class(self, game_class: Type[State]) -> List[str] | None:
+        """Extract controls for a specific game class.
+
+        Looks for a get_controls() class method first, then falls back to
+        parsing the module docstring for a "Controls:" section.
+
+        Returns a list of control lines or None if no controls found.
+        """
+        # Check for get_controls class method
+        if hasattr(game_class, "get_controls") and callable(
+            getattr(game_class, "get_controls")
+        ):
+            try:
+                controls = game_class.get_controls()  # type: ignore
+                if controls:
+                    return controls
+            except Exception:
+                pass
+
+        # Fallback: try to get module docstring
+        try:
+            module_name = game_class.__module__
+            # Import the specific module (not just the top-level package)
+            module = __import__(module_name)
+            # Get the specific submodule for the class
+            for part in module_name.split(".")[1:]:
+                module = getattr(module, part)
+            doc = getattr(module, "__doc__", None)
+            if doc:
+                controls = self._parse_controls_from_doc(doc)
+                if controls:
+                    return controls
+        except Exception:
+            pass
+
+        return None
 
     def _get_game_controls(
         self, game_name: str, launch_target: object | None

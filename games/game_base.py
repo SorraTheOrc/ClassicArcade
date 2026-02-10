@@ -6,10 +6,11 @@ This class provides the common attributes and behaviour shared by all game state
 - ``draw_text`` helper from ``utils``.
 - Default ``handle_event`` implementation that supports:
     * ``K_ESCAPE`` – request a transition back to the main menu.
+    * ``K_h`` – show help for the current game.
     * ``K_p`` – toggle a paused flag (the engine can respect ``self.paused`` in ``update``).
     * ``K_r`` – restart the current game by re‑initialising the state.
 
-Games can subclass ``Game`` instead of the lower‑level ``State`` to inherit this boiler‑plate
+Games can subclass ``Game`` instead of the lower-level ``State`` to inherit this boiler‑plate
 logic, reducing duplication across the individual game modules.
 """
 
@@ -56,6 +57,7 @@ class Game(State):
 
         Supports:
         - ``K_ESCAPE`` – return to the main menu.
+        - ``K_h`` – show help for the current game.
         - ``K_p`` – toggle the paused flag.
         - ``K_r`` – restart the current state by re‑initialising it.
         """
@@ -65,6 +67,17 @@ class Game(State):
                 from menu_items import get_menu_items
 
                 self.request_transition(MenuState(get_menu_items()))
+                return
+            if event.key == pygame.K_h:
+                # Show help for the current game
+                from engine import HelpState
+
+                self.paused = True  # Pause the game when help is shown
+                # Store a reference to this instance so it can be restored
+                self._help_parent = self  # type: ignore
+                help_state = HelpState(type(self))
+                help_state._parent_game = self  # type: ignore
+                self.request_transition(help_state)
                 return
             if event.key == pygame.K_p:
                 self.paused = not self.paused
