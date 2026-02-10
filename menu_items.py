@@ -115,8 +115,13 @@ def discover_games() -> List[Tuple[str, object, str | None]]:
                     continue
                 try:
                     if issubclass(obj, State) and obj is not State:
-                        state_cls = obj
-                        break
+                        # Skip mode-specific states that shouldn't appear as separate menu entries
+                        if not (
+                            obj.__name__.startswith("PongSinglePlayer")
+                            or obj.__name__.startswith("PongMultiplayer")
+                        ):
+                            state_cls = obj
+                            break
                 except Exception:
                     continue
             if state_cls:
@@ -125,6 +130,10 @@ def discover_games() -> List[Tuple[str, object, str | None]]:
         display_name = _friendly_name_from_module(
             name, getattr(state_cls, "__name__", None) if state_cls else None
         )
+
+        # For Pong, use the module name instead of state class name
+        if name == "pong":
+            display_name = "Pong"
 
         # Determine icon path for the module
         import os

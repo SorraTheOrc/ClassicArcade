@@ -43,7 +43,7 @@ def test_discover_finds_state_subclasses():
     # Check that games with State subclasses are discovered
     expected_games = {
         "Breakout",
-        "Pong Multiplayer",
+        "Pong",
         "Snake",
         "Space Invaders",
         "Tetris",

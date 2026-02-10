@@ -29,6 +29,7 @@ from config import (
     SCREEN_WIDTH,
     WHITE,
 )
+from engine import State
 from games.game_base import Game
 from games.highscore import add_score
 from utils import draw_text
@@ -323,11 +324,83 @@ class PongMultiplayerState(PongState):
         ]
 
 
+class PongModeSelectState(State):
+    """Mode selection screen for Pong game.
+
+    Allows the player to choose between single-player (vs AI) and multiplayer (vs friend) modes.
+    """
+
+    def __init__(self) -> None:
+        """Initialize the mode selection screen."""
+        super().__init__()
+        self.options = ["Single Player", "Multiplayer"]
+        self.selected = 0
+        self.title_font_size = 48
+        self.item_font_size = 32
+
+    def handle_event(self, event: pygame.event.Event) -> None:
+        """Handle key events for mode selection."""
+        if event.type == pygame.KEYDOWN:
+            if event.key == KEY_UP:
+                self.selected = (self.selected - 1) % len(self.options)
+            elif event.key == KEY_DOWN:
+                self.selected = (self.selected + 1) % len(self.options)
+            elif event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                if self.selected == 0:
+                    from games.pong import PongSinglePlayerState
+
+                    self.request_transition(PongSinglePlayerState())
+                elif self.selected == 1:
+                    from games.pong import PongMultiplayerState
+
+                    self.request_transition(PongMultiplayerState())
+            elif event.key == pygame.K_ESCAPE:
+                from engine import MenuState
+
+                self.request_transition(MenuState([]))
+
+    def update(self, dt: float) -> None:
+        """Update mode selection state."""
+        pass
+
+    def draw(self, screen: pygame.Surface) -> None:
+        """Render mode selection screen."""
+        screen.fill(BLACK)
+
+        # Draw title
+        draw_text(
+            screen,
+            "Select Pong Mode",
+            self.title_font_size,
+            WHITE,
+            SCREEN_WIDTH // 2,
+            SCREEN_HEIGHT // 3,
+            center=True,
+        )
+
+        # Draw options
+        for i, option in enumerate(self.options):
+            if i == self.selected:
+                text_color = GREEN
+            else:
+                text_color = WHITE
+
+            draw_text(
+                screen,
+                option,
+                self.item_font_size,
+                text_color,
+                SCREEN_WIDTH // 2,
+                SCREEN_HEIGHT // 2 + i * 50,
+                center=True,
+            )
+
+
 def run() -> None:
     """Run Pong using the shared run helper."""
     from games.run_helper import run_game
 
-    run_game(PongState)
+    run_game(PongModeSelectState)
 
 
 if __name__ == "__main__":

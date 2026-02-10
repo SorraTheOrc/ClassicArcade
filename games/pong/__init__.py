@@ -7,11 +7,22 @@ Exports:
 
 from games.run_helper import run_game
 
-from .pong import PongMultiplayerState, PongSinglePlayerState, PongState
+from .pong import (
+    PongModeSelectState,
+    PongMultiplayerState,
+    PongSinglePlayerState,
+    PongState,
+)
 
-__all__ = ["PongState", "PongSinglePlayerState", "PongMultiplayerState", "run"]
+__all__ = [
+    "PongState",
+    "PongSinglePlayerState",
+    "PongMultiplayerState",
+    "PongModeSelectState",
+    "run",
+]
 
 
 def run() -> None:
-    """Run the Pong game using the default engine FPS."""
-    run_game(PongState)
+    """Run Pong with mode selection screen."""
+    run_game(PongModeSelectState)
