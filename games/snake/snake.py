@@ -656,17 +656,21 @@ class Snake2PlayerState(Game):
         )
 
         # Shared grid - both players on the same screen
-        # Player 1 (arrow keys) - starts on left side
+        # Player 1 (WASD keys) - starts on left side
         self.snake1 = [(SCREEN_WIDTH // 4, SCREEN_HEIGHT // 2)]
         self.direction1 = (0, 0)
         self.score1 = 0
         self.game_over1 = False
+        self._time_acc1 = 0.0
+        self._base_snake_speed1 = self.snake_speed
 
-        # Player 2 (WASD keys) - starts on right side
+        # Player 2 (arrow keys) - starts on right side
         self.snake2 = [(SCREEN_WIDTH * 3 // 4, SCREEN_HEIGHT // 2)]
         self.direction2 = (0, 0)
         self.score2 = 0
         self.game_over2 = False
+        self._time_acc2 = 0.0
+        self._base_snake_speed2 = self.snake_speed
 
         # Single shared food
         self.food = (
@@ -715,11 +719,25 @@ class Snake2PlayerState(Game):
         if self.paused:
             return
 
-        # Update both snakes
-        if not self.game_over1:
-            self._update_snake(self.snake1, self.direction1, self.food, self.score1, 1)
-        if not self.game_over2:
-            self._update_snake(self.snake2, self.direction2, self.food, self.score2, 2)
+        # Accumulate time and move snakes at the effective speed
+        self._time_acc1 += dt
+        self._time_acc2 += dt
+
+        interval = 1.0 / self.snake_speed
+
+        while self._time_acc1 >= interval:
+            self._time_acc1 -= interval
+            if not self.game_over1 and self.direction1 != (0, 0):
+                self._update_snake(
+                    self.snake1, self.direction1, self.food, self.score1, 1
+                )
+
+        while self._time_acc2 >= interval:
+            self._time_acc2 -= interval
+            if not self.game_over2 and self.direction2 != (0, 0):
+                self._update_snake(
+                    self.snake2, self.direction2, self.food, self.score2, 2
+                )
 
     def _update_snake(
         self,
