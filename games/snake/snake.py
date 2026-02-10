@@ -862,9 +862,13 @@ class Snake2PlayerState(Game):
                 if self.score1 > self.score2
                 else ("Player 2" if self.score2 > self.score1 else "Tie")
             )
+            if winner == "Tie":
+                text = "Tie!"
+            else:
+                text = f"{winner} wins!"
             draw_text(
                 screen,
-                f"{winner} wins!",
+                text,
                 FONT_SIZE_LARGE,
                 YELLOW,
                 SCREEN_WIDTH // 2,
