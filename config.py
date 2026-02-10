@@ -202,6 +202,21 @@ def save_settings() -> None:
 # Load settings on import
 _load_settings()
 
+# UI Style constants
+# Font size hierarchy
+FONT_SIZE_TINY = 16
+FONT_SIZE_SMALL = 18
+FONT_SIZE_MEDIUM = 24
+FONT_SIZE_LARGE = 32
+FONT_SIZE_XLARGE = 48
+FONT_SIZE_XXLARGE = 64
+
+# Standard margins
+MARGIN_LEFT = 20
+MARGIN_RIGHT = 20
+MARGIN_TOP = 20
+MARGIN_BOTTOM = 20
+
 # Key bindings (using pygame key constants)
 KEY_QUIT = pygame.K_ESCAPE
 KEY_PAUSE = pygame.K_p
@@ -241,6 +256,16 @@ __all__ = [
     "difficulty_multiplier",
     "get_difficulty",
     "set_difficulty",
+    "FONT_SIZE_TINY",
+    "FONT_SIZE_SMALL",
+    "FONT_SIZE_MEDIUM",
+    "FONT_SIZE_LARGE",
+    "FONT_SIZE_XLARGE",
+    "FONT_SIZE_XXLARGE",
+    "MARGIN_LEFT",
+    "MARGIN_RIGHT",
+    "MARGIN_TOP",
+    "MARGIN_BOTTOM",
     "KEY_QUIT",
     "KEY_PAUSE",
     "KEY_RESTART",

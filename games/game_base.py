@@ -19,6 +19,7 @@ from abc import abstractmethod as _abstractmethod
 import pygame
 
 import audio
+from config import FONT_SIZE_SMALL, YELLOW
 from engine import MenuState, State
 from utils import SCREEN_HEIGHT, SCREEN_WIDTH, WHITE, draw_text
 
@@ -132,7 +133,7 @@ class Game(State):
                 pass
         text = "Muted" if config.MUTE else "Sound On"
         # Draw status text slightly to the right so the small indicator doesn't overlap the first char
-        draw_text(screen, text, font_size, YELLOW, 30, 10, center=False)
+        draw_text(screen, text, FONT_SIZE_SMALL, YELLOW, 30, 10, center=False)
         # Expose last drawn mute label for tests that prefer state introspection
         return text
 

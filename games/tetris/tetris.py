@@ -22,6 +22,8 @@ from config import (
     BLACK,
     BLUE,
     CYAN,
+    FONT_SIZE_MEDIUM,
+    FONT_SIZE_SMALL,
     GRAY,
     GREEN,
     KEY_DOWN,
@@ -229,7 +231,13 @@ class TetrisState(Game):
                 pygame.draw.rect(screen, self.current_color, rect)
         # Draw score
         draw_text(
-            screen, f"Score: {self.score}", FONT_SIZE, WHITE, 60, 20, center=False
+            screen,
+            f"Score: {self.score}",
+            FONT_SIZE_MEDIUM,
+            WHITE,
+            60,
+            20,
+            center=False,
         )
         if self.game_over:
             # Record high score once (score is self.score)
@@ -243,7 +251,7 @@ class TetrisState(Game):
             draw_text(
                 screen,
                 "High Scores:",
-                FONT_SIZE,
+                FONT_SIZE_MEDIUM,
                 WHITE,
                 SCREEN_WIDTH // 2,
                 heading_y,
@@ -261,7 +269,7 @@ class TetrisState(Game):
                 draw_text(
                     screen,
                     f"{idx}. {entry['score']} ({date_str})",
-                    FONT_SIZE,
+                    FONT_SIZE_MEDIUM,
                     WHITE,
                     SCREEN_WIDTH // 2,
                     score_y,
@@ -271,7 +279,7 @@ class TetrisState(Game):
             draw_text(
                 screen,
                 "Game Over! Press R to restart or ESC to menu",
-                FONT_SIZE,
+                FONT_SIZE_MEDIUM,
                 RED,
                 SCREEN_WIDTH // 2,
                 instr_y,

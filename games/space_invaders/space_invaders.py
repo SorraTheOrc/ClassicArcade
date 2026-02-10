@@ -20,6 +20,8 @@ import config
 from config import (
     BLACK,
     BLUE,
+    FONT_SIZE_MEDIUM,
+    FONT_SIZE_SMALL,
     GREEN,
     KEY_LEFT,
     KEY_RIGHT,
@@ -270,7 +272,13 @@ class SpaceInvadersState(Game):
             pygame.draw.rect(screen, SHELTER_COLOR, shelter)
         # Draw score
         draw_text(
-            screen, f"Score: {self.score}", FONT_SIZE, WHITE, 60, 20, center=False
+            screen,
+            f"Score: {self.score}",
+            FONT_SIZE_MEDIUM,
+            WHITE,
+            60,
+            20,
+            center=False,
         )
         if self.game_over:
             # Record high score once (score is stored in self.score)
@@ -284,7 +292,7 @@ class SpaceInvadersState(Game):
             draw_text(
                 screen,
                 "High Scores:",
-                FONT_SIZE,
+                FONT_SIZE_MEDIUM,
                 WHITE,
                 SCREEN_WIDTH // 2,
                 heading_y,
@@ -302,7 +310,7 @@ class SpaceInvadersState(Game):
                 draw_text(
                     screen,
                     f"{idx}. {entry['score']} ({date_str})",
-                    FONT_SIZE,
+                    FONT_SIZE_MEDIUM,
                     WHITE,
                     SCREEN_WIDTH // 2,
                     score_y,
@@ -312,7 +320,7 @@ class SpaceInvadersState(Game):
             draw_text(
                 screen,
                 "Game Over! Press R to restart or ESC to menu",
-                FONT_SIZE,
+                FONT_SIZE_MEDIUM,
                 RED,
                 SCREEN_WIDTH // 2,
                 instr_y,

@@ -18,6 +18,7 @@ import config
 from config import (
     BLACK,
     BLUE,
+    FONT_SIZE_MEDIUM,
     GREEN,
     KEY_DOWN,
     KEY_S,
@@ -242,7 +243,7 @@ class PongState(Game):
         draw_text(
             screen,
             f"{self.left_score}",
-            FONT_SIZE,
+            FONT_SIZE_MEDIUM,
             WHITE,
             SCREEN_WIDTH // 4,
             30,
@@ -251,7 +252,7 @@ class PongState(Game):
         draw_text(
             screen,
             f"{self.right_score}",
-            FONT_SIZE,
+            FONT_SIZE_MEDIUM,
             WHITE,
             SCREEN_WIDTH * 3 // 4,
             30,
@@ -261,7 +262,7 @@ class PongState(Game):
             draw_text(
                 screen,
                 f"{self.winner} wins!",
-                FONT_SIZE,
+                FONT_SIZE_MEDIUM,
                 RED,
                 SCREEN_WIDTH // 2,
                 SCREEN_HEIGHT // 2,

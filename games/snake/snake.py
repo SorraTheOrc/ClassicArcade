@@ -24,6 +24,8 @@ from config import (
     BLACK,
     BLUE,
     CYAN,
+    FONT_SIZE_MEDIUM,
+    FONT_SIZE_SMALL,
     GREEN,
     KEY_DOWN,
     KEY_LEFT,
@@ -312,7 +314,13 @@ class SnakeState(Game):
         self._draw_powerups(screen)
         # Draw score
         draw_text(
-            screen, f"Score: {self.score}", self.font_size, WHITE, 60, 20, center=False
+            screen,
+            f"Score: {self.score}",
+            FONT_SIZE_MEDIUM,
+            WHITE,
+            60,
+            20,
+            center=False,
         )
         # Draw HUD: extra lives and speed boost remaining
         # Draw Unicode heart glyphs for lives if a suitable font is available.
@@ -372,7 +380,7 @@ class SnakeState(Game):
                     draw_text(
                         screen,
                         f"+{hearts}",
-                        18,
+                        FONT_SIZE_SMALL,
                         YELLOW,
                         SCREEN_WIDTH - margin_right - 40,
                         16,
@@ -434,11 +442,25 @@ class SnakeState(Game):
         if getattr(self, "_speed_boost_time", 0) > 0:
             sb_text = f"Speed: {self._speed_boost_time:.1f}s"
             draw_text(
-                screen, sb_text, 20, MAGENTA, SCREEN_WIDTH - 120, 44, center=False
+                screen,
+                sb_text,
+                FONT_SIZE_SMALL,
+                MAGENTA,
+                SCREEN_WIDTH - 120,
+                44,
+                center=False,
             )
         # Shrink feedback message
         if getattr(self, "_shrink_feedback_time", 0) > 0:
-            draw_text(screen, "SHRUNK!", 20, CYAN, SCREEN_WIDTH - 160, 44, center=False)
+            draw_text(
+                screen,
+                "SHRUNK!",
+                FONT_SIZE_SMALL,
+                CYAN,
+                SCREEN_WIDTH - 160,
+                44,
+                center=False,
+            )
         if self.game_over:
             # Record high score (snake length is score) once
             if not getattr(self, "highscore_recorded", False):
@@ -451,7 +473,7 @@ class SnakeState(Game):
             draw_text(
                 screen,
                 "High Scores:",
-                24,
+                FONT_SIZE_MEDIUM,
                 WHITE,
                 SCREEN_WIDTH // 2,
                 heading_y,
@@ -469,7 +491,7 @@ class SnakeState(Game):
                 draw_text(
                     screen,
                     f"{idx}. {entry['score']} ({date_str})",
-                    24,
+                    FONT_SIZE_MEDIUM,
                     WHITE,
                     SCREEN_WIDTH // 2,
                     score_y,
@@ -479,7 +501,7 @@ class SnakeState(Game):
             draw_text(
                 screen,
                 "Game Over! Press R to restart or ESC to menu",
-                24,
+                FONT_SIZE_MEDIUM,
                 YELLOW,
                 SCREEN_WIDTH // 2,
                 instr_y,

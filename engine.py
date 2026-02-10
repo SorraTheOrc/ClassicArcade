@@ -50,9 +50,13 @@ from typing import List, Optional, Tuple, Type
 import config
 from config import (
     BLACK,
+    FONT_SIZE_LARGE,
+    FONT_SIZE_MEDIUM,
+    FONT_SIZE_SMALL,
     GRAY,
     KEY_DOWN,
     KEY_UP,
+    MARGIN_LEFT,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
     WHITE,
@@ -551,10 +555,10 @@ class MenuState(State):
         draw_text(
             screen,
             "Arcade Suite",
-            self.title_font_size,
+            FONT_SIZE_LARGE,
             WHITE,
             SCREEN_WIDTH // 2,
-            30,  # small top margin
+            30,
             center=True,
         )
         # Mute status indicator
@@ -566,7 +570,7 @@ class MenuState(State):
                 pass
         # Draw status text slightly to the right so the small indicator doesn't overlap the first char
         text = "Muted" if config.MUTE else "Sound On"
-        draw_text(screen, text, self.title_font_size // 2, YELLOW, 30, 10, center=False)
+        draw_text(screen, text, FONT_SIZE_SMALL, YELLOW, 30, 10, center=False)
         # Expose last rendered text for tests
         self._last_mute_text = text
         # Menu items - display each game as a square box in a grid layout
@@ -705,7 +709,7 @@ class MenuState(State):
                     draw_text(
                         screen,
                         self._last_launch_message,
-                        20,
+                        FONT_SIZE_SMALL,
                         YELLOW,
                         SCREEN_WIDTH // 2,
                         SCREEN_HEIGHT - 40,
@@ -807,7 +811,7 @@ class HelpState(State):
         draw_text(
             screen,
             "Controls",
-            self.title_font_size,
+            FONT_SIZE_LARGE,
             WHITE,
             SCREEN_WIDTH // 2,
             30,
@@ -824,7 +828,7 @@ class HelpState(State):
             draw_text(
                 screen,
                 game_name,
-                self.section_font_size,
+                FONT_SIZE_MEDIUM,
                 YELLOW,
                 SCREEN_WIDTH // 2,
                 y,
@@ -856,7 +860,7 @@ class HelpState(State):
         draw_text(
             screen,
             footer_text,
-            self.item_font_size - 4,
+            FONT_SIZE_SMALL,
             GRAY,
             SCREEN_WIDTH // 2,
             SCREEN_HEIGHT - 30,

@@ -12,6 +12,7 @@ import random
 
 import pygame
 
+from config import FONT_SIZE_MEDIUM
 from utils import (
     BLACK,
     BLUE,
@@ -161,13 +162,19 @@ class SpaceInvadersState(Game):
             pygame.draw.rect(screen, color, rect)
         # Draw score
         draw_text(
-            screen, f"Score: {self.score}", FONT_SIZE, WHITE, 60, 20, center=False
+            screen,
+            f"Score: {self.score}",
+            FONT_SIZE_MEDIUM,
+            WHITE,
+            60,
+            20,
+            center=False,
         )
         if self.game_over:
             draw_text(
                 screen,
                 "Game Over! Press R to restart or ESC to menu",
-                FONT_SIZE,
+                FONT_SIZE_MEDIUM,
                 RED,
                 SCREEN_WIDTH // 2,
                 SCREEN_HEIGHT // 2,
@@ -177,7 +184,7 @@ class SpaceInvadersState(Game):
             draw_text(
                 screen,
                 "You Win! Press R to restart or ESC to menu",
-                FONT_SIZE,
+                FONT_SIZE_MEDIUM,
                 GREEN,
                 SCREEN_WIDTH // 2,
                 SCREEN_HEIGHT // 2,

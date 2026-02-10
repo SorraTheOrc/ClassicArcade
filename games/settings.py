@@ -19,6 +19,7 @@ import pygame
 import config
 
 logger = logging.getLogger(__name__)
+from config import FONT_SIZE_MEDIUM, FONT_SIZE_SMALL
 from games.game_base import Game
 from utils import BLACK, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE, YELLOW, draw_text
 
@@ -147,7 +148,7 @@ class SettingsState(Game):
         draw_text(
             screen,
             "Settings",
-            self.title_font_size,
+            FONT_SIZE_MEDIUM,
             WHITE,
             SCREEN_WIDTH // 2,
             SCREEN_HEIGHT // 6,
@@ -157,7 +158,7 @@ class SettingsState(Game):
         draw_text(
             screen,
             "↑/↓ select • ←/→ change difficulty • ESC back",
-            self.item_font_size - 4,
+            FONT_SIZE_SMALL,
             YELLOW,
             SCREEN_WIDTH // 2,
             int(SCREEN_HEIGHT * 0.8),
