@@ -377,17 +377,11 @@ class MenuState(State):
                 columns = layout["columns"]
                 if columns > 0:
                     row = self.selected // columns
-                    self.selected = self.selected - 1
-                    if self.selected < row * columns:
-                        # Wrapped to previous row, go to end of that row
-                        prev_row = row - 1
-                        if prev_row >= 0:
-                            self.selected = min(
-                                self.selected, (prev_row + 1) * columns - 1
-                            )
-                        else:
-                            # At top row, wrap to end
-                            self.selected = len(self.menu_items) - 1
+                    col = self.selected % columns
+                    # Only move left if not at start of row
+                    if col > 0:
+                        self.selected = self.selected - 1
+                    # else: stay at current position (at start of row)
                 else:
                     self.selected = (self.selected - 1) % len(self.menu_items)
                 try:
@@ -408,12 +402,14 @@ class MenuState(State):
                 columns = layout["columns"]
                 if columns > 0:
                     row = self.selected // columns
-                    self.selected = (self.selected + 1) % len(self.menu_items)
-                    if self.selected > (row + 1) * columns - 1:
-                        # Wrapped to next row, go to start of current row
-                        self.selected = (row + 1) * columns
-                        if self.selected >= len(self.menu_items):
-                            self.selected = row * columns
+                    col = self.selected % columns
+                    last_col_in_row = min(
+                        (row + 1) * columns - 1, len(self.menu_items) - 1
+                    )
+                    # Only move right if not at end of row
+                    if col < (last_col_in_row - row * columns):
+                        self.selected = self.selected + 1
+                    # else: stay at current position (at end of row)
                 else:
                     self.selected = (self.selected + 1) % len(self.menu_items)
                 try:
@@ -620,15 +616,11 @@ class MenuState(State):
                         elif self._held_key == KEY_LEFT:
                             if columns > 0:
                                 row = self.selected // columns
-                                self.selected = self.selected - 1
-                                if self.selected < row * columns:
-                                    prev_row = row - 1
-                                    if prev_row >= 0:
-                                        self.selected = min(
-                                            self.selected, (prev_row + 1) * columns - 1
-                                        )
-                                    else:
-                                        self.selected = len(self.menu_items) - 1
+                                col = self.selected % columns
+                                # Only move left if not at start of row
+                                if col > 0:
+                                    self.selected = self.selected - 1
+                                # else: stay at current position (at start of row)
                             else:
                                 self.selected = (self.selected - 1) % len(
                                     self.menu_items
@@ -636,13 +628,14 @@ class MenuState(State):
                         elif self._held_key == KEY_RIGHT:
                             if columns > 0:
                                 row = self.selected // columns
-                                self.selected = (self.selected + 1) % len(
-                                    self.menu_items
+                                col = self.selected % columns
+                                last_col_in_row = min(
+                                    (row + 1) * columns - 1, len(self.menu_items) - 1
                                 )
-                                if self.selected > (row + 1) * columns - 1:
-                                    self.selected = (row + 1) * columns
-                                    if self.selected >= len(self.menu_items):
-                                        self.selected = row * columns
+                                # Only move right if not at end of row
+                                if col < (last_col_in_row - row * columns):
+                                    self.selected = self.selected + 1
+                                # else: stay at current position (at end of row)
                             else:
                                 self.selected = (self.selected + 1) % len(
                                     self.menu_items
