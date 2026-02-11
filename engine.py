@@ -81,6 +81,8 @@ if os.path.isfile(_default_png):
     DEFAULT_ICON_PATH = _default_png
 elif os.path.isfile(_default_svg):
     DEFAULT_ICON_PATH = _default_svg
+else:
+    DEFAULT_ICON_PATH = None
 # Detect optional Settings icon.
 _settings_png = os.path.join(_default_icon_dir, "settings_icon.png")
 _settings_svg = os.path.join(_default_icon_dir, "settings_icon.svg")

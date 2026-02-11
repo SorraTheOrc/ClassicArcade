@@ -15,6 +15,13 @@ dependencies = ["pygame>=2.0"]
 [project.scripts]
 classic-arcade = "main:main"
 
+[project.optional-dependencies]
+dev = [
+    "PyInstaller>=6.0",
+    "build>=0.10.0",
+    "pytest>=7.0",
+]
+
 [tool.setuptools]
 # Include the top-level module `main.py` as a py_module so the console script
 # entry point `main:main` can be imported after installation.
@@ -24,3 +31,7 @@ py-modules = ["main", "audio", "engine", "config", "menu_items", "utils"]
 # Only discover python packages under the `games` package to avoid picking up
 # non-python top-level directories (e.g. assets).
 include = ["games*"]
+
+[tool.setuptools.package-data]
+# Include all data files from the games package
+"games" = ["**/*.wav", "**/*.mp3", "**/*.ogg", "**/*.png", "**/*.jpg", "**/*.gif"]

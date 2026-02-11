@@ -1,2 +1,10 @@
 include README.md
-include LICENSE
+include requirements.txt
+include requirements-dev.txt
+recursive-include games **/*.wav
+recursive-include games **/*.mp3
+recursive-include games **/*.ogg
+recursive-include games **/*.png
+recursive-include games **/*.jpg
+recursive-include games **/*.gif
+recursive-include assets **/*
