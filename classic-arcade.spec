@@ -38,7 +38,6 @@ a = Analysis(
     hiddenimports=['pygame', 'pygame._sdl2'] + [m for m in games_modules if 'test' not in m],
     hookspath=[],
     hooksconfig={},
-    runtime_hooks=['rthook_assets.py'],
     excludes=[],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
