@@ -158,6 +158,12 @@ To build a standalone executable locally:
 
 3. The executable will be created in `dist/ClassicArcade` (Linux/macOS) or `dist/ClassicArcade.exe` (Windows).
 
+**Note for Windows users:** If `pyinstaller` is not recognized, it may not be on your PATH. Add the Scripts directory to your PATH or run:
+```powershell
+& "$env:APPDATA\Python\Python313\Scripts\pyinstaller.exe" --clean classic-arcade.spec
+```
+(Adjust `Python313` to match your Python version)
+
 ### Platform-Specific Builds
 
 **Important:** PyInstaller builds are platform-specific. Running the build on Linux produces a Linux executable, on macOS produces a macOS executable, and on Windows produces a Windows executable.
