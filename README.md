@@ -140,6 +140,8 @@ Download the latest build for your platform from the [Releases page](https://git
 - **macOS**: `ClassicArcade-YYYYMMDD-commit-macos-latest.app`
 - **Linux**: `ClassicArcade-YYYYMMDD-commit-ubuntu-latest.appimage`
 
+Nightly builds are automatically generated for all three platforms and published to GitHub Releases.
+
 ### Building Locally
 
 To build a standalone executable locally:
@@ -155,6 +157,17 @@ To build a standalone executable locally:
    ```
 
 3. The executable will be created in `dist/ClassicArcade` (Linux/macOS) or `dist/ClassicArcade.exe` (Windows).
+
+### Platform-Specific Builds
+
+**Important:** PyInstaller builds are platform-specific. Running the build on Linux produces a Linux executable, on macOS produces a macOS executable, and on Windows produces a Windows executable.
+
+To build for a different platform, you need to run PyInstaller on that platform. For automated cross-platform builds, use the **nightly release workflow** which runs on GitHub's infrastructure:
+- Runs on `ubuntu-latest` → produces Linux builds
+- Runs on `macos-latest` → produces macOS builds
+- Runs on `windows-latest` → produces Windows builds
+
+The nightly workflow automatically builds and publishes all three platform executables to the [Releases page](https://github.com/SorraTheOrc/ClassicArcade/releases).
 
 ### Build Artifacts
 
