@@ -4,6 +4,8 @@ block_cipher = None
 
 # Collect all data files from pygame and our project
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+import glob
+import os
 
 # Collect pygame data (fonts, etc.)
 pygame_datas = collect_data_files('pygame')
@@ -11,24 +13,32 @@ pygame_datas = collect_data_files('pygame')
 # Collect all game modules
 games_modules = collect_submodules('games')
 
-# Collect all game data files
-games_datas = []
-try:
-    from games import __path__ as games_path
-    for path in games_path:
-        games_datas.extend(collect_data_files('games', include_py_files=False))
-except Exception:
-    games_datas = []
+# Collect all game data files including assets
+games_datas = collect_data_files('games', include_py_files=False)
+
+# Manually collect assets
+assets = []
+for pattern in ['assets/**/*.wav', 'assets/**/*.mp3', 'assets/**/*.ogg', 'assets/**/*.png', 'assets/**/*.jpg', 'assets/**/*.gif']:
+    for f in glob.glob(pattern, recursive=True):
+        if os.path.isfile(f):
+            dest_dir = os.path.dirname(f)
+            assets.append((f, dest_dir))
+
+# Build the datas list
+datas = []
+datas.extend(pygame_datas)
+datas.extend(games_datas)
+datas.extend(assets)
 
 a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=pygame_datas + games_datas,
+    datas=datas,
     hiddenimports=['pygame', 'pygame._sdl2'] + [m for m in games_modules if 'test' not in m],
     hookspath=[],
     hooksconfig={},
-    runtime_hooks=[],
+    runtime_hooks=['rthook_assets.py'],
     excludes=[],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
