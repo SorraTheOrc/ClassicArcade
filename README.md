@@ -129,6 +129,44 @@ When drawing the menu, the icon is loaded with `pygame.image.load` and **scaled*
 
 The hue offset is computed from a SHA‑256 hash of the name, guaranteeing the same tint every time the menu is displayed.
 
+## Standalone Executables
+
+The arcade suite can be packaged as standalone executables for Windows, macOS, and Linux using PyInstaller. Nightly builds are automatically created and published to GitHub Releases.
+
+### Downloading Builds
+
+Download the latest build for your platform from the [Releases page](https://github.com/SorraTheOrc/ClassicArcade/releases):
+- **Windows**: `ClassicArcade-YYYYMMDD-commit-windows-latest.exe`
+- **macOS**: `ClassicArcade-YYYYMMDD-commit-macos-latest.app`
+- **Linux**: `ClassicArcade-YYYYMMDD-commit-ubuntu-latest.appimage`
+
+### Building Locally
+
+To build a standalone executable locally:
+
+1. Install build dependencies:
+   ```bash
+   pip install --upgrade build PyInstaller
+   ```
+
+2. Build the executable:
+   ```bash
+   pyinstaller --clean classic-arcade.spec
+   ```
+
+3. The executable will be created in `dist/ClassicArcade` (Linux/macOS) or `dist/ClassicArcade.exe` (Windows).
+
+### Build Artifacts
+
+Each build includes:
+- All game modules (Snake, Pong, Breakout, Space Invaders, Tetris)
+- All assets (sounds, music, icons)
+- Pygame and dependencies
+
+The Linux/macOS executable is a single binary (~39MB). Windows builds produce a standalone `.exe` file.
+
+---
+
 ## Project Structure
 
 ```
