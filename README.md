@@ -182,7 +182,7 @@ Each build includes:
 - All assets (sounds, music, icons)
 - Pygame and dependencies
 
-The Linux/macOS executable is a single binary (~39MB). Windows builds produce a standalone `.exe` file.
+The executable is a single binary (~57MB) that includes all assets. This ensures the game works without requiring any external files.
 
 ---
 
