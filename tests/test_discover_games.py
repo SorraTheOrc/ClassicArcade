@@ -1,7 +1,7 @@
 import importlib.util
 
-from engine import State
-from menu_items import discover_games
+from classic_arcade.engine import State
+from classic_arcade.menu_items import discover_games
 
 
 def test_discover_includes_space_invaders():

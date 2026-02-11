@@ -17,8 +17,8 @@ from typing import cast as _cast
 
 import pygame
 
-import audio
-from config import (
+from classic_arcade import audio
+from classic_arcade.config import (
     BLACK,
     BLUE,
     CYAN,
@@ -38,10 +38,10 @@ from config import (
     WHITE,
     YELLOW,
 )
-from engine import State
+from classic_arcade.engine import State
+from classic_arcade.utils import draw_text
 from games.game_base import Game
 from games.highscore import add_score
-from utils import draw_text
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ def _apply_tetris_speed_settings() -> None:
     FAST_FALL_SPEED = int(BASE_FAST_FALL_SPEED / multiplier)
 
 
-import config
+from classic_arcade import config
 
 
 class TetrisState(Game):
@@ -789,7 +789,7 @@ class TetrisModeSelectState(State):
 
                     self.request_transition(Tetris2PlayerState())
             elif event.key == pygame.K_ESCAPE:
-                from engine import MenuState
+                from classic_arcade.engine import MenuState
 
                 self.request_transition(MenuState([]))
 

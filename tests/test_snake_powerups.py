@@ -10,7 +10,7 @@ import pygame
 pygame.init()
 pygame.font.init()
 
-from config import SCREEN_HEIGHT, SCREEN_WIDTH
+from classic_arcade.config import SCREEN_HEIGHT, SCREEN_WIDTH
 from games.snake import SnakeState
 
 

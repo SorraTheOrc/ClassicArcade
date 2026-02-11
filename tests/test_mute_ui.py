@@ -19,13 +19,13 @@ import pygame
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-import config
-from audio import toggle_mute
-from config import _SETTINGS_PATH, BLACK, YELLOW, save_settings
-from engine import MenuState
+from classic_arcade import config
+from classic_arcade.audio import toggle_mute
+from classic_arcade.config import _SETTINGS_PATH, BLACK, YELLOW, save_settings
+from classic_arcade.engine import MenuState
+from classic_arcade.menu_items import get_menu_items
 from games.game_base import Game
 from games.snake import SnakeState
-from menu_items import get_menu_items
 
 
 class TestMuteUI(unittest.TestCase):
@@ -128,7 +128,7 @@ class TestMuteUI(unittest.TestCase):
             data = json.load(f)
         self.assertTrue(data["mute"])
         # Reload config module to simulate new session
-        import config as cfg_mod
+        from classic_arcade import config as cfg_mod
 
         importlib.reload(cfg_mod)
         self.assertTrue(cfg_mod.MUTE)

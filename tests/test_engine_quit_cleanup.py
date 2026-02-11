@@ -1,6 +1,6 @@
 import pygame
 
-from engine import Engine, State
+from classic_arcade.engine import Engine, State
 
 
 class DummyState(State):

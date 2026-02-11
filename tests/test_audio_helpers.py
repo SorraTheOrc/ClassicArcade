@@ -10,7 +10,7 @@ from unittest import mock
 import pygame
 
 import audio
-import config
+from classic_arcade import config
 
 
 # Helper to get the absolute path to a sound asset via the module function.

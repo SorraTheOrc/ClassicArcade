@@ -20,7 +20,7 @@ Usage::
 
 from typing import Optional, Type
 
-from engine import Engine, State
+from classic_arcade.engine import Engine, State
 
 
 def run_game(state_cls: Type[State], fps: Optional[int] = None) -> None:

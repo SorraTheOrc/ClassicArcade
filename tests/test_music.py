@@ -9,7 +9,7 @@ import sys
 
 # Import the modules under test.
 import audio
-import config
+from classic_arcade import config
 
 
 def test_get_music_files():

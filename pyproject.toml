@@ -22,15 +22,10 @@ dev = [
     "pytest>=7.0",
 ]
 
-[tool.setuptools]
-# Include the top-level module `main.py` as a py_module so the console script
-# entry point `main:main` can be imported after installation.
-py-modules = ["main", "audio", "engine", "config", "menu_items", "utils"]
-
 [tool.setuptools.packages.find]
-# Only discover python packages under the `games` package to avoid picking up
-# non-python top-level directories (e.g. assets).
-include = ["games*"]
+# Include both the classic_arcade package and games package
+where = ["."]
+include = ["classic_arcade*", "games*"]
 
 [tool.setuptools.package-data]
 # Include all data files from the games package

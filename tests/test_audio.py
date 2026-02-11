@@ -12,7 +12,7 @@ import pygame
 import audio
 
 # Import the modules under test.
-import config
+from classic_arcade import config
 
 
 def test_mute_default():

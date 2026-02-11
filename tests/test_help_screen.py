@@ -12,7 +12,7 @@ import pygame
 
 pygame.init()
 
-from engine import Engine, HelpState, MenuState
+from classic_arcade.engine import Engine, HelpState, MenuState
 
 
 def test_help_state_exists():

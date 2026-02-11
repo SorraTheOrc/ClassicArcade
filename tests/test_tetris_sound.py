@@ -7,7 +7,7 @@ the global mute flag prevents playback.
 import pygame
 
 import audio
-import config
+from classic_arcade import config
 from games.tetris.tetris import GRID_HEIGHT, TetrisState
 
 

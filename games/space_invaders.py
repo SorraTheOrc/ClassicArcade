@@ -12,8 +12,8 @@ import random
 
 import pygame
 
-from config import FONT_SIZE_MEDIUM
-from utils import (
+from classic_arcade.config import FONT_SIZE_MEDIUM
+from classic_arcade.utils import (
     BLACK,
     BLUE,
     GREEN,
@@ -24,8 +24,7 @@ from utils import (
     YELLOW,
     draw_text,
 )
-
-from .game_base import Game
+from games.game_base import Game
 
 # Game constants
 PLAYER_WIDTH = 50
@@ -210,7 +209,7 @@ def create_aliens():
 
 def run():
     """Run Space Invaders using the shared run helper."""
-    from .run_helper import run_game
+    from games.run_helper import run_game
 
     run_game(SpaceInvadersState)
 

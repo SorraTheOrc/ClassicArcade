@@ -16,6 +16,10 @@ games_modules = collect_submodules('games')
 # Collect all game data files including assets
 games_datas = collect_data_files('games', include_py_files=False)
 
+# Collect classic_arcade module data
+classic_arcade_modules = collect_submodules('classic_arcade')
+classic_arcade_datas = collect_data_files('classic_arcade', include_py_files=False)
+
 # Manually collect assets
 assets = []
 for pattern in ['assets/**/*.wav', 'assets/**/*.mp3', 'assets/**/*.ogg', 'assets/**/*.png', 'assets/**/*.jpg', 'assets/**/*.gif']:
@@ -28,14 +32,15 @@ for pattern in ['assets/**/*.wav', 'assets/**/*.mp3', 'assets/**/*.ogg', 'assets
 datas = []
 datas.extend(pygame_datas)
 datas.extend(games_datas)
+datas.extend(classic_arcade_datas)
 datas.extend(assets)
 
 a = Analysis(
-    ['main.py'],
+    ['classic_arcade/main.py'],
     pathex=[],
     binaries=[],
     datas=datas,
-    hiddenimports=['pygame', 'pygame._sdl2'] + [m for m in games_modules if 'test' not in m],
+    hiddenimports=['pygame', 'pygame._sdl2'] + [m for m in games_modules + classic_arcade_modules if 'test' not in m],
     hookspath=[],
     hooksconfig={},
     excludes=[],

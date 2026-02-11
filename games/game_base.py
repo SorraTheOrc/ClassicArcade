@@ -18,10 +18,10 @@ from abc import abstractmethod as _abstractmethod
 
 import pygame
 
-import audio
-from config import FONT_SIZE_SMALL, YELLOW
-from engine import MenuState, State
-from utils import SCREEN_HEIGHT, SCREEN_WIDTH, WHITE, draw_text
+from classic_arcade import audio
+from classic_arcade.config import FONT_SIZE_SMALL, YELLOW
+from classic_arcade.engine import MenuState, State
+from classic_arcade.utils import SCREEN_HEIGHT, SCREEN_WIDTH, WHITE, draw_text
 
 # import get_menu_items lazily in handle_event
 
@@ -67,13 +67,13 @@ class Game(State):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 # Return to menu (import lazily to avoid circular import)
-                from menu_items import get_menu_items
+                from classic_arcade.menu_items import get_menu_items
 
                 self.request_transition(MenuState(get_menu_items()))
                 return
             if event.key == pygame.K_h:
                 # Show help for the current game
-                from engine import HelpState
+                from classic_arcade.engine import HelpState
 
                 self.paused = True  # Pause the game when help is shown
                 # Store a reference to this instance so it can be restored
@@ -117,8 +117,8 @@ class Game(State):
 
         Uses a small font size and ``YELLOW`` colour for visibility.
         """
-        import config
-        from config import YELLOW
+        from classic_arcade import config
+        from classic_arcade.config import YELLOW
 
         # Use a modest font size for the overlay and draw using config.MUTE
         font_size = 24
@@ -126,7 +126,7 @@ class Game(State):
         # Optionally draw a small visible square at (10,10) in test/headless runs
         import os
 
-        from utils import draw_text
+        from classic_arcade.utils import draw_text
 
         if os.getenv("PYTEST_CURRENT_TEST") or os.getenv("SHOW_TEST_INDICATOR"):
             try:

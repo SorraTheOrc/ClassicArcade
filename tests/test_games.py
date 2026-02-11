@@ -12,20 +12,20 @@ os.environ["HEADLESS"] = "1"
 os.environ["SDL_VIDEODRIVER"] = "dummy"
 import pygame
 
-import config
+from classic_arcade import config
 
 # Initialize pygame before importing game modules that may set up display
 pygame.init()
 pygame.font.init()
 
-from engine import MenuState
+from classic_arcade.engine import MenuState
+from classic_arcade.menu_items import get_menu_items
 from games.breakout import BreakoutState
 from games.pong import PongMultiplayerState, PongSinglePlayerState
 from games.settings import SettingsState
 from games.snake import SnakeState
 from games.space_invaders import SpaceInvadersState
 from games.tetris import TetrisState
-from menu_items import get_menu_items
 
 
 def run_state(state_class):

@@ -16,12 +16,19 @@ import logging
 
 import pygame
 
-import config
+from classic_arcade import config
 
 logger = logging.getLogger(__name__)
-from config import FONT_SIZE_MEDIUM, FONT_SIZE_SMALL
+from classic_arcade.config import FONT_SIZE_MEDIUM, FONT_SIZE_SMALL
+from classic_arcade.utils import (
+    BLACK,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    WHITE,
+    YELLOW,
+    draw_text,
+)
 from games.game_base import Game
-from utils import BLACK, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE, YELLOW, draw_text
 
 
 class SettingsState(Game):

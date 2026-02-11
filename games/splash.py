@@ -6,9 +6,9 @@ Displays a simple title with a fade‑in effect, holds briefly, then transitions
 
 import pygame
 
-from config import BLACK, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
-from engine import MenuState, State
-from menu_items import get_menu_items
+from classic_arcade.config import BLACK, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
+from classic_arcade.engine import MenuState, State
+from classic_arcade.menu_items import get_menu_items
 
 
 class SplashState(State):

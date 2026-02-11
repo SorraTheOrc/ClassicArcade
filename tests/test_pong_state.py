@@ -2,7 +2,7 @@ import unittest
 
 import pygame
 
-from engine import MenuState
+from classic_arcade.engine import MenuState
 from games.pong import PongState
 
 

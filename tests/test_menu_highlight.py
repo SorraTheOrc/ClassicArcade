@@ -2,9 +2,9 @@ import unittest
 
 import pygame
 
-from config import BLACK, GRAY, SCREEN_HEIGHT, SCREEN_WIDTH
-from engine import MenuState
-from menu_items import get_menu_items
+from classic_arcade.config import BLACK, GRAY, SCREEN_HEIGHT, SCREEN_WIDTH
+from classic_arcade.engine import MenuState
+from classic_arcade.menu_items import get_menu_items
 
 
 class TestMenuHighlight(unittest.TestCase):

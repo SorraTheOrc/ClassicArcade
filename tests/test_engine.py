@@ -12,7 +12,7 @@ os.environ["HEADLESS"] = "1"
 
 pygame.init()
 
-from engine import Engine, State
+from classic_arcade.engine import Engine, State
 
 
 class DummyStateA(State):

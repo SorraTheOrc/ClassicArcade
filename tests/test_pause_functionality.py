@@ -7,7 +7,7 @@ import pygame
 # Ensure the project root is on sys.path for imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from config import KEY_PAUSE
+from classic_arcade.config import KEY_PAUSE
 from games.breakout import BreakoutState
 from games.pong import PongState
 from games.snake import SnakeState

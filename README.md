@@ -182,7 +182,7 @@ Each build includes:
 - All assets (sounds, music, icons)
 - Pygame and dependencies
 
-The executable is a single binary (~57MB) that includes all assets. This ensures the game works without requiring any external files.
+The executable is a single binary that includes all assets. This ensures the game works without requiring any external files.
 
 ---
 

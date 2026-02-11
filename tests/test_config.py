@@ -11,7 +11,7 @@ import pytest
 # Ensure headless mode for pygame (if needed)
 os.environ["HEADLESS"] = "1"
 
-import config
+from classic_arcade import config
 
 
 def test_difficulty_multiplier_values():

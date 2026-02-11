@@ -8,7 +8,7 @@ global speed/parameter constants based on the difficulty setting stored in
 
 import importlib
 
-import config
+from classic_arcade import config
 
 # Helper to reset config difficulties to easy after each test
 

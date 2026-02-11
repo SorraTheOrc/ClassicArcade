@@ -15,9 +15,8 @@ from typing import List, Tuple
 
 import pygame
 
-import audio
-import config
-from config import (
+from classic_arcade import audio, config
+from classic_arcade.config import (
     BLACK,
     BLUE,
     FONT_SIZE_MEDIUM,
@@ -31,15 +30,15 @@ from config import (
     WHITE,
     YELLOW,
 )
+from classic_arcade.utils import draw_text
 from games.game_base import Game
 from games.highscore import add_score
-from utils import draw_text
 
 # Apply difficulty‑based speed settings for Space Invaders
 
 
 logger = logging.getLogger(__name__)
-import config
+from classic_arcade import config
 
 # Game constants
 PLAYER_WIDTH = 50

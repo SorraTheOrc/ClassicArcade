@@ -11,7 +11,7 @@ from unittest import mock
 import pygame
 
 import audio
-import config
+from classic_arcade import config
 
 
 def test_preload_effects(monkeypatch):

@@ -14,8 +14,8 @@ from typing import List, Optional
 
 import pygame
 
-import config
-from config import (
+from classic_arcade import config
+from classic_arcade.config import (
     BLACK,
     BLUE,
     FONT_SIZE_MEDIUM,
@@ -29,10 +29,10 @@ from config import (
     SCREEN_WIDTH,
     WHITE,
 )
-from engine import State
+from classic_arcade.engine import State
+from classic_arcade.utils import draw_text
 from games.game_base import Game
 from games.highscore import add_score
-from utils import draw_text
 
 logger = logging.getLogger(__name__)
 
@@ -355,7 +355,7 @@ class PongModeSelectState(State):
 
                     self.request_transition(PongMultiplayerState())
             elif event.key == pygame.K_ESCAPE:
-                from engine import MenuState
+                from classic_arcade.engine import MenuState
 
                 self.request_transition(MenuState([]))
 

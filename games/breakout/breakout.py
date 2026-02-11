@@ -14,9 +14,8 @@ from typing import List, Tuple
 
 import pygame
 
-import audio
-import config
-from config import (
+from classic_arcade import audio, config
+from classic_arcade.config import (
     BLACK,
     BLUE,
     CYAN,
@@ -32,9 +31,9 @@ from config import (
     WHITE,
     YELLOW,
 )
+from classic_arcade.utils import draw_text
 from games.game_base import Game
 from games.highscore import add_score
-from utils import draw_text
 
 logger = logging.getLogger(__name__)
 
