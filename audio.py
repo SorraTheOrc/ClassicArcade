@@ -104,6 +104,9 @@ def _sound_path(name: str) -> str:
     Path is ``<project>/assets/sounds/<name>``.
     """
     # Handle PyInstaller bundle paths
+    import os
+    import sys
+
     if hasattr(sys, "_MEIPASS"):
         base_dir = sys._MEIPASS
     else:
