@@ -2,46 +2,50 @@ name: Nightly Release
 
 on:
   schedule:
-    # Run daily at midnight UTC (simpler than hourly checks) — cron uses UTC
+    # Run daily at midnight UTC
     - cron: '0 0 * * *'
   workflow_dispatch: {}
 
 jobs:
-  nightly:
-    name: Nightly release (midnight UTC)
-    runs-on: ubuntu-latest
+  build:
+    name: ${{ matrix.os }} build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.10"]
+    
     env:
       # Mark this run as a production/release build so runtime code can disable
       # worklog creation and other development-only behaviours.
       PRODUCTION: "true"
+    
     permissions:
       contents: write
       packages: write
-
+    
     steps:
       - name: Checkout with full history
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      # Running at midnight UTC so no local-time guard is required
-
-
+      
+      # Determine default branch
       - name: Determine default branch
         id: defbranch
         run: |
-          # Ensure origin/HEAD is set so we can discover the default branch
           git remote set-head origin -a || true
           default=$(git rev-parse --abbrev-ref origin/HEAD | sed 's|origin/||')
           echo "Default branch detected: $default"
           echo "default_branch=$default" >> $GITHUB_OUTPUT
-
-      - name: Check for recent commits to default branch in last 24 hours
+      
+      # Check for recent commits
+      - name: Check for recent commits
         id: merge_check
         run: |
           DEFAULT=${{ steps.defbranch.outputs.default_branch }}
           echo "Checking commits to origin/$DEFAULT in the last 24 hours"
-          # List commits in the default branch in the last 24 hours
           merges=$(git log origin/$DEFAULT --since='24 hours ago' --pretty=format:'%h %ad %s' --date=iso)
           if [ -z "$merges" ]; then
             echo "No commits detected in the last 24 hours. Skipping build."
@@ -51,56 +55,48 @@ jobs:
             echo "Commits detected:"
             echo "$merges"
             echo "no_merges=false" >> $GITHUB_OUTPUT
-            # export commits as a multi-line output
             echo "merges<<EOF" >> $GITHUB_OUTPUT
             echo "$merges" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
           fi
-
-      - name: Install pygame
-        run: pip install pygame
-
+      
+      # Setup Python
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --upgrade build PyInstaller pytest
+      
+      # Run tests
       - name: Run tests (pytest)
         id: tests
         run: |
           set -e
           if [ -f pyproject.toml ] || [ -f setup.py ]; then
             echo "Running pytest for Python project"
-            if command -v pytest >/dev/null 2>&1; then
-              pytest -q
-            else
-              echo "pytest not installed – installing"
-              python -m pip install --upgrade pip setuptools wheel build pytest
-              pytest -q
-            fi
+            pytest -q
           else
             echo "No Python project detected – nothing to test"
-            fi
-
-      - name: Build release artifact
+          fi
+      
+      # Build executable with PyInstaller
+      - name: Build executable with PyInstaller
         id: build
         run: |
           set -e
-          ART_DIR=release-artifact
-          rm -rf $ART_DIR && mkdir -p $ART_DIR
-          # Python package build
-          echo "Building Python package"
-          python -m pip install --upgrade build
-          python -m build
-          if [ -d dist ]; then cp -r dist $ART_DIR/; fi
-          ls -la $ART_DIR || true
-          # Package artifact for upload
-          if [ -d $ART_DIR ]; then
-            tar -czf release-artifact.tar.gz -C $ART_DIR . || true
-            echo "Created release-artifact.tar.gz"
-            ls -la release-artifact.tar.gz || true
-          fi
-
+          pyinstaller --clean classic-arcade.spec
+          ls -la dist/
+      
+      # Prepare tag and release metadata
       - name: Prepare tag and release metadata
         id: tag
         run: |
           set -e
-          # Use the current commit as canonical identity for this run
           COMMIT_SHA=$(git rev-parse --verify HEAD)
           SHORT=${COMMIT_SHA:0:7}
           DATE=$(date -u +%Y%m%d)
@@ -110,28 +106,25 @@ jobs:
           echo "TAG=$TAG" >> $GITHUB_ENV
           echo "short=$SHORT" >> $GITHUB_OUTPUT
           echo "tag prepared: $TAG"
-
-      - name: Create or get GitHub release (robust, race-safe)
+      
+      # Create or get GitHub release
+      - name: Create or get GitHub release
         if: steps.merge_check.outputs.no_merges != 'true'
         id: create_release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # TAG is set via GITHUB_ENV in the Prepare tag step
           MERGES: ${{ steps.merge_check.outputs.merges }}
         run: |
           set -euo pipefail
           REPO=${GITHUB_REPOSITORY}
-          # Validate TAG is set and sanitize it
           if [ -z "$TAG" ]; then
             echo "ERROR: TAG is empty" >&2
             exit 1
           fi
-          # Remove any characters that are not alphanumeric, dot, dash, or underscore
           TAG=$(echo "$TAG" | sed 's/[^a-zA-Z0-9._-]//g')
           echo "Using sanitized TAG: $TAG"
           echo "Creating or locating release for tag: $TAG"
-
-          # Prepare JSON payload using python to ensure safe escaping
+          
           PAYLOAD=$(python3 - <<'PY'
           import json,os
           tag=os.environ['TAG']
@@ -141,15 +134,13 @@ jobs:
           print(json.dumps(data))
           PY
           )
-
-          # Try to create the release
+          
           resp_file=$(mktemp)
           http_code=$(curl -s -w "%{http_code}" -o "$resp_file" -X POST -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${REPO}/releases" -d "$PAYLOAD")
           if [ "$http_code" = "201" ]; then
             upload_url=$(python3 -c "import sys,json;print(json.load(open('$resp_file'))['upload_url'])")
             echo "Created release for $TAG"
           elif [ "$http_code" = "422" ]; then
-            # Release already exists (race) — fetch it
             http_code2=$(curl -s -w "%{http_code}" -o "$resp_file" -H "Authorization: token ${GITHUB_TOKEN}" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${REPO}/releases/tags/${TAG}")
             if [ "$http_code2" = "200" ]; then
               upload_url=$(python3 -c "import sys,json;print(json.load(open('$resp_file'))['upload_url'])")
@@ -164,23 +155,36 @@ jobs:
             cat "$resp_file" >&2
             exit 1
           fi
-
-           # The upload_url includes templated parameters {?name,label} which are required by the upload-release-asset action.
-           # No modification needed.
-           echo "upload_url=$upload_url" >> $GITHUB_OUTPUT
+          
+          echo "upload_url=$upload_url" >> $GITHUB_OUTPUT
           rm -f "$resp_file"
-
-      - name: Upload release artifact (if created)
-        uses: actions/upload-release-asset@v1
+      
+      # Determine artifact name based on platform
+      - name: Determine artifact name
+        id: artifact
+        run: |
+          case "${{ matrix.os }}" in
+            windows-latest) EXT="exe" ;;
+            macos-latest) EXT="app" ;;
+            ubuntu-latest) EXT="appimage" ;;
+          esac
+          DATE=$(date -u +%Y%m%d)
+          COMMIT=${{ steps.tag.outputs.short }}
+          ARTIFACT_NAME="ClassicArcade-${DATE}-${COMMIT}-${{ matrix.os }}.${EXT}"
+          echo "artifact_name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
+      
+      # Upload release artifact
+      - name: Upload release artifact
         if: steps.build.outcome == 'success' && steps.merge_check.outputs.no_merges != 'true'
+        uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: release-artifact.tar.gz
-          asset_name: release-artifact.tar.gz
-          asset_content_type: application/gzip
+          asset_path: dist/ClassicArcade
+          asset_name: ${{ steps.artifact.outputs.artifact_name }}
+          asset_content_type: application/octet-stream
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Done — record decision
+      
+      - name: Done
         run: |
-          echo "Nightly release job completed. If no build occurred the job exited earlier with a skip message."
+          echo "Build completed for ${{ matrix.os }}"
