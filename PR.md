@@ -7,7 +7,7 @@ Implemented automated build process to package the arcade game as standalone exe
 ## Changes
 
 ### New Files
-- `classic-arcade.spec` - PyInstaller configuration for cross-platform builds
+- classic-arcade.spec - PyInstaller configuration for cross-platform builds
 - `requirements-dev.txt` - Development dependencies including PyInstaller
 - `MANIFEST.in` - Source distribution manifest for assets
 
