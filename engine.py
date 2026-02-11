@@ -72,9 +72,15 @@ _DEFAULT_ICON_PATH = None
 # Path to a custom Settings icon (optional).
 # Expected location: <project_root>/assets/icons/settings_icon.png (or .svg).
 _SETTINGS_ICON_PATH = None
-_default_icon_dir = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "assets", "icons")
-)
+
+# Handle PyInstaller bundle paths
+if hasattr(sys, "_MEIPASS"):
+    _default_icon_dir = os.path.join(sys._MEIPASS, "assets", "icons")
+else:
+    _default_icon_dir = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "assets", "icons")
+    )
+
 _default_png = os.path.join(_default_icon_dir, "default_game_icon.png")
 _default_svg = os.path.join(_default_icon_dir, "default_game_icon.svg")
 if os.path.isfile(_default_png):

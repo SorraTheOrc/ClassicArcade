@@ -103,13 +103,21 @@ def _sound_path(name: str) -> str:
 
     Path is ``<project>/assets/sounds/<name>``.
     """
-    base_dir = os.path.abspath(os.path.dirname(__file__))
+    # Handle PyInstaller bundle paths
+    if hasattr(sys, "_MEIPASS"):
+        base_dir = sys._MEIPASS
+    else:
+        base_dir = os.path.abspath(os.path.dirname(__file__))
     return os.path.join(base_dir, "assets", "sounds", name)
 
 
 def _music_dir() -> str:
     """Return the absolute path to the music assets directory."""
-    base_dir = os.path.abspath(os.path.dirname(__file__))
+    # Handle PyInstaller bundle paths
+    if hasattr(sys, "_MEIPASS"):
+        base_dir = sys._MEIPASS
+    else:
+        base_dir = os.path.abspath(os.path.dirname(__file__))
     return os.path.join(base_dir, "assets", "music")
 
 
@@ -118,7 +126,11 @@ def _sound_path_type(sound_type: str, name: str) -> str:
 
     Path is ``<project>/assets/sounds/<sound_type>/<name>``.
     """
-    base_dir = os.path.abspath(os.path.dirname(__file__))
+    # Handle PyInstaller bundle paths
+    if hasattr(sys, "_MEIPASS"):
+        base_dir = sys._MEIPASS
+    else:
+        base_dir = os.path.abspath(os.path.dirname(__file__))
     return os.path.join(base_dir, "assets", "sounds", sound_type, name)
 
 
