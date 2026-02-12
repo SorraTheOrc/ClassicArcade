@@ -32,7 +32,7 @@ from classic_arcade.config import (
 )
 from classic_arcade.utils import draw_text
 from games.game_base import Game
-from games.highscore import add_score
+from games.highscore import draw_highscore_screen, record_highscore
 
 # Apply difficulty‑based speed settings for Space Invaders
 
@@ -291,50 +291,13 @@ class SpaceInvadersState(Game):
             center=False,
         )
         if self.game_over:
-            # Record high score once (score is stored in self.score)
-            if not getattr(self, "highscore_recorded", False):
-                self.highscores = add_score("space_invaders", self.score)
-                self.highscore_recorded = True
-            # Layout positions
-            heading_y = int(SCREEN_HEIGHT * 0.20)
-            instr_y = int(SCREEN_HEIGHT * 0.80)
-            # Heading
-            draw_text(
+            record_highscore(self, "space_invaders", self.score)
+            draw_highscore_screen(
                 screen,
-                "High Scores:",
-                FONT_SIZE_MEDIUM,
-                WHITE,
-                SCREEN_WIDTH // 2,
-                heading_y,
-                center=True,
-            )
-            # Scores
-            for idx, entry in enumerate(self.highscores[:5], start=1):
-                try:
-                    date_str = datetime.fromisoformat(entry["timestamp"]).strftime(
-                        "%d-%b-%Y"
-                    )
-                except Exception:
-                    date_str = entry["timestamp"]
-                score_y = heading_y + FONT_SIZE + 5 + (idx - 1) * (FONT_SIZE + 5)
-                draw_text(
-                    screen,
-                    f"{idx}. {entry['score']} ({date_str})",
-                    FONT_SIZE_MEDIUM,
-                    WHITE,
-                    SCREEN_WIDTH // 2,
-                    score_y,
-                    center=True,
-                )
-            # Instruction line at bottom
-            draw_text(
-                screen,
-                "Game Over! Press R to restart or ESC to menu",
-                FONT_SIZE_MEDIUM,
-                RED,
-                SCREEN_WIDTH // 2,
-                instr_y,
-                center=True,
+                self.highscores,
+                instruction_text="Game Over! Press R to restart or ESC to menu",
+                instruction_color=RED,
+                font_size=FONT_SIZE_MEDIUM,
             )
         if self.countdown_active:
             self.draw_countdown(screen)

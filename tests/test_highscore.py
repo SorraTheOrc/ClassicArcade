@@ -60,3 +60,20 @@ def test_malformed_file_returns_empty(tmp_path, monkeypatch):
     # Loading should return empty list, not raise
     result = hs.load_highscores(game_name)
     assert result == []
+
+
+def test_record_highscore_records_once(monkeypatch, tmp_path):
+    class DummyState:
+        highscore_recorded = False
+        highscores = []
+
+    state = DummyState()
+    monkeypatch.setattr(hs, "_HIGHSCORE_DIR", str(tmp_path))
+
+    scores = hs.record_highscore(state, "dummy", 42)
+    assert state.highscore_recorded is True
+    assert scores
+    assert scores[0]["score"] == 42
+
+    scores_again = hs.record_highscore(state, "dummy", 10)
+    assert scores_again == scores
