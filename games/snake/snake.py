@@ -43,7 +43,7 @@ from classic_arcade.config import (
 from classic_arcade.engine import Engine
 from classic_arcade.utils import draw_text
 from games.game_base import Game
-from games.highscore import add_score
+from games.highscore import draw_highscore_screen, record_highscore
 
 logger = logging.getLogger(__name__)
 import logging
@@ -199,6 +199,7 @@ class SnakeState(Game):
 
         while self._time_acc >= interval:
             self._time_acc -= interval
+            new_head = None
             if self.direction != (0, 0):
                 new_head = (
                     self.snake[0][0] + self.direction[0],
@@ -265,7 +266,7 @@ class SnakeState(Game):
                         self.snake.pop()
                     # Power-up collision: check if new head landed on a powerup
             for pu in list(self.powerups):
-                if new_head == pu.get("pos"):
+                if new_head is not None and new_head == pu.get("pos"):
                     try:
                         self._collect_powerup(pu)
                     except Exception:
@@ -464,50 +465,13 @@ class SnakeState(Game):
                 center=False,
             )
         if self.game_over:
-            # Record high score (snake length is score) once
-            if not getattr(self, "highscore_recorded", False):
-                self.highscores = add_score("snake", self.score)
-                self.highscore_recorded = True
-            # Layout positions
-            heading_y = int(SCREEN_HEIGHT * 0.20)
-            instr_y = int(SCREEN_HEIGHT * 0.80)
-            # Heading
-            draw_text(
+            record_highscore(self, "snake", self.score)
+            draw_highscore_screen(
                 screen,
-                "High Scores:",
-                FONT_SIZE_MEDIUM,
-                WHITE,
-                SCREEN_WIDTH // 2,
-                heading_y,
-                center=True,
-            )
-            # Scores
-            for idx, entry in enumerate(self.highscores[:5], start=1):
-                try:
-                    date_str = datetime.fromisoformat(entry["timestamp"]).strftime(
-                        "%d-%b-%Y"
-                    )
-                except Exception:
-                    date_str = entry["timestamp"]
-                score_y = heading_y + 24 + 5 + (idx - 1) * (24 + 5)
-                draw_text(
-                    screen,
-                    f"{idx}. {entry['score']} ({date_str})",
-                    FONT_SIZE_MEDIUM,
-                    WHITE,
-                    SCREEN_WIDTH // 2,
-                    score_y,
-                    center=True,
-                )
-            # Instruction line at bottom
-            draw_text(
-                screen,
-                "Game Over! Press R to restart or ESC to menu",
-                FONT_SIZE_MEDIUM,
-                YELLOW,
-                SCREEN_WIDTH // 2,
-                instr_y,
-                center=True,
+                self.highscores,
+                instruction_text="Game Over! Press R to restart or ESC to menu",
+                instruction_color=YELLOW,
+                font_size=FONT_SIZE_MEDIUM,
             )
         # Draw pause overlay if paused
         if self.paused:
@@ -852,9 +816,7 @@ class Snake2PlayerState(Game):
 
         # Draw game over screen
         if self.game_over1 and self.game_over2:
-            if not getattr(self, "highscore_recorded", False):
-                self.highscores = add_score("snake", max(self.score1, self.score2))
-                self.highscore_recorded = True
+            record_highscore(self, "snake", max(self.score1, self.score2))
 
             winner = (
                 "Player 1"

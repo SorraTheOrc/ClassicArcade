@@ -16,7 +16,9 @@ If the file does not exist or is malformed an empty list is returned.
 import json
 import os
 from datetime import datetime
-from typing import Dict, List
+from typing import TYPE_CHECKING, Dict, List, Sequence
+
+import pygame
 
 # Directory for high‑score files – placed next to this module's parent directory (project root).
 _HIGHSCORE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -80,4 +82,90 @@ def add_score(game_name: str, score: int) -> List[Dict]:
     return scores
 
 
-__all__ = ["load_highscores", "save_highscores", "add_score"]
+def record_highscore(state: object, game_name: str, score: int) -> List[Dict]:
+    """Record a high score once per game over and return the list.
+
+    Expects the state to expose `highscore_recorded` and `highscores` fields.
+    """
+    if not getattr(state, "highscore_recorded", False):
+        highscores = add_score(game_name, score)
+        setattr(state, "highscores", highscores)
+        setattr(state, "highscore_recorded", True)
+    return getattr(state, "highscores", [])
+
+
+def draw_highscore_screen(
+    screen: pygame.Surface,
+    highscores: Sequence[Dict],
+    *,
+    instruction_text: str,
+    instruction_color: tuple[int, int, int],
+    font_size: int,
+    heading: str = "High Scores:",
+    heading_color: tuple[int, int, int] | None = None,
+    entry_color: tuple[int, int, int] | None = None,
+    overlay_alpha: int = 180,
+    max_entries: int = 5,
+) -> None:
+    """Draw a blackout overlay and the high score list."""
+    import pygame
+
+    from classic_arcade.config import SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
+    from classic_arcade.utils import draw_text
+
+    if heading_color is None:
+        heading_color = WHITE
+    if entry_color is None:
+        entry_color = WHITE
+
+    overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, overlay_alpha))
+    screen.blit(overlay, (0, 0))
+
+    heading_y = int(SCREEN_HEIGHT * 0.20)
+    instr_y = int(SCREEN_HEIGHT * 0.80)
+
+    draw_text(
+        screen,
+        heading,
+        font_size,
+        heading_color,
+        SCREEN_WIDTH // 2,
+        heading_y,
+        center=True,
+    )
+
+    for idx, entry in enumerate(highscores[:max_entries], start=1):
+        try:
+            date_str = datetime.fromisoformat(entry["timestamp"]).strftime("%d-%b-%Y")
+        except Exception:
+            date_str = entry.get("timestamp", "")
+        score_y = heading_y + font_size + 5 + (idx - 1) * (font_size + 5)
+        draw_text(
+            screen,
+            f"{idx}. {entry['score']} ({date_str})",
+            font_size,
+            entry_color,
+            SCREEN_WIDTH // 2,
+            score_y,
+            center=True,
+        )
+
+    draw_text(
+        screen,
+        instruction_text,
+        font_size,
+        instruction_color,
+        SCREEN_WIDTH // 2,
+        instr_y,
+        center=True,
+    )
+
+
+__all__ = [
+    "load_highscores",
+    "save_highscores",
+    "add_score",
+    "record_highscore",
+    "draw_highscore_screen",
+]

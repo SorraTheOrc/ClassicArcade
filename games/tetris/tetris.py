@@ -41,7 +41,7 @@ from classic_arcade.config import (
 from classic_arcade.engine import State
 from classic_arcade.utils import draw_text
 from games.game_base import Game
-from games.highscore import add_score
+from games.highscore import draw_highscore_screen, record_highscore
 
 logger = logging.getLogger(__name__)
 
@@ -252,50 +252,13 @@ class TetrisState(Game):
             center=False,
         )
         if self.game_over:
-            # Record high score once (score is self.score)
-            if not getattr(self, "highscore_recorded", False):
-                self.highscores = add_score("tetris", self.score)
-                self.highscore_recorded = True
-            # Layout positions
-            heading_y = int(SCREEN_HEIGHT * 0.20)
-            instr_y = int(SCREEN_HEIGHT * 0.80)
-            # Heading
-            draw_text(
+            record_highscore(self, "tetris", self.score)
+            draw_highscore_screen(
                 screen,
-                "High Scores:",
-                FONT_SIZE_MEDIUM,
-                WHITE,
-                SCREEN_WIDTH // 2,
-                heading_y,
-                center=True,
-            )
-            # Scores
-            for idx, entry in enumerate(self.highscores[:5], start=1):
-                try:
-                    date_str = datetime.fromisoformat(entry["timestamp"]).strftime(
-                        "%d-%b-%Y"
-                    )
-                except Exception:
-                    date_str = entry["timestamp"]
-                score_y = heading_y + FONT_SIZE + 5 + (idx - 1) * (FONT_SIZE + 5)
-                draw_text(
-                    screen,
-                    f"{idx}. {entry['score']} ({date_str})",
-                    FONT_SIZE_MEDIUM,
-                    WHITE,
-                    SCREEN_WIDTH // 2,
-                    score_y,
-                    center=True,
-                )
-            # Instruction line at bottom
-            draw_text(
-                screen,
-                "Game Over! Press R to restart or ESC to menu",
-                FONT_SIZE_MEDIUM,
-                RED,
-                SCREEN_WIDTH // 2,
-                instr_y,
-                center=True,
+                self.highscores,
+                instruction_text="Game Over! Press R to restart or ESC to menu",
+                instruction_color=RED,
+                font_size=FONT_SIZE_MEDIUM,
             )
         # Draw pause overlay if paused
         if self.paused:
@@ -402,6 +365,13 @@ class Tetris2PlayerState(Game):
     Player 1 uses arrow keys on the left grid.
     Player 2 uses WASD keys on the right grid.
     """
+
+    SHAPES = TetrisState.SHAPES
+    SHAPE_COLORS = TetrisState.SHAPE_COLORS
+    rotate = staticmethod(TetrisState.rotate)
+    valid_position = staticmethod(TetrisState.valid_position)
+    lock_piece = staticmethod(TetrisState.lock_piece)
+    clear_lines = staticmethod(TetrisState.clear_lines)
 
     def __init__(self) -> None:
         """Initialize 2-player Tetris game state."""
@@ -643,9 +613,7 @@ class Tetris2PlayerState(Game):
 
         # Game over display
         if self.game_over1 and self.game_over2:
-            if not getattr(self, "highscore_recorded", False):
-                self.highscores = add_score("tetris", max(self.score1, self.score2))
-                self.highscore_recorded = True
+            record_highscore(self, "tetris", max(self.score1, self.score2))
 
             winner = (
                 "Player 1"

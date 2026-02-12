@@ -32,7 +32,7 @@ from classic_arcade.config import (
 from classic_arcade.engine import State
 from classic_arcade.utils import draw_text
 from games.game_base import Game
-from games.highscore import add_score
+from games.highscore import draw_highscore_screen, record_highscore
 
 logger = logging.getLogger(__name__)
 
@@ -271,6 +271,14 @@ class PongState(Game):
             center=True,
         )
         if self.game_over:
+            record_highscore(self, "pong", max(self.left_score, self.right_score))
+            draw_highscore_screen(
+                screen,
+                self.highscores,
+                instruction_text="Game Over! Press R to restart or ESC to menu",
+                instruction_color=RED,
+                font_size=FONT_SIZE_MEDIUM,
+            )
             draw_text(
                 screen,
                 f"{self.winner} wins!",
