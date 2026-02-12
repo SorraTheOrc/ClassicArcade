@@ -69,6 +69,8 @@ def discover_games() -> List[Tuple[str, object, str | None]]:
         "splash",
     }
 
+    import os as _os
+
     for finder, name, ispkg in pkgutil.iter_modules(package_path):
         if name in excluded or name.startswith("._"):
             continue
@@ -146,7 +148,9 @@ def discover_games() -> List[Tuple[str, object, str | None]]:
         if hasattr(module, "__path__"):
             package_dir = module.__path__[0]
         else:
-            package_dir = os.path.dirname(getattr(module, "__file__", ""))
+            package_dir = _os.path.dirname(getattr(module, "__file__", ""))
+        if not _os.path.isdir(package_dir):
+            continue
         png_path = os.path.join(package_dir, "icon.png")
         svg_path = os.path.join(package_dir, "icon.svg")
         if os.path.isfile(png_path):
@@ -163,6 +167,95 @@ def discover_games() -> List[Tuple[str, object, str | None]]:
                 full_name,
             )
         items.append((display_name, launch_target, icon_path))
+
+    if not items:
+        logger.warning("No games discovered; falling back to explicit import list")
+        fallback_modules = (
+            "games.breakout",
+            "games.pong",
+            "games.snake",
+            "games.tetris",
+            "games.space_invaders",
+        )
+        for full_name in fallback_modules:
+            try:
+                module = importlib.import_module(full_name)
+            except Exception:
+                logger.debug("Fallback import failed for %s", full_name, exc_info=True)
+                continue
+
+            candidates = [module]
+            if hasattr(module, "__path__"):
+                try:
+                    for _, subname, _ in pkgutil.iter_modules(module.__path__):
+                        try:
+                            submod = importlib.import_module(f"{full_name}.{subname}")
+                            candidates.append(submod)
+                        except Exception:
+                            logger.debug(
+                                "Fallback import failed for %s.%s",
+                                full_name,
+                                subname,
+                                exc_info=True,
+                            )
+                except Exception:
+                    logger.debug(
+                        "Fallback unable to iterate submodules of %s",
+                        full_name,
+                        exc_info=True,
+                    )
+
+            run_callable = None
+            for mod in candidates:
+                if hasattr(mod, "run") and callable(getattr(mod, "run")):
+                    run_callable = getattr(mod, "run")
+                    break
+
+            state_cls = None
+            for mod in candidates:
+                for _, obj in inspect.getmembers(mod, inspect.isclass):
+                    if obj.__module__ != mod.__name__:
+                        continue
+                    try:
+                        if issubclass(obj, State) and obj is not State:
+                            if not (
+                                obj.__name__.startswith("PongSinglePlayer")
+                                or obj.__name__.startswith("PongMultiplayer")
+                            ):
+                                state_cls = obj
+                                break
+                    except Exception:
+                        continue
+                if state_cls:
+                    break
+
+            module_name = full_name.split(".")[-1]
+            display_name = _friendly_name_from_module(
+                module_name, getattr(state_cls, "__name__", None) if state_cls else None
+            )
+            if module_name == "pong":
+                display_name = "Pong"
+
+            icon_path = None
+            if hasattr(module, "__path__"):
+                package_dir = module.__path__[0]
+            else:
+                package_dir = _os.path.dirname(getattr(module, "__file__", ""))
+            if _os.path.isdir(package_dir):
+                png_path = _os.path.join(package_dir, "icon.png")
+                svg_path = _os.path.join(package_dir, "icon.svg")
+                if _os.path.isfile(png_path):
+                    icon_path = png_path
+                elif _os.path.isfile(svg_path):
+                    icon_path = svg_path
+
+            launch_target = run_callable if run_callable is not None else None
+            if run_callable is None:
+                logger.warning(
+                    "Game package %s does not define a callable run(); menu entry will be disabled",
+                    full_name,
+                )
+            items.append((display_name, launch_target, icon_path))
 
     # Sort alphabetically by display name
     items.sort(key=lambda t: t[0].lower())
@@ -188,7 +281,16 @@ def get_menu_items() -> List[Tuple[str, object, str | None]]:
     try:
         settings_mod = importlib.import_module("games.settings")
         SettingsState = getattr(settings_mod, "SettingsState")
-        items.append(("Settings", SettingsState, None))
+        settings_icon_path = None
+        icon_candidate = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "assets",
+            "icons",
+            "settings_icon.png",
+        )
+        if os.path.isfile(icon_candidate):
+            settings_icon_path = icon_candidate
+        items.append(("Settings", SettingsState, settings_icon_path))
     except Exception:
         logger.debug(
             "SettingsState not available; skipping Settings menu entry", exc_info=True

@@ -4,6 +4,8 @@
 Displays a simple title with a fade‑in effect, holds briefly, then transitions to the main menu.
 """
 
+import os
+
 import pygame
 
 from classic_arcade.config import BLACK, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
@@ -28,12 +30,34 @@ class SplashState(State):
         # Prepare a font for the splash title – size chosen to be readable
         # Ensure the font module is initialized before creating a Font object
         pygame.font.init()
-        self._font = pygame.font.Font(None, 48)
+        self._font = pygame.font.Font(None, 52)
         # Pre‑render the text surface (without alpha) – we will apply alpha each frame
-        self._text_surface = self._font.render("Arcade Suite", True, WHITE)
+        self._text_surface = self._font.render("Classic Arcade", True, WHITE)
         self._text_rect = self._text_surface.get_rect(
-            center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+            center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 80)
         )
+        self._icon_surface = None
+        self._icon_rect = None
+        icon_path = self._resolve_asset_path("assets/icons/default_game_icon.png")
+        if icon_path:
+            try:
+                icon = pygame.image.load(icon_path)
+                icon = pygame.transform.smoothscale(icon, (200, 200))
+                self._icon_surface = icon
+                self._icon_rect = icon.get_rect(
+                    center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 40)
+                )
+            except Exception:
+                self._icon_surface = None
+                self._icon_rect = None
+        self._loading_surface = None
+        try:
+            loading_font = pygame.font.Font(None, 28)
+            self._loading_surface = loading_font.render(
+                "Loading...", True, (220, 220, 220)
+            )
+        except Exception:
+            self._loading_surface = None
 
     def handle_event(self, event: pygame.event.Event) -> None:
         """Ignore input during the splash.
@@ -71,6 +95,26 @@ class SplashState(State):
         text_surface = self._text_surface.copy()
         text_surface.set_alpha(self.alpha)
         screen.blit(text_surface, self._text_rect)
+        if self._icon_surface is not None and self._icon_rect is not None:
+            icon_surface = self._icon_surface.copy()
+            icon_surface.set_alpha(self.alpha)
+            screen.blit(icon_surface, self._icon_rect)
+        if self._loading_surface is not None:
+            loading_rect = self._loading_surface.get_rect(
+                center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 140)
+            )
+            screen.blit(self._loading_surface, loading_rect)
+
+    @staticmethod
+    def _resolve_asset_path(relative_path: str) -> str | None:
+        import sys
+
+        if hasattr(sys, "_MEIPASS"):
+            base_dir = sys._MEIPASS
+        else:
+            base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        candidate = os.path.join(base_dir, relative_path)
+        return candidate if os.path.exists(candidate) else None
 
 
 __all__ = ["SplashState"]

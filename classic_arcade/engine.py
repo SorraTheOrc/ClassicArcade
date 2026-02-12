@@ -236,9 +236,14 @@ class Engine:
             # Update and draw current state
             self.state.update(dt)
             # Clear screen (states are responsible for drawing background if needed)
-            self.screen.fill(BLACK)
-            self.state.draw(self.screen)
-            pygame.display.flip()
+            try:
+                self.screen.fill(BLACK)
+                self.state.draw(self.screen)
+                pygame.display.flip()
+            except pygame.error:
+                # Display surface has been closed; exit the loop cleanly.
+                self.running = False
+                break
             # Handle state transition if requested
             if self.state.next_state is not None:
                 new_state = self.state.next_state

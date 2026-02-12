@@ -37,10 +37,23 @@ datas.extend(assets)
 
 a = Analysis(
     ['classic_arcade/main.py'],
-    pathex=[],
+    pathex=['.'],
     binaries=[],
     datas=datas,
-    hiddenimports=['pygame', 'pygame._sdl2'] + [m for m in games_modules + classic_arcade_modules if 'test' not in m],
+    hiddenimports=[
+        'pygame',
+        'pygame._sdl2',
+        'games',
+        'games.settings',
+        'games.breakout',
+        'games.pong',
+        'games.snake',
+        'games.tetris',
+        'games.space_invaders',
+        'games.space_invaders.space_invaders',
+        'games.game_base',
+        'games.run_helper',
+    ] + [m for m in games_modules + classic_arcade_modules if 'test' not in m],
     hookspath=[],
     hooksconfig={},
     excludes=[],
@@ -51,6 +64,9 @@ a = Analysis(
 )
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+is_windows = os.name == 'nt'
+use_upx = False if is_windows else True
 
 exe = EXE(
     pyz,
@@ -63,7 +79,7 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=use_upx,
     upx_exclude=[],
     runtime_tmpdir=None,
     console=False,  # No console window for GUI app
