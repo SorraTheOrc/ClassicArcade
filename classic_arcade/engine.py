@@ -575,7 +575,8 @@ class MenuState(State):
         """
         try:
             if not self._music_played_on_entry and audio is not None:
-                audio.play_random_music(context="menu")
+                if not audio.is_music_playing():
+                    audio.play_random_music(context="menu")
                 self._music_played_on_entry = True
         except Exception:
             pass

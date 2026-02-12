@@ -34,7 +34,11 @@ def test_play_random_music_respects_mute():
     original_mute = config.MUTE
     original_enabled = config.ENABLE_MUSIC
 
+    original_is_playing = None
     try:
+        original_is_playing = getattr(audio, "is_music_playing", None)
+        if original_is_playing:
+            audio.is_music_playing = lambda: False
         # Disable mute and enable music
         config.MUTE = False
         config.ENABLE_MUSIC = True
@@ -50,6 +54,8 @@ def test_play_random_music_respects_mute():
         # Restore original state
         config.MUTE = original_mute
         config.ENABLE_MUSIC = original_enabled
+        if original_is_playing:
+            audio.is_music_playing = original_is_playing
 
 
 def test_play_random_music_respects_enabled_flag():
@@ -57,12 +63,18 @@ def test_play_random_music_respects_enabled_flag():
     # Save original state
     original_enabled = config.ENABLE_MUSIC
 
+    original_is_playing = None
     try:
+        original_is_playing = getattr(audio, "is_music_playing", None)
+        if original_is_playing:
+            audio.is_music_playing = lambda: False
         config.ENABLE_MUSIC = False
         # Should not raise an exception even if no music files exist
         audio.play_random_music(context="game")
     finally:
         config.ENABLE_MUSIC = original_enabled
+        if original_is_playing:
+            audio.is_music_playing = original_is_playing
 
 
 def test_stop_music():
