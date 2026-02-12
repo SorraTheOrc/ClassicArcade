@@ -17,6 +17,11 @@ from classic_arcade import config
 
 def test_mute_default():
     """The global mute flag should default to ``False``."""
+    # Reset settings to ensure tests aren't affected by local settings.json
+    try:
+        config.MUTE = False
+    except Exception:
+        pass
     assert hasattr(config, "MUTE"), "config should have MUTE attribute"
     # The module exposes a `MUTE` name but it should default to False.
     assert config.MUTE is False

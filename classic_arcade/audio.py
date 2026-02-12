@@ -339,6 +339,8 @@ def play_random_music(context: str = "menu") -> None:
         return
     if config.MUTE or not config.ENABLE_MUSIC:
         return
+    if is_music_playing():
+        return
     try:
         music_files = get_music_files()
         if not music_files:
@@ -376,12 +378,23 @@ def stop_music() -> None:
         pass
 
 
+def is_music_playing() -> bool:
+    """Return True if background music is currently playing."""
+    if not pygame.mixer.get_init():
+        return False
+    try:
+        return bool(pygame.mixer.music.get_busy())
+    except Exception:
+        return False
+
+
 __all__ = [
     "init",
     "toggle_mute",
     "play_effect",
     "preload_effects",
     "play_random_music",
+    "is_music_playing",
     "stop_music",
     "fade_out_music",
     "on_music_end",
