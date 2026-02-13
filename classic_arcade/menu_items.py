@@ -221,6 +221,10 @@ def discover_games() -> List[Tuple[str, object, str | None]]:
                             if not (
                                 obj.__name__.startswith("PongSinglePlayer")
                                 or obj.__name__.startswith("PongMultiplayer")
+                                or obj.__name__.startswith("SnakeMode")
+                                or obj.__name__.startswith("Snake2Player")
+                                or obj.__name__.startswith("TetrisMode")
+                                or obj.__name__.startswith("Tetris2Player")
                             ):
                                 state_cls = obj
                                 break
