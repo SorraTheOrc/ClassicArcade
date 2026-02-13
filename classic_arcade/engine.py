@@ -77,9 +77,10 @@ _SETTINGS_ICON_PATH = None
 if hasattr(sys, "_MEIPASS"):
     _default_icon_dir = os.path.join(sys._MEIPASS, "assets", "icons")
 else:
-    _default_icon_dir = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "assets", "icons")
-    )
+    # Look for icons relative to project root (assets/icons)
+    # rather than relative to engine.py (classic_arcade/assets/icons)
+    _project_root = os.path.dirname(os.path.dirname(__file__))
+    _default_icon_dir = os.path.join(_project_root, "assets", "icons")
 
 _default_png = os.path.join(_default_icon_dir, "default_game_icon.png")
 _default_svg = os.path.join(_default_icon_dir, "default_game_icon.svg")
