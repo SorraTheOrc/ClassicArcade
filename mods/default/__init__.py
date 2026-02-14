@@ -12,7 +12,7 @@ from games.space_invaders_redux.alien_base import AlienBase
 class DefaultAlien(AlienBase):
     """Default alien with simple rectangular rendering."""
 
-    DEFAULT_COLOR = (255, 0, 0)  # Red
+    DEFAULT_COLOR = (0, 255, 0)  # Green
 
     def __init__(self, x: int, y: int, width: int, height: int):
         """Initialize a default alien.
