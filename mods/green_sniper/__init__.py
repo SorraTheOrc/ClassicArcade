@@ -15,7 +15,7 @@ class GreenSniperAlien(AlienBase):
     DEFAULT_SPEED = 0.5  # Move slower
     DEFAULT_SHOOT_CHANCE = 0.002  # Lower shooting rate
     DEFAULT_BULLET_SPEED = 8.0  # Faster bullets
-    DEFAULT_COLOR = (0, 255, 0)  # Bright green
+    DEFAULT_COLOR = (255, 0, 0)  # Red
     DEFAULT_WIDTH = 50
     DEFAULT_HEIGHT = 40
 
