@@ -1,4 +1,5 @@
 # Blue Wave level configuration
+# Wave 2: Two alien types (Blue and Green)
 rows: 5
 columns: 7
 alien_spacing:
@@ -6,7 +7,9 @@ alien_spacing:
   vertical: 12
 aliens:
   - type: "blue_wave"
-    probability: 1.0
+    probability: 0.6
+  - type: "default"
+    probability: 0.4
 alien_size:
   width: 45
   height: 35

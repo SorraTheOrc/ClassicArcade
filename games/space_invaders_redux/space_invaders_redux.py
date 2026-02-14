@@ -106,6 +106,8 @@ class SpaceInvadersReduxState(Game):
         """Load modded aliens and create the level."""
         loader = get_mod_loader()
         loader.discover_mods()
+        # Load all mods so they're available for create_aliens_with_types
+        loader.load_all_mods()
 
         # Try to use the specified mod or find the first available one
         if self.mod_name:
@@ -127,16 +129,16 @@ class SpaceInvadersReduxState(Game):
 
         self.alien_class = alien_class
 
-        # Create level using the level loader
+        # Create level using the level loader with multiple alien types
         level_loader = LevelLoader()
         # Ensure alien_class is not None (should always have a value by here)
         if self.alien_class is None:
             from .alien_loader import create_simple_alien_class
 
             self.alien_class = create_simple_alien_class(RED)
-        self.aliens = level_loader.create_aliens(
+        self.aliens = level_loader.create_aliens_with_types(
             mod_name=self.mod_name or "default",
-            alien_class=self.alien_class,
+            alien_loader=loader,
         )
 
         logger.info("Loaded mod %s with %d aliens", self.mod_name, len(self.aliens))
@@ -160,13 +162,16 @@ class SpaceInvadersReduxState(Game):
 
         # Reload the level with updated wave parameters
         level_loader = LevelLoader()
+        loader = get_mod_loader()
+        # Load all mods so they're available for create_aliens_with_types
+        loader.load_all_mods()
         if self.alien_class is None:
             from .alien_loader import create_simple_alien_class
 
             self.alien_class = create_simple_alien_class(RED)
-        self.aliens = level_loader.create_aliens(
+        self.aliens = level_loader.create_aliens_with_types(
             mod_name=self.mod_name or "default",
-            alien_class=self.alien_class,
+            alien_loader=loader,
         )
 
         # Increase difficulty for next wave

@@ -1,13 +1,18 @@
 # Green Sniper level configuration
-rows: 3
+# Wave 3: Three alien types (Red, Green, Blue)
+rows: 6
 columns: 6
 alien_spacing:
   horizontal: 20
   vertical: 15
 aliens:
+  - type: "default"
+    probability: 0.4
   - type: "green_sniper"
-    probability: 1.0
+    probability: 0.35
+  - type: "blue_wave"
+    probability: 0.25
 alien_size:
   width: 50
   height: 40
-start_y: 60
+start_y: 35
