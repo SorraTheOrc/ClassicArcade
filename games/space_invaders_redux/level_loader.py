@@ -342,18 +342,18 @@ class LevelLoader:
 
             fallback_alien_class = create_simple_alien_class((255, 0, 0))
 
-        # Create aliens with selected types
+        # Create aliens with selected types (one type per row)
         aliens = []
         for row in range(rows):
+            # Select one alien type for the entire row
+            alien_type = select_alien_type(weights)
+            alien_class = alien_loader.get_alien_class(alien_type)
+
+            if alien_class is None:
+                # Fallback to the provided alien class or create a simple one
+                alien_class = fallback_alien_class
+
             for col in range(columns):
-                # Select alien type based on weights
-                alien_type = select_alien_type(weights)
-                alien_class = alien_loader.get_alien_class(alien_type)
-
-                if alien_class is None:
-                    # Fallback to the provided alien class or create a simple one
-                    alien_class = fallback_alien_class
-
                 x = start_x + col * (alien_width + horizontal_spacing)
                 y = start_y + row * (alien_height + vertical_spacing)
                 alien = alien_class(x, y, alien_width, alien_height)
