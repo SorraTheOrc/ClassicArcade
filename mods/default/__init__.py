@@ -33,8 +33,8 @@ class DefaultAlien(AlienBase):
             direction: 1 for right, -1 for left
         """
         move_amount = int(
-            self.speed * direction * dt * 200
-        )  # Scale for reasonable movement
+            self.speed * direction * dt * 100
+        )  # Scale for reasonable movement (50% slower)
         self.rect.move_ip(move_amount, 0)
 
     def draw(self, screen: pygame.Surface) -> None:
