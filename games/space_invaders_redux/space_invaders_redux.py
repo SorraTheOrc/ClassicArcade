@@ -165,19 +165,28 @@ class SpaceInvadersReduxState(Game):
         self.alien_direction = 1
         self.player.left = (SCREEN_WIDTH - PLAYER_WIDTH) // 2
 
+        # Select mod based on wave number
+        # Wave 1: default (1 type), Wave 2: blue_wave (2 types), Wave 3: green_sniper (3 types)
+        wave_mods = {1: "default", 2: "blue_wave", 3: "green_sniper"}
+        mod_name = wave_mods.get(self.current_wave, "green_sniper")
+
         # Reload the level with updated wave parameters
         level_loader = LevelLoader()
         loader = get_mod_loader()
         # Load all mods so they're available for create_aliens_with_types
         loader.load_all_mods()
-        if self.alien_class is None:
+        # Load the mod's alien class
+        alien_class = loader.load_mod(mod_name)
+        if alien_class is None:
             from .alien_loader import create_simple_alien_class
 
-            self.alien_class = create_simple_alien_class(RED)
+            alien_class = create_simple_alien_class(RED)
+        self.mod_name = mod_name
+        self.alien_class = alien_class
         self.aliens = level_loader.create_aliens_with_types(
-            mod_name=self.mod_name or "default",
+            mod_name=mod_name,
             alien_loader=loader,
-            fallback_alien_class=self.alien_class,
+            fallback_alien_class=alien_class,
         )
 
         # Increase difficulty for next wave
@@ -187,7 +196,10 @@ class SpaceInvadersReduxState(Game):
         self.enemy_shoot_cooldown = self.current_wave_cooldown
 
         logger.info(
-            "Loaded wave %d with %d aliens", self.current_wave, len(self.aliens)
+            "Loaded wave %d with mod %s and %d aliens",
+            self.current_wave,
+            mod_name,
+            len(self.aliens),
         )
 
     def handle_event(self, event: pygame.event.Event) -> None:
