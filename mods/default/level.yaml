@@ -1,0 +1,13 @@
+# Default level configuration for Space Invaders Redux
+rows: 4
+columns: 8
+alien_spacing:
+  horizontal: 10
+  vertical: 10
+aliens:
+  - type: "default_red"
+    probability: 1.0
+alien_size:
+  width: 40
+  height: 30
+start_y: 50

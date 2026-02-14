@@ -1,0 +1,13 @@
+# Blue Wave level configuration
+rows: 5
+columns: 7
+alien_spacing:
+  horizontal: 15
+  vertical: 12
+aliens:
+  - type: "blue_wave"
+    probability: 1.0
+alien_size:
+  width: 45
+  height: 35
+start_y: 40

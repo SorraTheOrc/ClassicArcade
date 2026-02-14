@@ -1,0 +1,13 @@
+# Green Sniper level configuration
+rows: 3
+columns: 6
+alien_spacing:
+  horizontal: 20
+  vertical: 15
+aliens:
+  - type: "green_sniper"
+    probability: 1.0
+alien_size:
+  width: 50
+  height: 40
+start_y: 60
