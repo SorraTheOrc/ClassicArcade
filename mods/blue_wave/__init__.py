@@ -12,10 +12,10 @@ from games.space_invaders_redux.alien_base import AlienBase
 
 
 class BlueWaveAlien(AlienBase):
-    """Blue alien with faster movement and higher shooting rate."""
+    """Blue alien with higher shooting rate but slower movement."""
 
     # Override class constants for custom behavior
-    DEFAULT_SPEED = 2.0  # Move twice as fast
+    DEFAULT_SPEED = 0.5  # Move at 50% speed (half of default)
     DEFAULT_SHOOT_CHANCE = 0.005  # 5x higher shooting rate
     DEFAULT_BULLET_SPEED = 6.0
     DEFAULT_COLOR = (0, 0, 255)  # Bright blue

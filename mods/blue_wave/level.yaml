@@ -3,8 +3,8 @@
 rows: 4
 columns: 8
 alien_spacing:
-  horizontal: 15
-  vertical: 12
+  horizontal: 5
+  vertical: 5
 aliens:
   - type: "blue_wave"
     probability: 0.6
