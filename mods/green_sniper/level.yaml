@@ -6,12 +6,14 @@ alien_spacing:
   horizontal: 5
   vertical: 5
 aliens:
-  - type: "default"
-    probability: 0.4
-  - type: "green_sniper"
-    probability: 0.35
-  - type: "blue_wave"
-    probability: 0.25
+  - row: 0
+    type: "green_sniper"
+  - row: 1
+    type: "blue_wave"
+  - row: 2
+    type: "green_sniper"
+  - row: 3
+    type: "blue_wave"
 alien_size:
   width: 50
   height: 40

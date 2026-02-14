@@ -1,13 +1,19 @@
 # Default level configuration for Space Invaders Redux
-# Wave 1: Single alien type (Red)
+# Wave 1: Single alien type (Green)
 rows: 4
 columns: 7
 alien_spacing:
   horizontal: 10
   vertical: 10
 aliens:
-  - type: "default"
-    probability: 1.0
+  - row: 0
+    type: "default"
+  - row: 1
+    type: "default"
+  - row: 2
+    type: "default"
+  - row: 3
+    type: "default"
 alien_size:
   width: 40
   height: 30

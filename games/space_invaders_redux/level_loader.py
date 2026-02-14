@@ -342,15 +342,26 @@ class LevelLoader:
 
             fallback_alien_class = create_simple_alien_class((255, 0, 0))
 
+        # Get row-specific alien types from config
+        row_types = {}
+        aliens_config = config.get("aliens", [])
+        for entry in aliens_config:
+            if isinstance(entry, dict) and "row" in entry:
+                row = entry.get("row")
+                alien_type = entry.get("type")
+                row_types[row] = alien_type
+
         # Create aliens with selected types (one type per row)
         aliens = []
         for row in range(rows):
-            # Select one alien type for the entire row
-            alien_type = select_alien_type(weights)
-            alien_class = alien_loader.get_alien_class(alien_type)
+            # Get alien type for this row from config, or use fallback
+            if row in row_types:
+                alien_type = row_types[row]
+                alien_class = alien_loader.get_alien_class(alien_type)
+            else:
+                alien_class = fallback_alien_class
 
             if alien_class is None:
-                # Fallback to the provided alien class or create a simple one
                 alien_class = fallback_alien_class
 
             for col in range(columns):

@@ -6,10 +6,14 @@ alien_spacing:
   horizontal: 5
   vertical: 5
 aliens:
-  - type: "blue_wave"
-    probability: 0.6
-  - type: "default"
-    probability: 0.4
+  - row: 0
+    type: "blue_wave"
+  - row: 1
+    type: "default"
+  - row: 2
+    type: "blue_wave"
+  - row: 3
+    type: "default"
 alien_size:
   width: 45
   height: 35
