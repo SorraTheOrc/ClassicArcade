@@ -118,7 +118,11 @@ class SpaceInvadersReduxState(Game):
             # Use the first discovered mod, or create a default
             mod_names = list(loader._mod_paths.keys())
             if mod_names:
-                self.mod_name = mod_names[0]
+                # Always use 'default' mod for wave 1 if available
+                if "default" in mod_names:
+                    self.mod_name = "default"
+                else:
+                    self.mod_name = mod_names[0]
                 alien_class = loader.load_mod(self.mod_name)
             else:
                 # Create a default alien class
@@ -139,6 +143,7 @@ class SpaceInvadersReduxState(Game):
         self.aliens = level_loader.create_aliens_with_types(
             mod_name=self.mod_name or "default",
             alien_loader=loader,
+            fallback_alien_class=self.alien_class,
         )
 
         logger.info("Loaded mod %s with %d aliens", self.mod_name, len(self.aliens))
@@ -172,6 +177,7 @@ class SpaceInvadersReduxState(Game):
         self.aliens = level_loader.create_aliens_with_types(
             mod_name=self.mod_name or "default",
             alien_loader=loader,
+            fallback_alien_class=self.alien_class,
         )
 
         # Increase difficulty for next wave

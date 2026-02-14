@@ -303,12 +303,14 @@ class LevelLoader:
         self,
         mod_name: str,
         alien_loader: Any,
+        fallback_alien_class: Optional[type[AlienBase]] = None,
     ) -> list[AlienBase]:
         """Create aliens with different types based on level configuration.
 
         Args:
             mod_name: Name of the mod
             alien_loader: ModLoader instance to get alien classes
+            fallback_alien_class: Alien class to use when type not found (defaults to mod's class)
 
         Returns:
             List of AlienBase instances with varying types
@@ -334,6 +336,12 @@ class LevelLoader:
 
         start_x = int((SCREEN_WIDTH - total_width) * DEFAULT_START_X_OFFSET)
 
+        # Use fallback alien class if not provided
+        if fallback_alien_class is None:
+            from .alien_loader import create_simple_alien_class
+
+            fallback_alien_class = create_simple_alien_class((255, 0, 0))
+
         # Create aliens with selected types
         aliens = []
         for row in range(rows):
@@ -343,10 +351,8 @@ class LevelLoader:
                 alien_class = alien_loader.get_alien_class(alien_type)
 
                 if alien_class is None:
-                    # Fallback to a simple alien class
-                    from .alien_loader import create_simple_alien_class
-
-                    alien_class = create_simple_alien_class((255, 0, 0))
+                    # Fallback to the provided alien class or create a simple one
+                    alien_class = fallback_alien_class
 
                 x = start_x + col * (alien_width + horizontal_spacing)
                 y = start_y + row * (alien_height + vertical_spacing)
