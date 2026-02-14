@@ -212,6 +212,10 @@ class SpaceInvadersReduxState(Game):
                 self.next_state = MenuState(get_menu_items())
             elif event.key == pygame.K_r:
                 self.__init__(mod_name=self.mod_name, alien_class=self.alien_class)
+            elif event.key == pygame.K_n:
+                # Cheat: Skip to next wave (only when running from source)
+                if self._is_running_from_source():
+                    self._skip_to_next_wave()
 
     def update(self, dt: float) -> None:
         """Update game state."""
@@ -382,6 +386,38 @@ class SpaceInvadersReduxState(Game):
                 SCREEN_HEIGHT // 2,
                 center=True,
             )
+
+    def _is_running_from_source(self) -> bool:
+        """Check if game is running from source (not compiled).
+
+        Returns:
+            True if running from source, False if running from compiled/built version
+        """
+        import sys
+
+        # Check if running in a frozen/bundled environment
+        if getattr(sys, "frozen", False):
+            return False
+        if hasattr(sys, "_MEIPASS"):
+            return False
+
+        # Check if the module is in a .pyc-only environment
+        try:
+            import inspect
+
+            source_file = inspect.getsourcefile(SpaceInvadersReduxState)
+            if source_file and not source_file.endswith(".py"):
+                return False
+        except Exception:
+            pass
+
+        return True
+
+    def _skip_to_next_wave(self) -> None:
+        """Cheat to skip directly to the next wave."""
+        logger.info("Cheat: Skipping to next wave")
+        self.aliens = []
+        self.win = True
 
 
 def run() -> None:
