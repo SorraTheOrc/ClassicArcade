@@ -1,7 +1,7 @@
 # Green Sniper level configuration
 # Wave 3: Three alien types (Red, Green, Blue)
-rows: 6
-columns: 6
+rows: 4
+columns: 8
 alien_spacing:
   horizontal: 20
   vertical: 15
