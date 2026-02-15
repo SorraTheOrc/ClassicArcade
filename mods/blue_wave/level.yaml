@@ -1,0 +1,20 @@
+# Blue Wave level configuration
+# Wave 2: Two alien types (Blue and Green)
+rows: 4
+columns: 7
+alien_spacing:
+  horizontal: 5
+  vertical: 5
+aliens:
+  - row: 0
+    type: "blue_wave"
+  - row: 1
+    type: "default"
+  - row: 2
+    type: "blue_wave"
+  - row: 3
+    type: "default"
+alien_size:
+  width: 45
+  height: 35
+start_y: 40

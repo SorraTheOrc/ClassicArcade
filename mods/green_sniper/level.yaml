@@ -1,0 +1,20 @@
+# Green Sniper level configuration
+# Wave 3: Three alien types (Red, Green, Blue)
+rows: 4
+columns: 7
+alien_spacing:
+  horizontal: 5
+  vertical: 5
+aliens:
+  - row: 0
+    type: "green_sniper"
+  - row: 1
+    type: "blue_wave"
+  - row: 2
+    type: "green_sniper"
+  - row: 3
+    type: "blue_wave"
+alien_size:
+  width: 50
+  height: 40
+start_y: 35
