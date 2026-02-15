@@ -40,7 +40,7 @@ class BlueWaveAlien(AlienBase):
             dt: Delta time in seconds
             direction: 1 for right, -1 for left
         """
-        move_amount = self.speed * direction * dt * 20
+        move_amount = self.speed * direction * dt * 45
         self._fractional_x += move_amount
         integer_move = int(self._fractional_x)
         self._fractional_x -= integer_move
