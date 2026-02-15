@@ -572,13 +572,13 @@ class MenuState(State):
     def on_enter(self) -> None:
         """Called when the menu state becomes active.
 
-        Plays random music if not already played on this entry.
+        Plays random music if not already played on this entry, or if music
+        has stopped (e.g., track ended while in a game).
         """
         try:
-            if not self._music_played_on_entry and audio is not None:
-                # Stop any currently playing music before starting random music
-                audio.stop_music()
-                audio.play_random_music(context="menu")
+            if audio is not None:
+                if not self._music_played_on_entry or not audio.is_music_playing():
+                    audio.play_random_music(context="menu")
                 self._music_played_on_entry = True
         except Exception:
             pass
