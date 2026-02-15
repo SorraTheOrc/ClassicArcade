@@ -40,8 +40,11 @@ class BlueWaveAlien(AlienBase):
             dt: Delta time in seconds
             direction: 1 for right, -1 for left
         """
-        move_amount = int(self.speed * direction * dt * 1000)
-        self.rect.move_ip(move_amount, 0)
+        move_amount = self.speed * direction * dt * 20
+        self._fractional_x += move_amount
+        integer_move = int(self._fractional_x)
+        self._fractional_x -= integer_move
+        self.rect.move_ip(integer_move, 0)
 
         # Add slight vertical drift based on row position
         # Aliens at different heights drift differently for visual interest

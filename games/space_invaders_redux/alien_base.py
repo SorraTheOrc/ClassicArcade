@@ -48,6 +48,7 @@ class AlienBase(abc.ABC):
         self.rect = pygame.Rect(x, y, width, height)
         self.speed = self.DEFAULT_SPEED
         self.color = self.DEFAULT_COLOR
+        self._fractional_x = 0.0
         self.shoot_chance = self.DEFAULT_SHOOT_CHANCE
         self.bullet_speed = self.DEFAULT_BULLET_SPEED
         self.bullet_width = self.DEFAULT_BULLET_WIDTH

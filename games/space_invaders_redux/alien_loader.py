@@ -162,9 +162,11 @@ def create_simple_alien_class(color: tuple[int, int, int]) -> Type[AlienBase]:
 
         def move(self, dt: float, direction: int) -> None:
             """Move the alien horizontally."""
-            # Use a reasonable speed that works with dt
-            move_x = int(self.speed * direction * dt * 1000)
-            self.rect.move_ip(move_x, 0)
+            move_x = self.speed * direction * dt * 20
+            self._fractional_x += move_x
+            integer_move = int(self._fractional_x)
+            self._fractional_x -= integer_move
+            self.rect.move_ip(integer_move, 0)
 
         def draw(self, screen: pygame.Surface) -> None:
             """Draw a colored rectangle for the alien."""
