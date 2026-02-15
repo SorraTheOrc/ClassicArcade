@@ -48,10 +48,11 @@ class Game(State):
     def on_exit(self) -> None:
         """Called when the game state is no longer active.
 
-        Fades out music over 1 second for smooth transition.
+        Music continues from the previous state until it ends, then a new
+        random track is selected via MUSIC_END_EVENT.
         """
         try:
-            audio.fade_out_music(duration_ms=1000)
+            pass
         except Exception:
             pass
 

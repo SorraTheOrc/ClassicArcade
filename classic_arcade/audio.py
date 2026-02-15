@@ -245,9 +245,16 @@ def init() -> None:
         # Don't play music if random music feature is disabled
         # The menu state will play random music when it becomes active
         if config.ENABLE_MUSIC:
+            import random
+
+            music_files = get_music_files()
+            if music_files:
+                music_path = random.choice(music_files)
+                global _CURRENT_MUSIC_TRACK
+                _CURRENT_MUSIC_TRACK = music_path
             pygame.mixer.music.load(music_path)
             pygame.mixer.music.set_volume(0 if config.MUTE else 1)
-            pygame.mixer.music.play(-1)
+            pygame.mixer.music.play()
         # Pre‑load generic short‑effect sounds used across multiple games.
         # preload_effects(["eat.wav", "crash.wav"])  # Removed generic preload; snake sounds are loaded via type‑specific path
         # Pre‑load Pong‑specific short‑effect sounds removed – lazy loading via play_effect will handle them.

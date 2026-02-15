@@ -567,13 +567,11 @@ class MenuState(State):
     def on_enter(self) -> None:
         """Called when the menu state becomes active.
 
-        Plays random music if not already played on this entry.
+        Music continues from the previous state until it ends, then a new
+        random track is selected via MUSIC_END_EVENT.
         """
         try:
             if not self._music_played_on_entry:
-                import audio
-
-                audio.play_random_music(context="menu")
                 self._music_played_on_entry = True
         except Exception:
             pass
