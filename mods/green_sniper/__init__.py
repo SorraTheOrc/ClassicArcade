@@ -40,9 +40,7 @@ class GreenSniperAlien(AlienBase):
             dt: Delta time in seconds
             direction: 1 for right, -1 for left
         """
-        move_amount = int(
-            self.speed * direction * dt * 200
-        )  # Scale for reasonable movement
+        move_amount = int(self.speed * direction * dt * 200)
         self.rect.move_ip(move_amount, 0)
 
     def draw(self, screen: pygame.Surface) -> None:
