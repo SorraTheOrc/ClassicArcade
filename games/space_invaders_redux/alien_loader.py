@@ -162,7 +162,7 @@ def create_simple_alien_class(color: tuple[int, int, int]) -> Type[AlienBase]:
 
         def move(self, dt: float, direction: int) -> None:
             """Move the alien horizontally."""
-            move_x = self.speed * direction * dt * 45
+            move_x = self.speed * direction * dt * 60
             self._fractional_x += move_x
             integer_move = int(self._fractional_x)
             self._fractional_x -= integer_move

@@ -13,7 +13,7 @@ class DefaultAlien(AlienBase):
     """Default alien with simple rectangular rendering."""
 
     DEFAULT_COLOR = (0, 255, 0)  # Green
-    DEFAULT_SPEED = 0.6
+    DEFAULT_SPEED = 0.75
 
     def __init__(self, x: int, y: int, width: int, height: int):
         """Initialize a default alien.
@@ -33,7 +33,7 @@ class DefaultAlien(AlienBase):
             dt: Delta time in seconds
             direction: 1 for right, -1 for left
         """
-        move_amount = self.speed * direction * dt * 45
+        move_amount = self.speed * direction * dt * 60
         self._fractional_x += move_amount
         integer_move = int(self._fractional_x)
         self._fractional_x -= integer_move

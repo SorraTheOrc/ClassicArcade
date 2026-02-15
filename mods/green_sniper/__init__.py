@@ -12,7 +12,7 @@ from games.space_invaders_redux.alien_base import AlienBase
 class GreenSniperAlien(AlienBase):
     """Green alien with larger size and different visual style."""
 
-    DEFAULT_SPEED = 1.4  # Move at 140% of base speed (40% faster)
+    DEFAULT_SPEED = 1.25  # Move at 140% of base speed (40% faster)
     DEFAULT_SHOOT_CHANCE = 0.002  # Lower shooting rate
     DEFAULT_BULLET_SPEED = 8.0  # Faster bullets
     DEFAULT_COLOR = (255, 0, 0)  # Red
@@ -40,7 +40,7 @@ class GreenSniperAlien(AlienBase):
             dt: Delta time in seconds
             direction: 1 for right, -1 for left
         """
-        move_amount = self.speed * direction * dt * 45
+        move_amount = self.speed * direction * dt * 60
         self._fractional_x += move_amount
         integer_move = int(self._fractional_x)
         self._fractional_x -= integer_move

@@ -40,7 +40,7 @@ class BlueWaveAlien(AlienBase):
             dt: Delta time in seconds
             direction: 1 for right, -1 for left
         """
-        move_amount = self.speed * direction * dt * 45
+        move_amount = self.speed * direction * dt * 60
         self._fractional_x += move_amount
         integer_move = int(self._fractional_x)
         self._fractional_x -= integer_move
@@ -61,7 +61,7 @@ class BlueWaveAlien(AlienBase):
         pygame.draw.rect(screen, self.color, self.rect)
 
         # Draw wave pattern on top
-        wave_color = (100, 100, 255)  # Lighter blue
+        wave_color = (1.0, 100, 255)  # Lighter blue
         wave_width = self.rect.width // 3
         wave_height = self.rect.height // 4
 
