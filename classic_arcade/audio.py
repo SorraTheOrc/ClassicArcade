@@ -177,7 +177,7 @@ def init() -> None:
         # Values: 128 (very low latency), 256 (low), 512 (normal), 1024+ (high latency but stable)
         if "SDL_AUDIO_BUFFER_SIZE" not in os.environ:
             os.environ["SDL_AUDIO_BUFFER_SIZE"] = (
-                "512"  # Normal buffer size for stability
+                "2048"  # Increased buffer size for stability
             )
 
         # Try to use a smaller buffer size for lower latency
