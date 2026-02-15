@@ -13,6 +13,7 @@ class DefaultAlien(AlienBase):
     """Default alien with simple rectangular rendering."""
 
     DEFAULT_COLOR = (0, 255, 0)  # Green
+    DEFAULT_SPEED = 0.6
 
     def __init__(self, x: int, y: int, width: int, height: int):
         """Initialize a default alien.

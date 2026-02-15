@@ -27,7 +27,9 @@ class AlienBase(abc.ABC):
     """
 
     # Class-level constants that can be overridden in subclasses
-    DEFAULT_SPEED = 1.0  # Horizontal speed per frame
+    DEFAULT_SPEED = (
+        1.0  # Base horizontal speed per frame (multiplied by speed modifier)
+    )
     DEFAULT_SHOOT_CHANCE = 0.001  # Probability of shooting per frame
     DEFAULT_BULLET_SPEED = 5.0
     DEFAULT_BULLET_WIDTH = 4

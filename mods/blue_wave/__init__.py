@@ -15,7 +15,7 @@ class BlueWaveAlien(AlienBase):
     """Blue alien with higher shooting rate but slower movement."""
 
     # Override class constants for custom behavior
-    DEFAULT_SPEED = 1.05  # Move at 105% of default speed (5% faster)
+    DEFAULT_SPEED = 1.0  # Move at 100% of base speed
     DEFAULT_SHOOT_CHANCE = 0.005  # 5x higher shooting rate
     DEFAULT_BULLET_SPEED = 6.0
     DEFAULT_COLOR = (0, 0, 255)  # Bright blue
