@@ -290,10 +290,10 @@ class SpaceInvadersReduxState(Game):
             self.alien_direction *= -1
             for alien in self.aliens:
                 alien.rect.move_ip(0, DEFAULT_ALIEN_DESCEND)
-                # Move aliens back from edge to prevent immediate re-trigger
-                if self.alien_direction > 0:
+                # Move only aliens past the edge back to just inside
+                if alien.rect.right >= SCREEN_WIDTH:
                     alien.rect.right = SCREEN_WIDTH - 1
-                else:
+                elif alien.rect.left <= 0:
                     alien.rect.left = 1
 
         # Bullet-alien collisions
