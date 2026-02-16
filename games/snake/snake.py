@@ -742,20 +742,8 @@ class Snake2PlayerState(Game):
 
         new_head = (snake[0][0] + direction[0], snake[0][1] + direction[1])
 
-        # Check wall collision
-        if (
-            new_head[0] < 0
-            or new_head[0] >= SCREEN_WIDTH
-            or new_head[1] < 0
-            or new_head[1] >= SCREEN_HEIGHT
-        ):
-            if player_num == 1:
-                self.game_over1 = True
-                logger.info(f"Player 1 game over (wall collision). Score: {score}")
-            else:
-                self.game_over2 = True
-                logger.info(f"Player 2 game over (wall collision). Score: {score}")
-            return
+        # Bounds check removed: use shared helper _collision_type below which
+        # detects both wall and self collisions. This avoids duplicated logic.
 
         # Use shared helper to check wall/self collision
         ct = _collision_type(new_head, snake)
