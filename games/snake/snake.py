@@ -66,6 +66,35 @@ def get_snake_speed() -> int:
     return int(BASE_SNAKE_SPEED * multiplier)
 
 
+def _collision_type(
+    new_head: Tuple[int, int], snake: List[Tuple[int, int]]
+) -> str | None:
+    """Detect collision type for a proposed new head position.
+
+    Returns:
+        'wall' if the new_head is outside the screen bounds,
+        'self' if the new_head would collide with the snake's body,
+        None if no collision is detected.
+
+    This helper centralises the simple, frequently duplicated checks used by
+    both single-player and two-player update logic.
+    """
+    # Wall collision
+    if (
+        new_head[0] < 0
+        or new_head[0] >= SCREEN_WIDTH
+        or new_head[1] < 0
+        or new_head[1] >= SCREEN_HEIGHT
+    ):
+        return "wall"
+
+    # Self collision (check against existing body segments)
+    if new_head in snake[1:]:
+        return "self"
+
+    return None
+
+
 class SnakeState(Game):
     """State for the Snake game, compatible with the engine loop."""
 
@@ -206,12 +235,9 @@ class SnakeState(Game):
                     self.snake[0][1] + self.direction[1],
                 )
                 # Check wall collision
-                if (
-                    new_head[0] < 0
-                    or new_head[0] >= SCREEN_WIDTH
-                    or new_head[1] < 0
-                    or new_head[1] >= SCREEN_HEIGHT
-                ):
+                # Use shared helper to detect wall/self collision
+                ct = _collision_type(new_head, self.snake)
+                if ct == "wall":
                     # If player has an extra life, consume it and reset snake
                     if getattr(self, "extra_lives", 0) > 0:
                         self.extra_lives -= 1
@@ -275,9 +301,9 @@ class SnakeState(Game):
                         self.powerups.remove(pu)
                     except ValueError:
                         pass
-                    # Self collision
-                    if new_head in self.snake[1:]:
-                        # Self collision
+                    # Self collision (use shared helper to detect)
+                    ct2 = _collision_type(new_head, self.snake)
+                    if ct2 == "self":
                         if getattr(self, "extra_lives", 0) > 0:
                             self.extra_lives -= 1
                             logger.info("Extra life used to avoid self collision")
@@ -731,8 +757,17 @@ class Snake2PlayerState(Game):
                 logger.info(f"Player 2 game over (wall collision). Score: {score}")
             return
 
-        # Check self collision
-        if new_head in snake[1:]:
+        # Use shared helper to check wall/self collision
+        ct = _collision_type(new_head, snake)
+        if ct == "wall":
+            if player_num == 1:
+                self.game_over1 = True
+                logger.info(f"Player 1 game over (wall collision). Score: {score}")
+            else:
+                self.game_over2 = True
+                logger.info(f"Player 2 game over (wall collision). Score: {score}")
+            return
+        if ct == "self":
             if player_num == 1:
                 self.game_over1 = True
                 logger.info(f"Player 1 game over (self collision). Score: {score}")
