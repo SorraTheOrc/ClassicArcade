@@ -552,8 +552,6 @@ def play_effect(
     """
     import time
 
-    start_time = time.perf_counter()
-
     if filename is None:
         filename = sound_type
         sound_type = None
@@ -581,16 +579,10 @@ def play_effect(
             return
     try:
         if filename not in _SOUND_CACHE:
-            load_start = time.perf_counter()
             _SOUND_CACHE[filename] = pygame.mixer.Sound(path)
-            load_time = (time.perf_counter() - load_start) * 1000
-            print(f"[{time.time():.6f}] audio.load({filename}): {load_time:.2f}ms")
         sound = _SOUND_CACHE[filename]
         try:
-            play_start = time.perf_counter()
             sound.play()
-            play_time = (time.perf_counter() - play_start) * 1000
-            print(f"[{time.time():.6f}] audio.play({filename}): {play_time:.2f}ms")
         except Exception:
             try:
                 getattr(sound, "play")()
@@ -598,9 +590,3 @@ def play_effect(
                 pass
     except Exception:
         return
-
-    # Timing debug output
-    elapsed_ms = (time.perf_counter() - start_time) * 1000
-    print(
-        f"[{time.time():.6f}] audio.play_effect({sound_type}, {filename}): {elapsed_ms:.2f}ms"
-    )
