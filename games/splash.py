@@ -11,6 +11,7 @@ import pygame
 from classic_arcade.config import BLACK, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
 from classic_arcade.engine import MenuState, State
 from classic_arcade.menu_items import get_menu_items
+from classic_arcade.utils import resolve_asset_path
 
 
 class SplashState(State):
@@ -38,7 +39,7 @@ class SplashState(State):
         )
         self._icon_surface = None
         self._icon_rect = None
-        icon_path = self._resolve_asset_path("assets/icons/default_game_icon.png")
+        icon_path = resolve_asset_path("assets/icons/default_game_icon.png")
         if icon_path:
             try:
                 icon = pygame.image.load(icon_path)
@@ -104,17 +105,6 @@ class SplashState(State):
                 center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 140)
             )
             screen.blit(self._loading_surface, loading_rect)
-
-    @staticmethod
-    def _resolve_asset_path(relative_path: str) -> str | None:
-        import sys
-
-        if hasattr(sys, "_MEIPASS"):
-            base_dir = sys._MEIPASS
-        else:
-            base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-        candidate = os.path.join(base_dir, relative_path)
-        return candidate if os.path.exists(candidate) else None
 
 
 __all__ = ["SplashState"]
