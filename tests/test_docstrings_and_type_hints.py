@@ -18,8 +18,11 @@ def iter_modules():
     """Yield the importable module name for each non‑test Python file in the repository."""
     root = pathlib.Path(__file__).parent.parent
     for py_path in root.rglob("*.py"):
-        # Skip test files and the tests package itself
+        # Skip test files, hidden directories, and the tests package itself
         if "tests" in py_path.parts:
+            continue
+        # Skip any hidden directories (starting with a dot)
+        if any(part.startswith(".") for part in py_path.parts):
             continue
         if py_path.name.startswith("test_"):
             continue
