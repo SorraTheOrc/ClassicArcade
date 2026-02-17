@@ -55,6 +55,12 @@ BLOCK_SIZE = 20
 BASE_SNAKE_SPEED = 10  # frames per second (base)
 # Determine snake speed based on difficulty setting (computed per game start)
 
+# Power-up constants
+POWERUP_TTL = 10.0  # seconds
+PARTICLE_COUNT = 20
+BOOST_DURATION = 5.0  # seconds
+SHRINK_MAX_SEGMENTS = 3
+
 
 def get_snake_speed() -> int:
     """Calculate snake speed based on the current difficulty.
@@ -525,7 +531,7 @@ class SnakeState(Game):
                 and pos != self.food
                 and pos not in [p["pos"] for p in self.powerups]
             ):
-                self.powerups.append({"type": pu_type, "pos": pos, "ttl": 10.0})
+                self.powerups.append({"type": pu_type, "pos": pos, "ttl": POWERUP_TTL})
                 break
 
     def _collect_powerup(self, pu: dict) -> None:
@@ -538,10 +544,10 @@ class SnakeState(Game):
         """
         t = pu.get("type")
         if t == "speed":
-            self._speed_boost_time = max(self._speed_boost_time, 5.0)
+            self._speed_boost_time = max(self._speed_boost_time, BOOST_DURATION)
         elif t == "shrink":
             # remove up to 3 segments but keep at least head
-            remove_n = min(3, max(0, len(self.snake) - 1))
+            remove_n = min(SHRINK_MAX_SEGMENTS, max(0, len(self.snake) - 1))
             for _ in range(remove_n):
                 try:
                     self.snake.pop()
@@ -560,7 +566,7 @@ class SnakeState(Game):
                 cx = int(head[0] + BLOCK_SIZE // 2)
                 cy = int(head[1] + BLOCK_SIZE // 2)
                 # spawn a burst of particles with variation
-                for _ in range(20):
+                for _ in range(PARTICLE_COUNT):
                     angle = random.random() * 2 * math.pi
                     speed = random.uniform(60, 180)  # pixels per second
                     vx = math.cos(angle) * speed

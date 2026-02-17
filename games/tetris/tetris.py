@@ -48,6 +48,9 @@ logger = logging.getLogger(__name__)
 # Base speed values for difficulty scaling (default values)
 BASE_FALL_SPEED = 500
 BASE_FAST_FALL_SPEED = 50
+LINES_PER_LEVEL = 5
+SCORE_CALCULATION = 100
+COUNTDOWN_SECONDS = 3
 
 # Game constants (initial values, may be overridden by difficulty settings)
 CELL_SIZE = 20
@@ -185,15 +188,15 @@ class TetrisState(Game):
                 lines = self.clear_lines(self.grid)
                 if lines:
                     self.lines_cleared_total += lines
-                    self.score += (lines**2) * 100
+                    self.score += (lines**2) * SCORE_CALCULATION
                     # Play line clear sound once per cleared line.
                     # This should happen regardless of whether the level
                     # increased — moving playback out of the level-up block
                     # ensures the player always receives audio feedback.
                     for _ in range(lines):
                         audio.play_effect("tetris", "line_clear.wav")
-                    # Increase level every 5 lines cleared
-                    if self.lines_cleared_total // 5 > (self.level - 1):
+                    # Increase level every LINES_PER_LEVEL lines cleared
+                    if self.lines_cleared_total // LINES_PER_LEVEL > (self.level - 1):
                         self.level += 1
                         self.fall_interval = max(50, FALL_SPEED - (self.level - 1) * 50)
                         # Start level transition countdown
@@ -557,14 +560,14 @@ class Tetris2PlayerState(Game):
                 lines = self.clear_lines(grid)
                 if lines:
                     lines_total += lines
-                    score += (lines**2) * 100
+                    score += (lines**2) * SCORE_CALCULATION
                     for _ in range(lines):
                         audio.play_effect("tetris", "line_clear.wav")
-                    if lines_total // 5 > (level - 1):
+                    if lines_total // LINES_PER_LEVEL > (level - 1):
                         level += 1
                         fall_interval = max(50, FALL_SPEED - (level - 1) * 50)
                         self.countdown_active = True
-                        self.countdown_remaining = 3.0
+                        self.countdown_remaining = COUNTDOWN_SECONDS
 
                 shape_name = random.choice(list(self.SHAPES.keys()))
                 shape = self.SHAPES[shape_name]
