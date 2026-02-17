@@ -30,6 +30,10 @@ from classic_arcade.config import (
     WHITE,
     YELLOW,
 )
+from classic_arcade.difficulty import (
+    apply_difficulty_divisor,
+    apply_difficulty_multiplier,
+)
 from classic_arcade.utils import draw_text
 from games.game_base import Game
 from games.highscore import draw_highscore_screen, record_highscore
@@ -38,7 +42,6 @@ from games.highscore import draw_highscore_screen, record_highscore
 
 
 logger = logging.getLogger(__name__)
-from classic_arcade import config
 
 # Game constants
 PLAYER_WIDTH = 50
@@ -84,17 +87,18 @@ SHELTER_BLOCK_HEIGHT = SHELTER_HEIGHT // 3
 
 
 def _apply_space_invaders_speed_settings() -> None:
-    """Set global speed variables based on the current Space Invaders difficulty.
-
-    Easy: default PLAYER_SPEED=5, BULLET_SPEED=7, ALIEN_SPEED=1, ENEMY_SHOOT_COOLDOWN=2.0 seconds.
-    Medium: increase speeds by 1.5x and reduce cooldown accordingly.
-    Hard: increase speeds by 2x and reduce cooldown further.
-    """
+    """Set global speed variables based on the current Space Invaders difficulty."""
     global PLAYER_SPEED, BULLET_SPEED, ALIEN_SPEED, ENEMY_SHOOT_COOLDOWN
     multiplier = config.difficulty_multiplier(config.SPACE_INVADERS_DIFFICULTY)
-    PLAYER_SPEED = int(BASE_PLAYER_SPEED * multiplier)
-    BULLET_SPEED = int(BASE_BULLET_SPEED * multiplier)
-    ALIEN_SPEED = int(BASE_ALIEN_SPEED * multiplier)
+    PLAYER_SPEED = apply_difficulty_multiplier(
+        BASE_PLAYER_SPEED, "space_invaders", custom_multiplier=multiplier
+    )
+    BULLET_SPEED = apply_difficulty_multiplier(
+        BASE_BULLET_SPEED, "space_invaders", custom_multiplier=multiplier
+    )
+    ALIEN_SPEED = apply_difficulty_multiplier(
+        BASE_ALIEN_SPEED, "space_invaders", custom_multiplier=multiplier
+    )
     ENEMY_SHOOT_COOLDOWN = BASE_ENEMY_SHOOT_COOLDOWN / multiplier
 
 

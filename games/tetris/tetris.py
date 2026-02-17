@@ -38,6 +38,7 @@ from classic_arcade.config import (
     WHITE,
     YELLOW,
 )
+from classic_arcade.difficulty import apply_difficulty_divisor
 from classic_arcade.engine import State
 from classic_arcade.utils import draw_text
 from games.game_base import Game
@@ -66,17 +67,10 @@ FONT_SIZE = 24
 
 
 def _apply_tetris_speed_settings() -> None:
-    """Set fall speed variables based on the current Tetris difficulty.
-
-    Easy: default FALL_SPEED=500 ms, FAST_FALL_SPEED=50 ms.
-    Medium: speed increased by 1.5x (i.e., interval reduced).
-    Hard: speed increased by 2x (interval reduced further).
-    """
+    """Set fall speed variables based on the current Tetris difficulty."""
     global FALL_SPEED, FAST_FALL_SPEED
-    multiplier = config.difficulty_multiplier(config.TETRIS_DIFFICULTY)
-    # Reduce interval for higher difficulty (faster falling)
-    FALL_SPEED = int(BASE_FALL_SPEED / multiplier)
-    FAST_FALL_SPEED = int(BASE_FAST_FALL_SPEED / multiplier)
+    FALL_SPEED = apply_difficulty_divisor(BASE_FALL_SPEED, "tetris")
+    FAST_FALL_SPEED = apply_difficulty_divisor(BASE_FAST_FALL_SPEED, "tetris")
 
 
 from classic_arcade import config

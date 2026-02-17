@@ -29,6 +29,7 @@ from classic_arcade.config import (
     SCREEN_WIDTH,
     WHITE,
 )
+from classic_arcade.difficulty import apply_difficulty_multiplier
 from classic_arcade.engine import State
 from classic_arcade.utils import draw_text
 from games.game_base import Game
@@ -46,6 +47,11 @@ BASE_PADDLE_SPEED = 5
 BASE_BALL_SPEED_X = 4
 BASE_BALL_SPEED_Y = 4
 
+PADDLE_SPEED = apply_difficulty_multiplier(BASE_PADDLE_SPEED, "pong")
+BALL_SPEED_X = apply_difficulty_multiplier(BASE_BALL_SPEED_X, "pong")
+BALL_SPEED_Y = apply_difficulty_multiplier(BASE_BALL_SPEED_Y, "pong")
+AI_PADDLE_SPEED = apply_difficulty_multiplier(BASE_PADDLE_SPEED, "pong")
+
 # AI constants
 PADDLE_ERROR_RANGE = 0.8
 MAX_DELAY_EASY = 1.0
@@ -59,21 +65,36 @@ def _apply_pong_speed_settings() -> None:
     """Set global speed variables based on the current PONG_DIFFICULTY."""
     global PADDLE_SPEED, BALL_SPEED_X, BALL_SPEED_Y, AI_PADDLE_SPEED
     if config.PONG_DIFFICULTY == config.DIFFICULTY_EASY:
-        PADDLE_SPEED = BASE_PADDLE_SPEED
-        BALL_SPEED_X = BASE_BALL_SPEED_X
-        BALL_SPEED_Y = BASE_BALL_SPEED_Y
-        AI_PADDLE_SPEED = BASE_PADDLE_SPEED
+        PADDLE_SPEED = apply_difficulty_multiplier(BASE_PADDLE_SPEED, "pong")
+        BALL_SPEED_X = apply_difficulty_multiplier(BASE_BALL_SPEED_X, "pong")
+        BALL_SPEED_Y = apply_difficulty_multiplier(BASE_BALL_SPEED_Y, "pong")
+        AI_PADDLE_SPEED = apply_difficulty_multiplier(BASE_PADDLE_SPEED, "pong")
     elif config.PONG_DIFFICULTY == config.DIFFICULTY_MEDIUM:
-        PADDLE_SPEED = int(BASE_PADDLE_SPEED * 1.2)
-        BALL_SPEED_X = int(BASE_BALL_SPEED_X * 1.5)
-        BALL_SPEED_Y = int(BASE_BALL_SPEED_Y * 1.5)
-        AI_PADDLE_SPEED = int(BASE_PADDLE_SPEED * 1.2)
+        PADDLE_SPEED = apply_difficulty_multiplier(
+            BASE_PADDLE_SPEED, "pong", custom_multiplier=1.2
+        )
+        BALL_SPEED_X = apply_difficulty_multiplier(
+            BASE_BALL_SPEED_X, "pong", custom_multiplier=1.5
+        )
+        BALL_SPEED_Y = apply_difficulty_multiplier(
+            BASE_BALL_SPEED_Y, "pong", custom_multiplier=1.5
+        )
+        AI_PADDLE_SPEED = apply_difficulty_multiplier(
+            BASE_PADDLE_SPEED, "pong", custom_multiplier=1.2
+        )
     else:
-        # Hard difficulty
-        PADDLE_SPEED = int(BASE_PADDLE_SPEED * 1.5)
-        BALL_SPEED_X = int(BASE_BALL_SPEED_X * 2)
-        BALL_SPEED_Y = int(BASE_BALL_SPEED_Y * 2)
-        AI_PADDLE_SPEED = int(BASE_PADDLE_SPEED * 1.5)
+        PADDLE_SPEED = apply_difficulty_multiplier(
+            BASE_PADDLE_SPEED, "pong", custom_multiplier=1.5
+        )
+        BALL_SPEED_X = apply_difficulty_multiplier(
+            BASE_BALL_SPEED_X, "pong", custom_multiplier=2
+        )
+        BALL_SPEED_Y = apply_difficulty_multiplier(
+            BASE_BALL_SPEED_Y, "pong", custom_multiplier=2
+        )
+        AI_PADDLE_SPEED = apply_difficulty_multiplier(
+            BASE_PADDLE_SPEED, "pong", custom_multiplier=1.5
+        )
 
 
 FONT_SIZE = 24
