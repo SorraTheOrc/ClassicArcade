@@ -3,6 +3,9 @@
 Provides screen dimensions, color definitions, and a helper function for drawing text.
 """
 
+# Added imports for asset path resolution
+import os
+import sys
 from typing import List, Tuple
 
 import pygame
@@ -20,6 +23,27 @@ from classic_arcade.config import (
     WHITE,
     YELLOW,
 )
+
+
+def resolve_asset_path(relative_path: str) -> str | None:
+    """Resolve an asset path, handling PyInstaller bundles.
+
+    Args:
+        relative_path: Path relative to the project root ``assets`` directory.
+
+    Returns:
+        The absolute path to the asset if it exists, otherwise ``None``.
+    """
+    # When running from a PyInstaller bundle, ``sys._MEIPASS`` points to the
+    # temporary extraction directory containing bundled data files.
+    if hasattr(sys, "_MEIPASS"):
+        base_dir = sys._MEIPASS
+    else:
+        # For normal execution, assets are located relative to the project root.
+        # ``classic_arcade`` package resides one level below the repository root.
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    candidate = os.path.join(base_dir, relative_path)
+    return candidate if os.path.exists(candidate) else None
 
 
 def wrap_text(
@@ -127,4 +151,4 @@ def draw_text(
         return font.get_height()
 
 
-__all__ = ["draw_text", "wrap_text"]
+__all__ = ["draw_text", "wrap_text", "resolve_asset_path"]
