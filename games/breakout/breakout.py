@@ -54,6 +54,7 @@ FONT_SIZE = 24
 POWERUP_SPAWN_CHANCE = 0.2
 POWERUP_DURATION = 5.0
 PADDLE_EXPANSION = 50
+COUNTDOWN_SECONDS = 3
 POWERUP_TYPES = ["expand_paddle", "multiball", "slow_ball"]
 POWERUP_SIZE = 18
 # Visual cue colour for cracked bricks
@@ -265,7 +266,7 @@ class BreakoutState(Game):
         # Handle level transition countdown
         if self.win and not self.countdown_active:
             self.countdown_active = True
-            self.countdown_remaining = 3.0
+            self.countdown_remaining = COUNTDOWN_SECONDS
         # Check lose: game over only when all balls are lost
         # Remove any extra balls that have fallen below the screen
         self.extra_balls = [

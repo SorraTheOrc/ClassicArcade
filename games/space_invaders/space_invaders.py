@@ -71,6 +71,8 @@ SHELTER_HEIGHT = 30
 SHELTER_SPACING = 50
 SHELTER_COLOR = BLUE
 NUM_SHELTERS = 3
+# Countdown constants
+COUNTDOWN_SECONDS = 3
 # Shelter block layout (0 = empty, 1 = block)
 SHELTER_SHAPE = [
     [0, 1, 0],
@@ -255,7 +257,7 @@ class SpaceInvadersState(Game):
         # Handle level transition countdown
         if self.win and not self.countdown_active:
             self.countdown_active = True
-            self.countdown_remaining = 3.0
+            self.countdown_remaining = COUNTDOWN_SECONDS
         # Check lose
         for rect, _ in self.aliens:
             if rect.bottom >= self.player.top:

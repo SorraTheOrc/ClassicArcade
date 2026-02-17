@@ -46,6 +46,14 @@ BASE_PADDLE_SPEED = 5
 BASE_BALL_SPEED_X = 4
 BASE_BALL_SPEED_Y = 4
 
+# AI constants
+PADDLE_ERROR_RANGE = 0.8
+MAX_DELAY_EASY = 1.0
+MAX_DELAY_MEDIUM = 0.5
+MAX_DELAY_HARD = 0.25
+BALL_VELOCITY_MULTIPLIER = 2
+COUNTDOWN_SECONDS = 3
+
 
 def _apply_pong_speed_settings() -> None:
     """Set global speed variables based on the current PONG_DIFFICULTY."""
@@ -172,18 +180,18 @@ class PongState(Game):
                             pred_y = 2 * (SCREEN_HEIGHT - BALL_SIZE) - pred_y
                             pred_vy = -pred_vy
                     # error up to 50% of paddle height
-                    error_range = int(PADDLE_HEIGHT * 0.8)
+                    error_range = int(PADDLE_HEIGHT * PADDLE_ERROR_RANGE)
                     error = random.randint(-error_range, error_range)
                     # Store the target with the random error applied once per approach
                     self.ai_target_center_y = pred_y + BALL_SIZE // 2 + error
                     # Random response delay based on difficulty (up to 1 sec for Easy)
                     # Random response delay based on difficulty
                     if config.PONG_DIFFICULTY == config.DIFFICULTY_EASY:
-                        max_delay = 1.0
+                        max_delay = MAX_DELAY_EASY
                     elif config.PONG_DIFFICULTY == config.DIFFICULTY_MEDIUM:
-                        max_delay = 0.5
+                        max_delay = MAX_DELAY_MEDIUM
                     else:
-                        max_delay = 0.25
+                        max_delay = MAX_DELAY_HARD
                     self.ai_delay_timer = random.uniform(0, max_delay)
 
                 # Apply delay before moving
@@ -244,7 +252,7 @@ class PongState(Game):
         # Handle level transition countdown
         if self.game_over and not self.countdown_active:
             self.countdown_active = True
-            self.countdown_remaining = 3.0
+            self.countdown_remaining = COUNTDOWN_SECONDS
 
     def draw(self, screen: pygame.Surface) -> None:
         """Render Pong UI."""
