@@ -17,6 +17,16 @@ from classic_arcade import config
 
 # ---------------------------------------------------------------------------
 # Helper path functions
+
+
+def _get_base_dir() -> str:
+    """Return the base directory for assets, handling PyInstaller bundle paths."""
+    if hasattr(sys, "_MEIPASS"):
+        return sys._MEIPASS
+    # assets/ is at the project root (parent of classic_arcade/)
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
@@ -104,26 +114,13 @@ def _sound_path(name: str) -> str:
 
     Path is ``<project>/assets/sounds/<name>``.
     """
-    # Handle PyInstaller bundle paths
-    import os
-    import sys
-
-    if hasattr(sys, "_MEIPASS"):
-        base_dir = sys._MEIPASS
-    else:
-        # assets/ is at the project root (parent of classic_arcade/)
-        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    base_dir = _get_base_dir()
     return os.path.join(base_dir, "assets", "sounds", name)
 
 
 def _music_dir() -> str:
     """Return the absolute path to the music assets directory."""
-    # Handle PyInstaller bundle paths
-    if hasattr(sys, "_MEIPASS"):
-        base_dir = sys._MEIPASS
-    else:
-        # assets/ is at the project root (parent of classic_arcade/)
-        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    base_dir = _get_base_dir()
     return os.path.join(base_dir, "assets", "music")
 
 
@@ -132,12 +129,7 @@ def _sound_path_type(sound_type: str, name: str) -> str:
 
     Path is ``<project>/assets/sounds/<sound_type>/<name>``.
     """
-    # Handle PyInstaller bundle paths
-    if hasattr(sys, "_MEIPASS"):
-        base_dir = sys._MEIPASS
-    else:
-        # assets/ is at the project root (parent of classic_arcade/)
-        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    base_dir = _get_base_dir()
     return os.path.join(base_dir, "assets", "sounds", sound_type, name)
 
 
@@ -210,11 +202,7 @@ def init() -> None:
         return
 
     # Use the same path resolution as _music_dir() and _sound_path()
-    if hasattr(sys, "_MEIPASS"):
-        base_dir = sys._MEIPASS
-    else:
-        # assets/ is at the project root (parent of classic_arcade/)
-        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    base_dir = _get_base_dir()
     sounds_dir = os.path.join(base_dir, "assets", "sounds")
     music_dir = os.path.join(base_dir, "assets", "music")
 
