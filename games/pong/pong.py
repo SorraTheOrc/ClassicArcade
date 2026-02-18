@@ -29,6 +29,7 @@ from classic_arcade.config import (
     SCREEN_WIDTH,
     WHITE,
 )
+from classic_arcade.constants import COUNTDOWN_SECONDS
 from classic_arcade.difficulty import apply_difficulty_multiplier
 from classic_arcade.engine import State
 from classic_arcade.utils import draw_text
@@ -58,7 +59,6 @@ MAX_DELAY_EASY = 1.0
 MAX_DELAY_MEDIUM = 0.5
 MAX_DELAY_HARD = 0.25
 BALL_VELOCITY_MULTIPLIER = 2
-COUNTDOWN_SECONDS = 3
 
 
 def _apply_pong_speed_settings() -> None:

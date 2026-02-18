@@ -38,6 +38,7 @@ from classic_arcade.config import (
     WHITE,
     YELLOW,
 )
+from classic_arcade.constants import COUNTDOWN_SECONDS
 from classic_arcade.difficulty import apply_difficulty_divisor
 from classic_arcade.engine import State
 from classic_arcade.utils import draw_text
@@ -51,7 +52,6 @@ BASE_FALL_SPEED = 500
 BASE_FAST_FALL_SPEED = 50
 LINES_PER_LEVEL = 5
 SCORE_CALCULATION = 100
-COUNTDOWN_SECONDS = 3
 
 # Game constants (initial values, may be overridden by difficulty settings)
 CELL_SIZE = 20
