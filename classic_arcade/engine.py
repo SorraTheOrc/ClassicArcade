@@ -783,6 +783,10 @@ class MenuState(State):
             pass
 
     def draw(self, screen: pygame.Surface) -> None:
+        """Render the menu title and list of menu items onto the screen.
+
+        The selected menu item is highlighted with a pulsing rectangle outline.
+        """
         self._draw_title(screen)
         self._draw_mute_status(screen)
         self._draw_menu_items(screen)
