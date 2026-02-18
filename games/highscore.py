@@ -14,11 +14,14 @@ If the file does not exist or is malformed an empty list is returned.
 """
 
 import json
+import logging
 import os
 from datetime import datetime
 from typing import TYPE_CHECKING, Dict, List, Sequence
 
 import pygame
+
+logger = logging.getLogger(__name__)
 
 # Directory for high‑score files – placed next to this module's parent directory (project root).
 _HIGHSCORE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -52,8 +55,8 @@ def load_highscores(game_name: str) -> List[Dict]:
             data = json.load(f)
             if isinstance(data, list):
                 return data
-    except Exception:
-        # Corrupted file – treat as empty.
+    except (json.JSONDecodeError, UnicodeDecodeError, OSError) as e:
+        logger.warning("Failed to load high scores for '%s': %s", game_name, e)
         return []
     return []
 
@@ -138,7 +141,8 @@ def draw_highscore_screen(
     for idx, entry in enumerate(highscores[:max_entries], start=1):
         try:
             date_str = datetime.fromisoformat(entry["timestamp"]).strftime("%d-%b-%Y")
-        except Exception:
+        except (ValueError, TypeError) as e:
+            logger.warning("Failed to parse timestamp for entry %s: %s", entry, e)
             date_str = entry.get("timestamp", "")
         score_y = heading_y + font_size + 5 + (idx - 1) * (font_size + 5)
         draw_text(

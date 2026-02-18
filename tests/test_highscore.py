@@ -1,6 +1,7 @@
 import json
 import os
 
+import pygame
 import pytest
 
 # Import the highscore module
@@ -77,3 +78,40 @@ def test_record_highscore_records_once(monkeypatch, tmp_path):
 
     scores_again = hs.record_highscore(state, "dummy", 10)
     assert scores_again == scores
+
+
+def test_load_logs_warning_on_corrupted_file(tmp_path, caplog):
+    import logging
+
+    game_name = "badgame"
+    file_path = os.path.join(str(tmp_path), f"highscore_{game_name}.json")
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write("{ not a valid json }")
+
+    with caplog.at_level(logging.WARNING):
+        result = hs.load_highscores(game_name)
+
+    assert result == []
+    assert any(
+        "Failed to load high scores" in record.message for record in caplog.records
+    )
+
+
+def test_draw_highscore_handles_invalid_timestamp(tmp_path):
+    game_name = "badtimestamp"
+    file_path = os.path.join(str(tmp_path), f"highscore_{game_name}.json")
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump([{"score": 100, "timestamp": "not-a-date"}], f)
+
+    scores = hs.load_highscores(game_name)
+
+    screen = pygame.Surface((800, 600))
+    hs.draw_highscore_screen(
+        screen,
+        scores,
+        instruction_text="Press any key",
+        instruction_color=(255, 255, 255),
+        font_size=24,
+    )
+
+    assert scores[0]["timestamp"] == "not-a-date"
