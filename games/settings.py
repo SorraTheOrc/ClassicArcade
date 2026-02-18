@@ -66,21 +66,22 @@ class SettingsState(Game):
     # ---------------------------------------------------------------------
     # Helper methods for reading and writing difficulty values
     # ---------------------------------------------------------------------
+    _DIFFICULTY_KEYS = {
+        "snake": "SNAKE_DIFFICULTY",
+        "pong": "PONG_DIFFICULTY",
+        "breakout": "BREAKOUT_DIFFICULTY",
+        "space_invaders": "SPACE_INVADERS_DIFFICULTY",
+        "tetris": "TETRIS_DIFFICULTY",
+    }
+
     def _get_difficulty(self, key: str) -> str:
         """Return the stored difficulty for *key*.
 
         ``key`` is one of the identifiers used in ``config`` (e.g. ``"snake"``).
         """
-        if key == "snake":
-            return config.SNAKE_DIFFICULTY
-        if key == "pong":
-            return config.PONG_DIFFICULTY
-        if key == "breakout":
-            return config.BREAKOUT_DIFFICULTY
-        if key == "space_invaders":
-            return config.SPACE_INVADERS_DIFFICULTY
-        if key == "tetris":
-            return config.TETRIS_DIFFICULTY
+        attr_name = self._DIFFICULTY_KEYS.get(key)
+        if attr_name:
+            return getattr(config, attr_name)
         return config.DIFFICULTY_MEDIUM
 
     def _set_difficulty(self, key: str, level: str) -> None:
