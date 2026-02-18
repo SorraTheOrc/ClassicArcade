@@ -31,6 +31,10 @@ from classic_arcade.config import (
     WHITE,
     YELLOW,
 )
+from classic_arcade.difficulty import (
+    apply_difficulty_divisor,
+    apply_difficulty_multiplier,
+)
 from classic_arcade.utils import draw_text
 from games.game_base import Game
 from games.highscore import draw_highscore_screen, record_highscore
@@ -40,10 +44,16 @@ logger = logging.getLogger(__name__)
 # Game constants
 PADDLE_WIDTH = 100
 PADDLE_HEIGHT = 10
-PADDLE_SPEED = 6
 BALL_RADIUS = 8
-BALL_SPEED = 5
-BRICK_ROWS = 5
+
+# Base speed values
+BASE_PADDLE_SPEED = 6
+BASE_BALL_SPEED = 5
+BASE_BRICK_ROWS = 5
+
+PADDLE_SPEED = apply_difficulty_multiplier(BASE_PADDLE_SPEED, "breakout")
+BALL_SPEED = apply_difficulty_multiplier(BASE_BALL_SPEED, "breakout")
+BRICK_ROWS = apply_difficulty_multiplier(BASE_BRICK_ROWS, "breakout")
 BRICK_COLS = 10
 BRICK_WIDTH = (SCREEN_WIDTH - (BRICK_COLS + 1) * 5) // BRICK_COLS
 BRICK_HEIGHT = 20
@@ -63,26 +73,32 @@ CRACK_COLOR = (220, 220, 220)
 
 # Apply difficulty‑based speed settings for Breakout
 def _apply_breakout_speed_settings() -> None:
-    """Set global speed and brick variables based on the current Breakout difficulty.
-
-    Easy: default paddle speed 6, ball speed 5, brick rows 5.
-    Medium: paddle speed = int(6 * 1.2), ball speed = int(5 * 1.5), brick rows = 6 (extra bricks).
-    Hard: paddle speed = int(6 * 1.5), ball speed = int(5 * 2), brick rows = 7 (more bricks).
-    """
+    """Set global speed and brick variables based on the current Breakout difficulty."""
     global PADDLE_SPEED, BALL_SPEED, BRICK_ROWS
     if config.BREAKOUT_DIFFICULTY == config.DIFFICULTY_EASY:
-        PADDLE_SPEED = 6
-        BALL_SPEED = 5
-        BRICK_ROWS = 5
+        PADDLE_SPEED = apply_difficulty_multiplier(BASE_PADDLE_SPEED, "breakout")
+        BALL_SPEED = apply_difficulty_multiplier(BASE_BALL_SPEED, "breakout")
+        BRICK_ROWS = apply_difficulty_multiplier(BASE_BRICK_ROWS, "breakout")
     elif config.BREAKOUT_DIFFICULTY == config.DIFFICULTY_MEDIUM:
-        PADDLE_SPEED = int(6 * 1.2)
-        BALL_SPEED = int(5 * 1.5)
-        BRICK_ROWS = 6
+        PADDLE_SPEED = apply_difficulty_multiplier(
+            BASE_PADDLE_SPEED, "breakout", custom_multiplier=1.2
+        )
+        BALL_SPEED = apply_difficulty_multiplier(
+            BASE_BALL_SPEED, "breakout", custom_multiplier=1.5
+        )
+        BRICK_ROWS = apply_difficulty_multiplier(
+            BASE_BRICK_ROWS, "breakout", custom_multiplier=1.2
+        )
     else:
-        # Hard difficulty
-        PADDLE_SPEED = int(6 * 1.5)
-        BALL_SPEED = int(5 * 2)
-        BRICK_ROWS = 7
+        PADDLE_SPEED = apply_difficulty_multiplier(
+            BASE_PADDLE_SPEED, "breakout", custom_multiplier=1.5
+        )
+        BALL_SPEED = apply_difficulty_multiplier(
+            BASE_BALL_SPEED, "breakout", custom_multiplier=2
+        )
+        BRICK_ROWS = apply_difficulty_multiplier(
+            BASE_BRICK_ROWS, "breakout", custom_multiplier=1.5
+        )
 
 
 class BreakoutState(Game):
