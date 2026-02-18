@@ -377,6 +377,7 @@ class BreakoutState(Game):
         self.draw_mute_overlay(screen)
 
     def draw(self, screen: pygame.Surface) -> None:
+        """Render the breakout game elements and UI onto the screen."""
         self._draw_background(screen)
         self._draw_paddle(screen)
         self._draw_balls(screen)

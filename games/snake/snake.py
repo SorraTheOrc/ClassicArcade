@@ -526,6 +526,10 @@ class SnakeState(Game):
         self.draw_mute_overlay(screen)
 
     def draw(self, screen: pygame.Surface) -> None:
+        """Render the Snake game elements and UI onto the screen.
+
+        Draws the background, food, snake segments, and the current score. If the game is over, displays a game-over message.
+        """
         self._draw_background(screen)
         self._draw_food(screen)
         self._draw_snake_body(screen)
