@@ -55,7 +55,7 @@ def discover_games() -> List[Tuple[str, object, str | None]]:
         import games
 
         package_path = games.__path__
-    except Exception:
+    except (ImportError, AttributeError) as e:
         logger.exception("Unable to import games package for discovery")
         return items
 
@@ -77,7 +77,7 @@ def discover_games() -> List[Tuple[str, object, str | None]]:
         full_name = f"games.{name}"
         try:
             module = importlib.import_module(full_name)
-        except Exception:
+        except (ImportError, AttributeError) as e:
             logger.debug("Failed to import %s, skipping", full_name, exc_info=True)
             continue
 
@@ -90,14 +90,14 @@ def discover_games() -> List[Tuple[str, object, str | None]]:
                     try:
                         submod = importlib.import_module(f"{full_name}.{subname}")
                         candidates.append(submod)
-                    except Exception:
+                    except (ImportError, AttributeError) as e:
                         logger.debug(
                             "Failed to import submodule %s.%s, skipping",
                             full_name,
                             subname,
                             exc_info=True,
                         )
-            except Exception:
+            except (ImportError, AttributeError, OSError) as e:
                 logger.debug(
                     "Unable to iterate submodules of %s", full_name, exc_info=True
                 )
@@ -128,7 +128,7 @@ def discover_games() -> List[Tuple[str, object, str | None]]:
                         ):
                             state_cls = obj
                             break
-                except Exception:
+                except (TypeError, AttributeError):
                     continue
             if state_cls:
                 break
@@ -180,7 +180,7 @@ def discover_games() -> List[Tuple[str, object, str | None]]:
         for full_name in fallback_modules:
             try:
                 module = importlib.import_module(full_name)
-            except Exception:
+            except (ImportError, AttributeError) as e:
                 logger.debug("Fallback import failed for %s", full_name, exc_info=True)
                 continue
 
@@ -191,14 +191,14 @@ def discover_games() -> List[Tuple[str, object, str | None]]:
                         try:
                             submod = importlib.import_module(f"{full_name}.{subname}")
                             candidates.append(submod)
-                        except Exception:
+                        except (ImportError, AttributeError) as e:
                             logger.debug(
                                 "Fallback import failed for %s.%s",
                                 full_name,
                                 subname,
                                 exc_info=True,
                             )
-                except Exception:
+                except (ImportError, AttributeError, OSError) as e:
                     logger.debug(
                         "Fallback unable to iterate submodules of %s",
                         full_name,
@@ -228,7 +228,7 @@ def discover_games() -> List[Tuple[str, object, str | None]]:
                             ):
                                 state_cls = obj
                                 break
-                    except Exception:
+                    except (TypeError, AttributeError):
                         continue
                 if state_cls:
                     break
@@ -295,7 +295,7 @@ def get_menu_items() -> List[Tuple[str, object, str | None]]:
         if os.path.isfile(icon_candidate):
             settings_icon_path = icon_candidate
         items.append(("Settings", SettingsState, settings_icon_path))
-    except Exception:
+    except (ImportError, AttributeError) as e:
         logger.debug(
             "SettingsState not available; skipping Settings menu entry", exc_info=True
         )
