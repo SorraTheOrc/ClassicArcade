@@ -31,6 +31,7 @@ from classic_arcade.config import (
     WHITE,
     YELLOW,
 )
+from classic_arcade.constants import COUNTDOWN_SECONDS
 from classic_arcade.difficulty import (
     apply_difficulty_divisor,
     apply_difficulty_multiplier,
@@ -64,7 +65,7 @@ FONT_SIZE = 24
 POWERUP_SPAWN_CHANCE = 0.2
 POWERUP_DURATION = 5.0
 PADDLE_EXPANSION = 50
-COUNTDOWN_SECONDS = 3
+# COUNTDOWN_SECONDS moved to classic_arcade.constants
 POWERUP_TYPES = ["expand_paddle", "multiball", "slow_ball"]
 POWERUP_SIZE = 18
 # Visual cue colour for cracked bricks

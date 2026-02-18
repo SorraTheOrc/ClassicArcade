@@ -30,6 +30,7 @@ from classic_arcade.config import (
     WHITE,
     YELLOW,
 )
+from classic_arcade.constants import COUNTDOWN_SECONDS
 from classic_arcade.difficulty import (
     apply_difficulty_divisor,
     apply_difficulty_multiplier,
@@ -74,8 +75,7 @@ SHELTER_HEIGHT = 30
 SHELTER_SPACING = 50
 SHELTER_COLOR = BLUE
 NUM_SHELTERS = 3
-# Countdown constants
-COUNTDOWN_SECONDS = 3
+# Countdown seconds are provided from classic_arcade.constants
 # Shelter block layout (0 = empty, 1 = block)
 SHELTER_SHAPE = [
     [0, 1, 0],
