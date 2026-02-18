@@ -17,6 +17,24 @@ from classic_arcade.engine import State
 logger = logging.getLogger(__name__)
 
 
+def _is_mode_specific_state(state_cls: Type) -> bool:
+    """Check if a state class is mode-specific and should be excluded from menu entries.
+
+    Mode-specific states like PongSinglePlayer, PongMultiplayer, SnakeMode, etc.
+    should not appear as separate menu entries.
+    """
+    return state_cls.__name__.startswith(
+        (
+            "PongSinglePlayer",
+            "PongMultiplayer",
+            "SnakeMode",
+            "Snake2Player",
+            "TetrisMode",
+            "Tetris2Player",
+        )
+    )
+
+
 def _friendly_name_from_module(module_name: str, cls_name: str | None = None) -> str:
     """Create a display name for a menu entry.
 
@@ -117,15 +135,7 @@ def discover_games() -> List[Tuple[str, object, str | None]]:
                     continue
                 try:
                     if issubclass(obj, State) and obj is not State:
-                        # Skip mode-specific states that shouldn't appear as separate menu entries
-                        if not (
-                            obj.__name__.startswith("PongSinglePlayer")
-                            or obj.__name__.startswith("PongMultiplayer")
-                            or obj.__name__.startswith("SnakeMode")
-                            or obj.__name__.startswith("Snake2Player")
-                            or obj.__name__.startswith("TetrisMode")
-                            or obj.__name__.startswith("Tetris2Player")
-                        ):
+                        if not _is_mode_specific_state(obj):
                             state_cls = obj
                             break
                 except (TypeError, AttributeError):
@@ -218,14 +228,7 @@ def discover_games() -> List[Tuple[str, object, str | None]]:
                         continue
                     try:
                         if issubclass(obj, State) and obj is not State:
-                            if not (
-                                obj.__name__.startswith("PongSinglePlayer")
-                                or obj.__name__.startswith("PongMultiplayer")
-                                or obj.__name__.startswith("SnakeMode")
-                                or obj.__name__.startswith("Snake2Player")
-                                or obj.__name__.startswith("TetrisMode")
-                                or obj.__name__.startswith("Tetris2Player")
-                            ):
+                            if not _is_mode_specific_state(obj):
                                 state_cls = obj
                                 break
                     except (TypeError, AttributeError):
