@@ -297,23 +297,20 @@ class BreakoutState(Game):
             else:
                 self.game_over = True
 
-    def draw(self, screen: pygame.Surface) -> None:
-        """Render the breakout game elements and UI onto the screen."""
+    def _draw_background(self, screen: pygame.Surface) -> None:
         screen.fill(BLACK)
-        # Draw paddle
+
+    def _draw_paddle(self, screen: pygame.Surface) -> None:
         pygame.draw.rect(screen, WHITE, self.paddle)
-        # Draw ball
+
+    def _draw_balls(self, screen: pygame.Surface) -> None:
         pygame.draw.ellipse(screen, GREEN, self.ball)
-        # Draw extra balls (multiball)
         for ball_rect, _ in self.extra_balls:
             pygame.draw.ellipse(screen, GREEN, ball_rect)
-        # Draw bricks (support hp-aware bricks). We iterate by index so we can
-        # reference parallel hp arrays and render a "cracked" overlay for
-        # strong bricks that have been damaged once.
+
+    def _draw_bricks(self, screen: pygame.Surface) -> None:
         for idx, (rect, color) in enumerate(self.bricks):
             pygame.draw.rect(screen, color, rect)
-            # If this brick was originally strong (2 HP) and now has 1 HP,
-            # draw a simple crack overlay to indicate damage.
             try:
                 initial = self.brick_initial_hps[idx]
                 current = self.brick_hps[idx]
@@ -321,12 +318,12 @@ class BreakoutState(Game):
                 initial = 1
                 current = 1
             if initial == 2 and current == 1:
-                # draw two short diagonal lines across the brick
                 x1, y1 = rect.left + 4, rect.top + 4
                 x2, y2 = rect.right - 4, rect.bottom - 4
                 pygame.draw.line(screen, CRACK_COLOR, (x1, y1), (x2, y2), 2)
                 pygame.draw.line(screen, CRACK_COLOR, (x1, y2), (x2, y1), 2)
-        # Draw falling power-ups
+
+    def _draw_powerups(self, screen: pygame.Surface) -> None:
         for pu in self.powerups:
             pu_rect = pu["rect"]
             pu_type = pu["type"]
@@ -334,10 +331,11 @@ class BreakoutState(Game):
                 pu_color = YELLOW
             elif pu_type == "multiball":
                 pu_color = CYAN
-            else:  # slow_ball
+            else:
                 pu_color = MAGENTA
             pygame.draw.rect(screen, pu_color, pu_rect)
-        # Draw score
+
+    def _draw_score(self, screen: pygame.Surface) -> None:
         draw_text(
             screen,
             f"Score: {self.score}",
@@ -347,6 +345,8 @@ class BreakoutState(Game):
             20,
             center=False,
         )
+
+    def _draw_game_over(self, screen: pygame.Surface) -> None:
         if self.game_over:
             record_highscore(self, "breakout", self.score)
             draw_highscore_screen(
@@ -356,6 +356,8 @@ class BreakoutState(Game):
                 instruction_color=RED,
                 font_size=FONT_SIZE_MEDIUM,
             )
+
+    def _draw_win_countdown(self, screen: pygame.Surface) -> None:
         if self.countdown_active:
             self.draw_countdown(screen)
         elif self.win:
@@ -368,11 +370,22 @@ class BreakoutState(Game):
                 SCREEN_HEIGHT // 2,
                 center=True,
             )
-        # Draw pause overlay if paused
+
+    def _draw_pause_mute_overlays(self, screen: pygame.Surface) -> None:
         if self.paused:
             self.draw_pause_overlay(screen)
-        # Draw mute overlay (Muted or Sound On)
         self.draw_mute_overlay(screen)
+
+    def draw(self, screen: pygame.Surface) -> None:
+        self._draw_background(screen)
+        self._draw_paddle(screen)
+        self._draw_balls(screen)
+        self._draw_bricks(screen)
+        self._draw_powerups(screen)
+        self._draw_score(screen)
+        self._draw_game_over(screen)
+        self._draw_win_countdown(screen)
+        self._draw_pause_mute_overlays(screen)
 
     @classmethod
     def get_controls(cls) -> List[str]:
