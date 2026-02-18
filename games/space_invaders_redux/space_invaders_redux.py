@@ -21,6 +21,7 @@ from typing import Optional
 
 import pygame
 
+from classic_arcade import audio
 from classic_arcade.config import FONT_SIZE_MEDIUM
 from classic_arcade.utils import (
     BLACK,
@@ -265,6 +266,7 @@ class SpaceInvadersReduxState(Game):
             alien = random.choice(self.aliens)
             enemy_bullet = alien.shoot()
             self.enemy_bullets.append(enemy_bullet)
+            audio.play_effect("space_invaders_redux", "enemy_shoot.wav")
             # Reset to current wave's cooldown (which may be lower due to difficulty scaling)
             self.enemy_shoot_cooldown = self.current_wave_cooldown
 
@@ -277,6 +279,7 @@ class SpaceInvadersReduxState(Game):
                 BULLET_HEIGHT,
             )
             self.bullets.append(bullet)
+            audio.play_effect("space_invaders_redux", "shoot.wav")
             self.player_shoot_cooldown = DEFAULT_PLAYER_SHOOT_COOLDOWN
 
         # Move aliens horizontally
@@ -303,12 +306,14 @@ class SpaceInvadersReduxState(Game):
                     self.aliens.pop(i)
                     self.bullets.remove(bullet)
                     self.score += 10
+                    audio.play_effect("space_invaders_redux", "alien_hit.wav")
                     break
 
         # Enemy bullet-player collisions
         for bullet in self.enemy_bullets[:]:
             if bullet.colliderect(self.player):
                 self.game_over = True
+                audio.play_effect("space_invaders_redux", "player_hit.wav")
                 self.enemy_bullets.remove(bullet)
                 break
 
@@ -325,6 +330,7 @@ class SpaceInvadersReduxState(Game):
         for alien in self.aliens:
             if alien.rect.bottom >= self.player.top:
                 self.game_over = True
+                audio.play_effect("space_invaders_redux", "game_over.wav")
                 break
 
     def draw(self, screen: pygame.Surface) -> None:
