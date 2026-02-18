@@ -298,17 +298,21 @@ class BreakoutState(Game):
                 self.game_over = True
 
     def _draw_background(self, screen: pygame.Surface) -> None:
+        """Draw the background (black fill)."""
         screen.fill(BLACK)
 
     def _draw_paddle(self, screen: pygame.Surface) -> None:
+        """Draw the paddle (white rectangle)."""
         pygame.draw.rect(screen, WHITE, self.paddle)
 
     def _draw_balls(self, screen: pygame.Surface) -> None:
+        """Draw the main ball and extra balls (green ellipses)."""
         pygame.draw.ellipse(screen, GREEN, self.ball)
         for ball_rect, _ in self.extra_balls:
             pygame.draw.ellipse(screen, GREEN, ball_rect)
 
     def _draw_bricks(self, screen: pygame.Surface) -> None:
+        """Draw bricks with HP-aware rendering (crack overlay for damaged bricks)."""
         for idx, (rect, color) in enumerate(self.bricks):
             pygame.draw.rect(screen, color, rect)
             try:
@@ -324,6 +328,7 @@ class BreakoutState(Game):
                 pygame.draw.line(screen, CRACK_COLOR, (x1, y2), (x2, y1), 2)
 
     def _draw_powerups(self, screen: pygame.Surface) -> None:
+        """Draw falling power-ups with type-specific colors (expand_paddle=YELLOW, multiball=CYAN, slow_ball=MAGENTA)."""
         for pu in self.powerups:
             pu_rect = pu["rect"]
             pu_type = pu["type"]
@@ -336,6 +341,7 @@ class BreakoutState(Game):
             pygame.draw.rect(screen, pu_color, pu_rect)
 
     def _draw_score(self, screen: pygame.Surface) -> None:
+        """Draw the current score text."""
         draw_text(
             screen,
             f"Score: {self.score}",
@@ -347,6 +353,7 @@ class BreakoutState(Game):
         )
 
     def _draw_game_over(self, screen: pygame.Surface) -> None:
+        """Draw the game-over screen with high score if game is over."""
         if self.game_over:
             record_highscore(self, "breakout", self.score)
             draw_highscore_screen(
@@ -358,6 +365,7 @@ class BreakoutState(Game):
             )
 
     def _draw_win_countdown(self, screen: pygame.Surface) -> None:
+        """Draw the countdown or win message when all bricks are cleared."""
         if self.countdown_active:
             self.draw_countdown(screen)
         elif self.win:
@@ -372,6 +380,7 @@ class BreakoutState(Game):
             )
 
     def _draw_pause_mute_overlays(self, screen: pygame.Surface) -> None:
+        """Draw the pause and mute status overlays."""
         if self.paused:
             self.draw_pause_overlay(screen)
         self.draw_mute_overlay(screen)

@@ -607,6 +607,7 @@ class MenuState(State):
             pass
 
     def _draw_title(self, screen: pygame.Surface) -> None:
+        """Draw the Arcade Suite title at the top of the screen."""
         draw_text(
             screen,
             "Arcade Suite",
@@ -618,6 +619,7 @@ class MenuState(State):
         )
 
     def _draw_mute_status(self, screen: pygame.Surface) -> None:
+        """Draw the mute status indicator and text (visible in test/headless runs)."""
         if os.getenv("PYTEST_CURRENT_TEST") or os.getenv("SHOW_TEST_INDICATOR"):
             try:
                 pygame.draw.rect(screen, YELLOW, pygame.Rect(8, 8, 6, 6))
@@ -628,6 +630,7 @@ class MenuState(State):
         self._last_mute_text = text
 
     def _draw_menu_items(self, screen: pygame.Surface) -> None:
+        """Draw all menu items in a grid layout with icons and text."""
         num_items = len(self.menu_items)
         if num_items == 0:
             return
@@ -678,6 +681,7 @@ class MenuState(State):
             screen.blit(text_surface, (text_x, text_y))
 
     def _get_menu_item_color(self, name: str, idx: int) -> tuple:
+        """Determine the text color for a menu item based on name and selection state."""
         if name == "Settings":
             return GRAY
         else:
@@ -698,6 +702,7 @@ class MenuState(State):
         return text_x, text_y
 
     def _get_icon_surface(self, icon_path: str, name: str, max_icon_dim: int):
+        """Load and scale the icon surface for a menu item, with fallback handling."""
         if icon_path:
             try:
                 icon_img = pygame.image.load(icon_path).convert_alpha()
@@ -751,6 +756,7 @@ class MenuState(State):
         )
 
     def _draw_scroll_indicator(self, screen: pygame.Surface) -> None:
+        """Draw a scroll indicator triangle if vertical overflow exists."""
         layout = self._layout_params()
         if layout["max_offset"] > 0:
             tri_height = max(self.title_font_size // 2, self.item_font_size) * 2
@@ -765,6 +771,7 @@ class MenuState(State):
             pygame.draw.polygon(screen, YELLOW, points)
 
     def _draw_launch_message(self, screen: pygame.Surface) -> None:
+        """Draw a transient launch message if set and not expired."""
         try:
             import time
 

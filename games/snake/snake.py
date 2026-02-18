@@ -334,20 +334,25 @@ class SnakeState(Game):
                         break
 
     def _draw_background(self, screen: pygame.Surface) -> None:
+        """Draw the background (black fill)."""
         screen.fill(BLACK)
 
     def _draw_food(self, screen: pygame.Surface) -> None:
+        """Draw the food item (red square)."""
         pygame.draw.rect(screen, RED, (*self.food, BLOCK_SIZE, BLOCK_SIZE))
 
     def _draw_snake_body(self, screen: pygame.Surface) -> None:
+        """Draw the snake segments (green squares)."""
         for segment in self.snake:
             pygame.draw.rect(screen, GREEN, (*segment, BLOCK_SIZE, BLOCK_SIZE))
 
     def _draw_shrink_effect(self, screen: pygame.Surface) -> None:
+        """Draw the visual feedback for the shrink power-up (cyan flash and particles)."""
         self._draw_shrink_flash(screen)
         self._draw_shrink_particles(screen)
 
     def _draw_shrink_flash(self, screen: pygame.Surface) -> None:
+        """Draw the pulsing cyan overlay on the snake body during shrink effect."""
         if getattr(self, "_shrink_flash_remaining", 0) > 0:
             dur = max(self._shrink_flash_duration, 0.001)
             elapsed = dur - self._shrink_flash_remaining
@@ -366,6 +371,7 @@ class SnakeState(Game):
                 pygame.draw.rect(screen, seg_color, (*segment, BLOCK_SIZE, BLOCK_SIZE))
 
     def _draw_shrink_particles(self, screen: pygame.Surface) -> None:
+        """Draw particles for the shrink effect visual feedback."""
         if self._particles:
             for p in list(self._particles):
                 ttl = max(0.0, p.get("ttl", 0.0))
@@ -400,6 +406,7 @@ class SnakeState(Game):
                 pass
 
     def _draw_hud(self, screen: pygame.Surface) -> None:
+        """Draw the heads-up display (score, lives, speed boost, shrink feedback)."""
         self._draw_score(screen)
         self._draw_lives(screen)
         self._draw_speed_boost(screen)
@@ -417,6 +424,7 @@ class SnakeState(Game):
         )
 
     def _draw_lives(self, screen: pygame.Surface) -> None:
+        """Draw the extra lives indicator (hearts or fallback circles)."""
         hearts = max(0, getattr(self, "extra_lives", 0))
         heart_font = self._find_heart_font(20)
 
@@ -426,6 +434,7 @@ class SnakeState(Game):
             self._draw_heart_circles(screen, hearts)
 
     def _find_heart_font(self, sz: int):
+        """Find a font that supports the heart glyph, or None if not available."""
         candidates = [
             "DejaVu Sans",
             "Segoe UI Symbol",
@@ -465,6 +474,7 @@ class SnakeState(Game):
             screen.blit(heart_surf, (x, y))
 
     def _draw_heart_circles(self, screen: pygame.Surface, hearts: int) -> None:
+        """Draw fallback red circles for lives if no heart glyph font is available."""
         margin_right = 20
         spacing = 18
         size = 10
@@ -485,6 +495,7 @@ class SnakeState(Game):
                 )
 
     def _draw_speed_boost(self, screen: pygame.Surface) -> None:
+        """Draw the speed boost timer if active."""
         if getattr(self, "_speed_boost_time", 0) > 0:
             sb_text = f"Speed: {self._speed_boost_time:.1f}s"
             draw_text(
@@ -498,6 +509,7 @@ class SnakeState(Game):
             )
 
     def _draw_shrink_feedback(self, screen: pygame.Surface) -> None:
+        """Draw the SHRUNK! feedback text when shrink power-up is collected."""
         if getattr(self, "_shrink_feedback_time", 0) > 0:
             draw_text(
                 screen,
@@ -510,6 +522,7 @@ class SnakeState(Game):
             )
 
     def _draw_game_over(self, screen: pygame.Surface) -> None:
+        """Draw the game-over screen with high score if game is over."""
         if self.game_over:
             record_highscore(self, "snake", self.score)
             draw_highscore_screen(
@@ -521,6 +534,7 @@ class SnakeState(Game):
             )
 
     def _draw_pause_mute_overlays(self, screen: pygame.Surface) -> None:
+        """Draw the pause and mute status overlays."""
         if self.paused:
             self.draw_pause_overlay(screen)
         self.draw_mute_overlay(screen)
