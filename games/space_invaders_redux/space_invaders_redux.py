@@ -211,7 +211,7 @@ class SpaceInvadersReduxState(Game):
 
                 self.next_state = MenuState(get_menu_items())
             elif event.key == pygame.K_r:
-                self.__init__(mod_name=self.mod_name, alien_class=self.alien_class)
+                self.__init__()
             elif event.key == pygame.K_n:
                 # Cheat: Skip to next wave (only when running from source)
                 if self._is_running_from_source():
