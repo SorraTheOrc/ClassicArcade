@@ -606,12 +606,7 @@ class MenuState(State):
             # Protect update loop from any input handling errors
             pass
 
-    def draw(self, screen: pygame.Surface) -> None:
-        """Render the menu title and list of menu items onto the screen.
-
-        The selected menu item is highlighted with a pulsing rectangle outline.
-        """
-        # Title - draw at the very top
+    def _draw_title(self, screen: pygame.Surface) -> None:
         draw_text(
             screen,
             "Arcade Suite",
@@ -621,135 +616,143 @@ class MenuState(State):
             30,
             center=True,
         )
-        # Mute status indicator
-        # Optionally draw a small visible indicator in test/headless runs
+
+    def _draw_mute_status(self, screen: pygame.Surface) -> None:
         if os.getenv("PYTEST_CURRENT_TEST") or os.getenv("SHOW_TEST_INDICATOR"):
             try:
                 pygame.draw.rect(screen, YELLOW, pygame.Rect(8, 8, 6, 6))
             except Exception:
                 pass
-        # Draw status text slightly to the right so the small indicator doesn't overlap the first char
         text = "Muted" if config.MUTE else "Sound On"
         draw_text(screen, text, FONT_SIZE_SMALL, YELLOW, 30, 10, center=False)
-        # Expose last rendered text for tests
         self._last_mute_text = text
-        # Menu items - display each game as a square box in a grid layout
+
+    def _draw_menu_items(self, screen: pygame.Surface) -> None:
         num_items = len(self.menu_items)
         if num_items == 0:
-            # Nothing to draw
             return
-        # Compute layout parameters (box size, spacing, columns, etc.) – this also gives us the current scroll offset
         layout = self._layout_params()
         BOX_SIZE = layout["BOX_SIZE"]
         H_SPACING = layout["H_SPACING"]
         V_SPACING = layout["V_SPACING"]
         columns = layout["columns"]
         start_x = layout["start_x"]
-        # Apply vertical scroll offset (positive offset means the grid moves up)
         start_y = layout["margin_top"] - self.scroll_offset
-        # Prepare font for menu items
         font = pygame.font.Font(None, self.item_font_size)
         for idx, (name, _, icon_path) in enumerate(self.menu_items):
-            # Determine column and row for this item
             col = idx % columns
             row = idx // columns
             box_x = start_x + col * (BOX_SIZE + H_SPACING)
             box_y = start_y + row * (BOX_SIZE + V_SPACING)
-            # Render the text surface first (to know its height)
-            if name == "Settings":
-                base_color = GRAY
-            else:
-                base_color = WHITE
-            color = YELLOW if idx == self.selected else base_color
-            text_surface = font.render(name, True, color)
+            self._draw_menu_item(
+                screen, name, icon_path, idx, box_x, box_y, font, BOX_SIZE
+            )
 
-            # Compute max icon size to fill the square box while preserving a margin for the game name text
-            max_icon_dim = max(
-                16, BOX_SIZE - text_surface.get_height() - 10
-            )  # 5px margin above and below
+    def _draw_menu_item(
+        self,
+        screen: pygame.Surface,
+        name: str,
+        icon_path: str,
+        idx: int,
+        box_x: int,
+        box_y: int,
+        font,
+        BOX_SIZE: int,
+    ) -> None:
+        color = self._get_menu_item_color(name, idx)
+        text_surface = font.render(name, True, color)
 
-            # Determine icon surface (scaled to fit within the computed size)
-            if icon_path:
-                try:
-                    icon_img = pygame.image.load(icon_path).convert_alpha()
-                    # Scale icon to fit within max_icon_dim (maintaining square shape)
-                    icon_surface = pygame.transform.smoothscale(
-                        icon_img, (max_icon_dim, max_icon_dim)
-                    )
-                    # No hue shift applied for game-specific icons
-                except Exception:
-                    icon_surface = None
-            else:
-                icon_surface = None
-            if icon_surface is None:
-                # Try to load shared default icon if available
-                if DEFAULT_ICON_PATH and name != "Settings":
-                    try:
-                        default_img = pygame.image.load(
-                            DEFAULT_ICON_PATH
-                        ).convert_alpha()
-                        icon_surface = pygame.transform.smoothscale(
-                            default_img, (max_icon_dim, max_icon_dim)
-                        )
-                        # Apply deterministic hue shift based on game name
-                        icon_surface = _apply_hue_shift(icon_surface, name)
-                    except Exception:
-                        icon_surface = None
-                # Try Settings-specific icon if available
-                if icon_surface is None and name == "Settings" and _SETTINGS_ICON_PATH:
-                    try:
-                        settings_img = pygame.image.load(
-                            _SETTINGS_ICON_PATH
-                        ).convert_alpha()
-                        icon_surface = pygame.transform.smoothscale(
-                            settings_img, (max_icon_dim, max_icon_dim)
-                        )
-                        # No hue shift applied for Settings icon
-                    except Exception:
-                        icon_surface = None
-                # Final fallback: gray placeholder
-                if icon_surface is None:
-                    icon_surface = pygame.Surface(
-                        (max_icon_dim, max_icon_dim), pygame.SRCALPHA
-                    )
-                    icon_surface.fill(GRAY)
-            # Compute positions inside the box
-            # Center icon horizontally at the top of the box with a small margin
-            icon_x = box_x + (BOX_SIZE - icon_surface.get_width()) // 2
-            icon_y = box_y + 5
-            # Position text below the icon with a small margin
-            text_x = box_x + (BOX_SIZE - text_surface.get_width()) // 2
-            text_y = icon_y + icon_surface.get_height() + 5
-            # If this is the selected item, draw a highlight rectangle around the whole box
+        max_icon_dim = max(16, BOX_SIZE - text_surface.get_height() - 10)
+        icon_surface = self._get_icon_surface(icon_path, name, max_icon_dim)
+
+        if icon_surface:
+            icon_x, icon_y = self._get_icon_positions(
+                box_x, box_y, BOX_SIZE, icon_surface, text_surface
+            )
+            text_x, text_y = self._get_text_positions(
+                box_x, box_y, BOX_SIZE, icon_surface, text_surface
+            )
             if idx == self.selected:
-                # Compute pulsing border width using time-based animation (decoupled)
-                try:
-                    import math
-                    import time
-
-                    elapsed = time.time() - self._highlight_start
-                    phase = math.sin(elapsed * 2 * math.pi)  # -1 to 1
-                    border_w = int(2 + (phase + 1) / 2 * 4)
-                    if border_w < 2:
-                        border_w = 2
-                except Exception:
-                    border_w = self.highlight_border_width
-
-                self.highlight_rect = pygame.Rect(
-                    box_x, box_y, BOX_SIZE, BOX_SIZE
-                ).inflate(self.highlight_padding * 2, self.highlight_padding * 2)
-                pygame.draw.rect(
-                    screen,
-                    self.highlight_color,
-                    self.highlight_rect,
-                    width=border_w,
-                )
-            # Draw icon and text
+                self._draw_highlight(screen, box_x, box_y, BOX_SIZE)
             screen.blit(icon_surface, (icon_x, icon_y))
             screen.blit(text_surface, (text_x, text_y))
-        # After drawing all boxes, draw a scroll indicator if any vertical overflow exists
+
+    def _get_menu_item_color(self, name: str, idx: int) -> tuple:
+        if name == "Settings":
+            return GRAY
+        else:
+            return YELLOW if idx == self.selected else WHITE
+
+    def _get_icon_positions(
+        self, box_x: int, box_y: int, BOX_SIZE: int, icon_surface, text_surface
+    ) -> tuple:
+        icon_x = box_x + (BOX_SIZE - icon_surface.get_width()) // 2
+        icon_y = box_y + 5
+        return icon_x, icon_y
+
+    def _get_text_positions(
+        self, box_x: int, box_y: int, BOX_SIZE: int, icon_surface, text_surface
+    ) -> tuple:
+        text_x = box_x + (BOX_SIZE - text_surface.get_width()) // 2
+        text_y = box_y + 5 + icon_surface.get_height() + 5
+        return text_x, text_y
+
+    def _get_icon_surface(self, icon_path: str, name: str, max_icon_dim: int):
+        if icon_path:
+            try:
+                icon_img = pygame.image.load(icon_path).convert_alpha()
+                return pygame.transform.smoothscale(
+                    icon_img, (max_icon_dim, max_icon_dim)
+                )
+            except Exception:
+                pass
+        if DEFAULT_ICON_PATH and name != "Settings":
+            try:
+                default_img = pygame.image.load(DEFAULT_ICON_PATH).convert_alpha()
+                icon_surface = pygame.transform.smoothscale(
+                    default_img, (max_icon_dim, max_icon_dim)
+                )
+                return _apply_hue_shift(icon_surface, name)
+            except Exception:
+                pass
+        if name == "Settings" and _SETTINGS_ICON_PATH:
+            try:
+                settings_img = pygame.image.load(_SETTINGS_ICON_PATH).convert_alpha()
+                return pygame.transform.smoothscale(
+                    settings_img, (max_icon_dim, max_icon_dim)
+                )
+            except Exception:
+                pass
+        icon_surface = pygame.Surface((max_icon_dim, max_icon_dim), pygame.SRCALPHA)
+        icon_surface.fill(GRAY)
+        return icon_surface
+
+    def _draw_highlight(
+        self, screen: pygame.Surface, box_x: int, box_y: int, BOX_SIZE: int
+    ) -> None:
+        try:
+            import math
+            import time
+
+            elapsed = time.time() - self._highlight_start
+            phase = math.sin(elapsed * 2 * math.pi)
+            border_w = int(2 + (phase + 1) / 2 * 4)
+            if border_w < 2:
+                border_w = 2
+        except Exception:
+            border_w = self.highlight_border_width
+
+        self.highlight_rect = pygame.Rect(box_x, box_y, BOX_SIZE, BOX_SIZE)
+        self.highlight_rect = self.highlight_rect.inflate(
+            self.highlight_padding * 2, self.highlight_padding * 2
+        )
+        pygame.draw.rect(
+            screen, self.highlight_color, self.highlight_rect, width=border_w
+        )
+
+    def _draw_scroll_indicator(self, screen: pygame.Surface) -> None:
+        layout = self._layout_params()
         if layout["max_offset"] > 0:
-            # Draw a larger, more visible scroll indicator (a filled triangle)
             tri_height = max(self.title_font_size // 2, self.item_font_size) * 2
             tri_half = tri_height // 2
             tri_center_x = SCREEN_WIDTH // 2
@@ -760,7 +763,8 @@ class MenuState(State):
                 (tri_center_x, tri_top_y + tri_height),
             ]
             pygame.draw.polygon(screen, YELLOW, points)
-        # Draw transient launch message (if set and not expired)
+
+    def _draw_launch_message(self, screen: pygame.Surface) -> None:
         try:
             import time
 
@@ -776,10 +780,15 @@ class MenuState(State):
                         center=True,
                     )
         except Exception:
-            # Drawing a transient message should not interfere with normal rendering
             pass
 
-    def _handle_held_key_auto_repeat(self, dt: float) -> None:
+    def draw(self, screen: pygame.Surface) -> None:
+        self._draw_title(screen)
+        self._draw_mute_status(screen)
+        self._draw_menu_items(screen)
+        self._draw_scroll_indicator(screen)
+        self._draw_launch_message(screen)
+
         """Handle auto-repeat of held navigation keys during update."""
         try:
             if self._held_key is not None:
