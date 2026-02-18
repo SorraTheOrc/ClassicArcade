@@ -333,103 +333,27 @@ class SnakeState(Game):
                                 pass
                         break
 
-    def draw(self, screen: pygame.Surface) -> None:
-        """Render the Snake game elements and UI onto the screen.
-
-        Draws the background, food, snake segments, and the current score. If the game is over, displays a game‑over message.
-        """
-        # Clear background
+    def _draw_background(self, screen: pygame.Surface) -> None:
         screen.fill(BLACK)
-        # Draw food
+
+    def _draw_food(self, screen: pygame.Surface) -> None:
         pygame.draw.rect(screen, RED, (*self.food, BLOCK_SIZE, BLOCK_SIZE))
-        # Draw snake
+
+    def _draw_snake_body(self, screen: pygame.Surface) -> None:
         for segment in self.snake:
             pygame.draw.rect(screen, GREEN, (*segment, BLOCK_SIZE, BLOCK_SIZE))
-        # Draw power-ups
-        self._draw_powerups(screen)
-        # Draw score
-        draw_text(
-            screen,
-            f"Score: {self.score}",
-            FONT_SIZE_MEDIUM,
-            WHITE,
-            60,
-            20,
-            center=False,
-        )
-        # Draw HUD: extra lives and speed boost remaining
-        # Draw Unicode heart glyphs for lives if a suitable font is available.
-        hearts = max(0, getattr(self, "extra_lives", 0))
-        margin_right = 20
-        heart_size = 20
 
-        def _find_heart_font(sz: int):
-            # Try a list of candidate fonts that often include the heart glyph
-            candidates = [
-                "DejaVu Sans",
-                "Segoe UI Symbol",
-                "Symbola",
-                "Noto Color Emoji",
-                "Arial Unicode MS",
-                "Arial",
-                "FreeSans",
-            ]
-            for name in candidates:
-                try:
-                    f = pygame.font.SysFont(name, sz)
-                    m = f.metrics("♥")
-                    if m and m[0] is not None:
-                        return f
-                except Exception:
-                    continue
-            # Last resort: use default font and hope for the glyph
-            try:
-                f = pygame.font.Font(None, sz)
-                m = f.metrics("♥")
-                if m and m[0] is not None:
-                    return f
-            except Exception:
-                pass
-            return None
+    def _draw_shrink_effect(self, screen: pygame.Surface) -> None:
+        self._draw_shrink_flash(screen)
+        self._draw_shrink_particles(screen)
 
-        heart_font = _find_heart_font(heart_size)
-        if heart_font:
-            heart_surf = heart_font.render("♥", True, RED)
-            w = heart_surf.get_width()
-            padding = 4
-            for i in range(hearts):
-                x = SCREEN_WIDTH - margin_right - (i + 1) * (w + padding)
-                y = 16
-                screen.blit(heart_surf, (x, y))
-        else:
-            # Fallback: small red circle to indicate lives (better than prior polygon heart)
-            spacing = 18
-            size = 10
-            cy = 16 + size // 2
-            for i in range(hearts):
-                cx = SCREEN_WIDTH - margin_right - (i * spacing) - size // 2
-                try:
-                    pygame.draw.circle(screen, RED, (cx, cy), size // 2)
-                except Exception:
-                    # ultimate fallback: draw text +N
-                    draw_text(
-                        screen,
-                        f"+{hearts}",
-                        FONT_SIZE_SMALL,
-                        YELLOW,
-                        SCREEN_WIDTH - margin_right - 40,
-                        16,
-                        center=False,
-                    )
-        # Visual feedback for shrink power-up: pulsing cyan overlay on the snake
+    def _draw_shrink_flash(self, screen: pygame.Surface) -> None:
         if getattr(self, "_shrink_flash_remaining", 0) > 0:
             dur = max(self._shrink_flash_duration, 0.001)
             elapsed = dur - self._shrink_flash_remaining
             frac = max(0.0, min(1.0, elapsed / dur))
-            # two cycles of sine for a more noticeable pulse
             intensity = 0.5 * (1.0 + math.sin(frac * 2 * math.pi * 2))
 
-            # blend GREEN -> CYAN based on intensity
             def _blend(c1, c2, t):
                 return (
                     int(c1[0] + (c2[0] - c1[0]) * t),
@@ -441,39 +365,126 @@ class SnakeState(Game):
             for segment in self.snake:
                 pygame.draw.rect(screen, seg_color, (*segment, BLOCK_SIZE, BLOCK_SIZE))
 
-        # Draw particles for shrink effect
+    def _draw_shrink_particles(self, screen: pygame.Surface) -> None:
         if self._particles:
             for p in list(self._particles):
-                life = p.get("life", 1.0)
                 ttl = max(0.0, p.get("ttl", 0.0))
+                life = p.get("life", 1.0)
                 t = ttl / life if life > 0 else 0
-                # size fades with ttl, alpha fades too
                 radius = max(1, int(p.get("size", 3) * t))
                 col = p.get("color", CYAN)
                 alpha = int(255 * t)
-                try:
-                    # draw with per-pixel alpha surface for smooth fade
-                    surf = pygame.Surface(
-                        (radius * 2 + 2, radius * 2 + 2), pygame.SRCALPHA
-                    )
-                    pygame.draw.circle(
-                        surf,
-                        (col[0], col[1], col[2], alpha),
-                        (radius + 1, radius + 1),
-                        radius,
-                    )
-                    screen.blit(
-                        surf,
-                        (int(p["pos"][0] - radius - 1), int(p["pos"][1] - radius - 1)),
-                    )
-                except Exception:
-                    try:
-                        pygame.draw.circle(
-                            screen, col, (int(p["pos"][0]), int(p["pos"][1])), radius
-                        )
-                    except Exception:
-                        pass
+                self._draw_particle(screen, p, radius, col, alpha)
 
+    def _draw_particle(
+        self, screen: pygame.Surface, p: dict, radius: int, col: tuple, alpha: int
+    ) -> None:
+        try:
+            surf = pygame.Surface((radius * 2 + 2, radius * 2 + 2), pygame.SRCALPHA)
+            pygame.draw.circle(
+                surf,
+                (col[0], col[1], col[2], alpha),
+                (radius + 1, radius + 1),
+                radius,
+            )
+            screen.blit(
+                surf,
+                (int(p["pos"][0] - radius - 1), int(p["pos"][1] - radius - 1)),
+            )
+        except Exception:
+            try:
+                pygame.draw.circle(
+                    screen, col, (int(p["pos"][0]), int(p["pos"][1])), radius
+                )
+            except Exception:
+                pass
+
+    def _draw_hud(self, screen: pygame.Surface) -> None:
+        self._draw_score(screen)
+        self._draw_lives(screen)
+        self._draw_speed_boost(screen)
+        self._draw_shrink_feedback(screen)
+
+    def _draw_score(self, screen: pygame.Surface) -> None:
+        draw_text(
+            screen,
+            f"Score: {self.score}",
+            FONT_SIZE_MEDIUM,
+            WHITE,
+            60,
+            20,
+            center=False,
+        )
+
+    def _draw_lives(self, screen: pygame.Surface) -> None:
+        hearts = max(0, getattr(self, "extra_lives", 0))
+        heart_font = self._find_heart_font(20)
+
+        if heart_font:
+            self._draw_heart_glyphs(screen, hearts, heart_font)
+        else:
+            self._draw_heart_circles(screen, hearts)
+
+    def _find_heart_font(self, sz: int):
+        candidates = [
+            "DejaVu Sans",
+            "Segoe UI Symbol",
+            "Symbola",
+            "Noto Color Emoji",
+            "Arial Unicode MS",
+            "Arial",
+            "FreeSans",
+        ]
+        for name in candidates:
+            try:
+                f = pygame.font.SysFont(name, sz)
+                m = f.metrics("♥")
+                if m and m[0] is not None:
+                    return f
+            except Exception:
+                continue
+        try:
+            f = pygame.font.Font(None, sz)
+            m = f.metrics("♥")
+            if m and m[0] is not None:
+                return f
+        except Exception:
+            pass
+        return None
+
+    def _draw_heart_glyphs(
+        self, screen: pygame.Surface, hearts: int, heart_font
+    ) -> None:
+        heart_surf = heart_font.render("♥", True, RED)
+        w = heart_surf.get_width()
+        padding = 4
+        margin_right = 20
+        for i in range(hearts):
+            x = SCREEN_WIDTH - margin_right - (i + 1) * (w + padding)
+            y = 16
+            screen.blit(heart_surf, (x, y))
+
+    def _draw_heart_circles(self, screen: pygame.Surface, hearts: int) -> None:
+        margin_right = 20
+        spacing = 18
+        size = 10
+        cy = 16 + size // 2
+        for i in range(hearts):
+            cx = SCREEN_WIDTH - margin_right - (i * spacing) - size // 2
+            try:
+                pygame.draw.circle(screen, RED, (cx, cy), size // 2)
+            except Exception:
+                draw_text(
+                    screen,
+                    f"+{hearts}",
+                    FONT_SIZE_SMALL,
+                    YELLOW,
+                    SCREEN_WIDTH - margin_right - 40,
+                    16,
+                    center=False,
+                )
+
+    def _draw_speed_boost(self, screen: pygame.Surface) -> None:
         if getattr(self, "_speed_boost_time", 0) > 0:
             sb_text = f"Speed: {self._speed_boost_time:.1f}s"
             draw_text(
@@ -485,7 +496,8 @@ class SnakeState(Game):
                 44,
                 center=False,
             )
-        # Shrink feedback message
+
+    def _draw_shrink_feedback(self, screen: pygame.Surface) -> None:
         if getattr(self, "_shrink_feedback_time", 0) > 0:
             draw_text(
                 screen,
@@ -496,6 +508,8 @@ class SnakeState(Game):
                 44,
                 center=False,
             )
+
+    def _draw_game_over(self, screen: pygame.Surface) -> None:
         if self.game_over:
             record_highscore(self, "snake", self.score)
             draw_highscore_screen(
@@ -505,11 +519,21 @@ class SnakeState(Game):
                 instruction_color=YELLOW,
                 font_size=FONT_SIZE_MEDIUM,
             )
-        # Draw pause overlay if paused
+
+    def _draw_pause_mute_overlays(self, screen: pygame.Surface) -> None:
         if self.paused:
             self.draw_pause_overlay(screen)
-        # Draw mute overlay (Muted or Sound On)
         self.draw_mute_overlay(screen)
+
+    def draw(self, screen: pygame.Surface) -> None:
+        self._draw_background(screen)
+        self._draw_food(screen)
+        self._draw_snake_body(screen)
+        self._draw_powerups(screen)
+        self._draw_hud(screen)
+        self._draw_shrink_effect(screen)
+        self._draw_game_over(screen)
+        self._draw_pause_mute_overlays(screen)
 
     # --- Power-up helpers -------------------------------------------------
     def _spawn_powerup(self) -> None:
